@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="115" fill="#080808"/>
+  <text x="256" y="295" font-family="'Arial Black','Helvetica Neue',Arial,sans-serif" font-size="200" font-weight="900" fill="#ffffff" text-anchor="middle" textLength="420" lengthAdjust="spacing">CINÉ</text>
+  <text x="256" y="385" font-family="'Arial','Helvetica Neue',Arial,sans-serif" font-size="62" font-weight="300" fill="rgba(255,255,255,0.4)" text-anchor="middle" textLength="380" lengthAdjust="spacing">TRACKER</text>
+</svg>
