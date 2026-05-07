@@ -5648,6 +5648,7 @@ header {
 .detail-stream-shell {
   display: grid;
   gap: 20px;
+  background: linear-gradient(180deg, #0f172a 0px, #0f172a 180px, transparent 320px);
 }
 
 .detail-stream-hero-wrap {
