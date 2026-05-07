@@ -2373,52 +2373,71 @@ function buildSeriesUpcomingEpisodesRow(seriesItems) {
       });
     }
 
-    body = `
-      <div class="collection-upcoming-shell">
-        ${sections
-          .map((section) => {
-            return `
-              <section class="collection-upcoming-day collection-upcoming-day-${section.type} ${section.entries.length === 1 ? "collection-upcoming-day-single" : ""}">
-                <div class="collection-upcoming-dayhead">
-                  <div class="collection-upcoming-daybadge">${escapeHtml(section.badge)}</div>
-                </div>
-                <div class="collection-upcoming-daymeta">${escapeHtml(section.meta)}</div>
-                <div class="collection-upcoming-cards">
-                  ${section.entries
-                    .map(({ item, next, airDate }, index) => {
-                      const daysLeft = Math.round((airDate - today) / 86400000);
-                      const isUrgent = daysLeft <= 2;
-                      const isFeatured = index === 0;
-                      const episodeCode = `S${String(next.season_number).padStart(2, "0")} E${String(next.episode_number).padStart(2, "0")}`;
-                      const providerLabel = getCompactProviderLabel(
-                        item.providerName,
-                      );
-                      return `
-                <article class="collection-upcoming-card ${isFeatured ? "collection-upcoming-card-featured" : ""} ${isUrgent ? "collection-upcoming-card-urgent" : ""}" onclick="openDetail('${item.id}')">
-                  <div class="collection-upcoming-card-image">
-                    ${
-                      item.posterUrl
-                        ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
-                        : `<div class="upcoming-poster-placeholder">📺</div>`
-                    }
-                    <div class="collection-upcoming-card-imagefade"></div>
-                    ${providerLabel ? `<div class="collection-upcoming-card-provider">${escapeHtml(providerLabel)}</div>` : ""}
-                    <div class="collection-upcoming-card-info">
-                      <div class="collection-upcoming-show">${escapeHtml(item.title)}</div>
-                      <div class="collection-upcoming-episode">${escapeHtml(episodeCode)}</div>
-                    </div>
+    if (upcoming.length === 1) {
+      const { item, next, airDate } = upcoming[0];
+      const episodeCode = `S${String(next.season_number).padStart(2, "0")} · E${String(next.episode_number).padStart(2, "0")}`;
+      const daysLeft = Math.round((airDate - today) / 86400000);
+      const dateLabel = daysLeft === 0
+        ? "Aujourd'hui"
+        : daysLeft === 1
+          ? "Demain"
+          : airDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+      body = `
+        <div class="collection-upcoming-seasons-row">
+          <article class="collection-upcoming-season-card" onclick="openDetail('${item.id}')">
+            <div class="collection-upcoming-season-poster">
+              ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="upcoming-poster-placeholder">📺</div>`}
+            </div>
+            <div class="collection-upcoming-season-body">
+              <div class="collection-upcoming-season-title">${escapeHtml(item.title)}</div>
+              <div class="collection-upcoming-season-num">${escapeHtml(episodeCode)}</div>
+              <div class="collection-upcoming-season-date">${escapeHtml(dateLabel)}</div>
+            </div>
+          </article>
+        </div>
+      `;
+    } else {
+      body = `
+        <div class="collection-upcoming-shell">
+          ${sections
+            .map((section) => {
+              return `
+                <section class="collection-upcoming-day collection-upcoming-day-${section.type}">
+                  <div class="collection-upcoming-dayhead">
+                    <div class="collection-upcoming-daybadge">${escapeHtml(section.badge)}</div>
                   </div>
-                </article>
+                  <div class="collection-upcoming-daymeta">${escapeHtml(section.meta)}</div>
+                  <div class="collection-upcoming-cards">
+                    ${section.entries
+                      .map(({ item, next, airDate }, index) => {
+                        const daysLeft = Math.round((airDate - today) / 86400000);
+                        const isUrgent = daysLeft <= 2;
+                        const isFeatured = index === 0;
+                        const episodeCode = `S${String(next.season_number).padStart(2, "0")} E${String(next.episode_number).padStart(2, "0")}`;
+                        const providerLabel = getCompactProviderLabel(item.providerName);
+                        return `
+                  <article class="collection-upcoming-card ${isFeatured ? "collection-upcoming-card-featured" : ""} ${isUrgent ? "collection-upcoming-card-urgent" : ""}" onclick="openDetail('${item.id}')">
+                    <div class="collection-upcoming-card-image">
+                      ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="upcoming-poster-placeholder">📺</div>`}
+                      <div class="collection-upcoming-card-imagefade"></div>
+                      ${providerLabel ? `<div class="collection-upcoming-card-provider">${escapeHtml(providerLabel)}</div>` : ""}
+                      <div class="collection-upcoming-card-info">
+                        <div class="collection-upcoming-show">${escapeHtml(item.title)}</div>
+                        <div class="collection-upcoming-episode">${escapeHtml(episodeCode)}</div>
+                      </div>
+                    </div>
+                  </article>
+                `;
+                      })
+                      .join("")}
+                  </div>
+                </section>
               `;
-                    })
-                    .join("")}
-                </div>
-              </section>
-            `;
-          })
-          .join("")}
-      </div>
-    `;
+            })
+            .join("")}
+        </div>
+      `;
+    }
   } else if (tracked.length === 0) {
     body = renderUpcomingEmpty("Aucune série suivie avec TMDB.");
   } else {
