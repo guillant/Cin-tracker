@@ -4319,7 +4319,11 @@ function buildDetailHTML(item, tmdb) {
   const heroChips = [statusText];
   if (tmdbScore) heroChips.push(`TMDB ${tmdbScore}/5`);
   if (item.providerName) heroChips.push(item.providerName);
-  const heroActions = [];
+  const heroActions = [
+    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "towatch" ? "active" : ""}" onclick="setItemStatusFromDetail('towatch')">À voir</button>`,
+    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Vu + noter</button>`,
+    `<button class="detail-mini-btn detail-mini-btn-toolbar detail-mini-btn-ghost" onclick="editItem()">Modifier</button>`,
+  ];
   if (getTrailerKey(tmdb)) {
     heroActions.push(
       buildDetailAnchorButton("Bande-annonce", "detailTrailerAnchor", true),
@@ -4343,7 +4347,6 @@ function buildDetailHTML(item, tmdb) {
         posterUrl: item.posterUrl,
         actionHtml: heroActions.join(""),
       })}
-      ${buildCollectionQuickBar(item)}
       <div class="detail-stream-panel detail-stream-panel-info">
         <div class="sd-section-title">Informations</div>
         ${buildDetailInfoRow("Année", escapeHtml(item.year) || "—")}
@@ -4420,7 +4423,12 @@ function buildSeriesDetailHTML(item, tmdb) {
     `${totalSeasons} saison${totalSeasons > 1 ? "s" : ""}`,
   ];
   if (totalEpisodes !== "?") heroChips.push(`${totalEpisodes} épisodes`);
-  const heroActions = [];
+  const heroActions = [
+    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "towatch" ? "active" : ""}" onclick="setItemStatusFromDetail('towatch')">À voir</button>`,
+    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watching" ? "active" : ""}" onclick="setItemStatusFromDetail('watching')">En cours</button>`,
+    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Vu</button>`,
+    `<button class="detail-mini-btn detail-mini-btn-toolbar detail-mini-btn-ghost" onclick="editItem()">Modifier</button>`,
+  ];
   if (getTrailerKey(tmdb)) {
     heroActions.push(
       buildDetailAnchorButton("Bande-annonce", "sdTabVideos", true),
@@ -4439,7 +4447,6 @@ function buildSeriesDetailHTML(item, tmdb) {
         posterUrl: item.posterUrl,
         actionHtml: heroActions.join(""),
       })}
-      ${buildCollectionQuickBar(item)}
       <div class="detail-stream-panel detail-stream-panel-series">
         <div class="sd-info-bar">
           <div class="sd-info-text">
