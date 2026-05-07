@@ -4319,7 +4319,6 @@ function buildDetailHTML(item, tmdb) {
     .filter(Boolean)
     .join(" · ");
   const heroChips = [];
-  if (tmdbScore) heroChips.push(`TMDB ${tmdbScore}/5`);
   if (item.providerName) heroChips.push(item.providerName);
   const heroActions = [];
   if (getTrailerKey(tmdb)) {
@@ -4350,26 +4349,7 @@ function buildDetailHTML(item, tmdb) {
         <div class="sd-section-title">Informations</div>
         ${buildDetailInfoRow("Année", escapeHtml(item.year) || "—")}
         ${buildDetailInfoRow("Statut", `${statusText}${item.watchedAt ? ` <span class="watched-date">· Vu le ${new Date(item.watchedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>` : ""}`)}
-        ${(() => {
-          const rows = [];
-          if (tmdbScore)
-            rows.push(
-              buildDetailInfoRow(
-                "Note TMDB",
-                buildTmdbRatingInline(tmdbScore, tmdb?.vote_count),
-                "detail-row-highlight",
-              ),
-            );
-          if (item.rating)
-            rows.push(
-              buildDetailInfoRow(
-                "Ma note",
-                buildUserRatingInline(item.rating),
-                "detail-row-highlight",
-              ),
-            );
-          return rows.join("");
-        })()}
+        ${item.rating ? buildDetailInfoRow("Ma note", buildUserRatingInline(item.rating), "detail-row-highlight") : ""}
         ${item.genre ? buildDetailInfoRow("Genre", escapeHtml(item.genre)) : ""}
         ${extraRows}
         ${item.tags?.length ? buildDetailInfoRow("Tags", buildDetailTagList(item.tags), "detail-row-tags") : ""}
