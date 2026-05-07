@@ -4013,9 +4013,9 @@ function buildDetailHeroHTML({
           ${chips.length
             ? `<div class="detail-stream-chips">${chips.map((c) => `<span class="detail-stream-chip">${escapeHtml(c)}</span>`).join("")}</div>`
             : ""}
-          ${actionHtml ? `<div class="detail-stream-hero-actions">${actionHtml}</div>` : ""}
         </div>
       </div>
+      ${actionHtml ? `<div class="detail-hero-actions-row">${actionHtml}</div>` : ""}
     </div>`;
 }
 

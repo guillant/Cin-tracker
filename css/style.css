@@ -318,6 +318,10 @@ header {
     font-size: 17px;
   }
 
+  .detail-hero-actions-row {
+    padding: 4px 18px 16px;
+  }
+
   .detail-stream-meta {
     font-size: 13px;
   }
@@ -6052,6 +6056,13 @@ header {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.detail-hero-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 4px 24px 18px;
 }
 
 .detail-stream-quickcopy {
