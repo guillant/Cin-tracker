@@ -4320,9 +4320,7 @@ function buildDetailHTML(item, tmdb) {
   if (tmdbScore) heroChips.push(`TMDB ${tmdbScore}/5`);
   if (item.providerName) heroChips.push(item.providerName);
   const heroActions = [
-    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "towatch" ? "active" : ""}" onclick="setItemStatusFromDetail('towatch')">À voir</button>`,
-    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Vu + noter</button>`,
-    `<button class="detail-mini-btn detail-mini-btn-toolbar detail-mini-btn-ghost" onclick="editItem()">Modifier</button>`,
+    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Noter</button>`,
   ];
   if (getTrailerKey(tmdb)) {
     heroActions.push(
@@ -4424,10 +4422,7 @@ function buildSeriesDetailHTML(item, tmdb) {
   ];
   if (totalEpisodes !== "?") heroChips.push(`${totalEpisodes} épisodes`);
   const heroActions = [
-    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "towatch" ? "active" : ""}" onclick="setItemStatusFromDetail('towatch')">À voir</button>`,
-    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watching" ? "active" : ""}" onclick="setItemStatusFromDetail('watching')">En cours</button>`,
-    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Vu</button>`,
-    `<button class="detail-mini-btn detail-mini-btn-toolbar detail-mini-btn-ghost" onclick="editItem()">Modifier</button>`,
+    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Noter</button>`,
   ];
   if (getTrailerKey(tmdb)) {
     heroActions.push(
