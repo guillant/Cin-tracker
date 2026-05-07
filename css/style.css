@@ -8922,17 +8922,13 @@ header {
 
 .detail-hero-badges {
   position: absolute;
-  top: calc(190px - 20px);
-  right: 24px;
+  bottom: 14px;
+  right: 28px;
   display: flex;
   align-items: center;
   gap: 6px;
   z-index: 3;
   pointer-events: none;
-}
-
-@media (max-width: 520px) {
-  .detail-hero-badges { top: calc(170px - 20px); right: 20px; }
 }
 
 .detail-hero-score {

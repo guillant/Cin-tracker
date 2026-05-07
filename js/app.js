@@ -4006,12 +4006,12 @@ function buildDetailHeroHTML({
           : `<div class="detail-stream-bg detail-stream-bg-empty"></div>`
         }
         <div class="detail-stream-overlay"></div>
+        ${score || providerLogo ? `
+          <div class="detail-hero-badges">
+            ${providerLogo ? `<span class="detail-hero-provider"><img src="${escapeHtml(providerLogo)}" alt="${escapeHtml(providerName || "")}"></span>` : ""}
+            ${score ? `<span class="detail-hero-score">★ ${escapeHtml(String(score))}</span>` : ""}
+          </div>` : ""}
       </div>
-      ${score || providerLogo ? `
-        <div class="detail-hero-badges">
-          ${providerLogo ? `<span class="detail-hero-provider"><img src="${escapeHtml(providerLogo)}" alt="${escapeHtml(providerName || "")}"></span>` : ""}
-          ${score ? `<span class="detail-hero-score">★ ${escapeHtml(String(score))}</span>` : ""}
-        </div>` : ""}
       <div class="detail-poster-row">
         <div class="detail-poster-col">${posterEl}</div>
         <div class="detail-poster-info">
