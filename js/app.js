@@ -4107,40 +4107,15 @@ function buildCollectionQuickBar(item) {
 
 function buildTrendingQuickBar(item, type, alreadyAdded) {
   if (alreadyAdded) {
-    const pills = [type === "movie" ? "Film" : "Série"];
-    const year = (item.release_date || item.first_air_date || "").substring(
-      0,
-      4,
-    );
-    if (year) pills.push(year);
-    return buildDetailDockHTML({
-      posterUrl: item.poster_path
-        ? `${TMDB_IMAGE_BASE}${item.poster_path}`
-        : "",
-      title: "Déjà ajouté",
-      subtitle: "Actions collection",
-      pills,
-      state: "success",
-      actionsHtml: `
-        <button class="detail-mini-btn active" onclick="openCollectionDetailFromTmdbId(${item.id})">Ouvrir</button>
-        <button class="detail-mini-btn detail-mini-btn-ghost" onclick="openCollectionEditFromTmdbId(${item.id})">Modifier</button>
-      `,
-    });
+    return `<div class="detail-action-bar">
+      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="openCollectionDetailFromTmdbId(${item.id})">Ouvrir dans la collection</button>
+      <button class="btn" style="flex:1;justify-content:center;" onclick="openCollectionEditFromTmdbId(${item.id})">Modifier</button>
+    </div>`;
   }
-
-  const pills = [type === "movie" ? "Film" : "Série"];
-  const year = (item.release_date || item.first_air_date || "").substring(0, 4);
-  if (year) pills.push(year);
-  return buildDetailDockHTML({
-    posterUrl: item.poster_path ? `${TMDB_IMAGE_BASE}${item.poster_path}` : "",
-    title: "Ajout rapide",
-    subtitle: "Collection",
-    pills,
-    actionsHtml: `
-      <button class="detail-mini-btn active" onclick="quickAddFromTrendingById(${item.id}, 'towatch', '${type}')">+ Collection</button>
-      <button class="detail-mini-btn" onclick="openWatchedFlowFromTrendingById(${item.id}, '${type}')">✓ Vu + noter</button>
-    `,
-  });
+  return `<div class="detail-action-bar">
+    <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="quickAddFromTrendingById(${item.id}, 'towatch', '${type}')">+ Ajouter</button>
+    <button class="btn" style="flex:1;justify-content:center;" onclick="openWatchedFlowFromTrendingById(${item.id}, '${type}')">✓ Vu + noter</button>
+  </div>`;
 }
 
 function buildCollectionItemFromTrending(
@@ -5789,7 +5764,6 @@ function buildTrendingDetailHTML(item, type, tmdb) {
     .filter(Boolean)
     .join(" · ");
   const heroChips = [];
-  if (tmdbRating) heroChips.push(`TMDB ${tmdbRating}/5`);
   if (tmdb?.genres?.length) {
     heroChips.push(...tmdb.genres.slice(0, 2).map((genre) => genre.name));
   }
@@ -5818,6 +5792,7 @@ function buildTrendingDetailHTML(item, type, tmdb) {
         backdropUrl,
         posterUrl: posterPath,
         actionHtml: heroActions.join(""),
+        score: tmdbRating || null,
       })}
       ${buildTrendingQuickBar(item, type, alreadyAdded)}
       <div class="detail-stream-panel">
