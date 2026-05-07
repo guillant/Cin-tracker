@@ -8922,7 +8922,7 @@ header {
 
 .detail-hero-badges {
   position: absolute;
-  top: calc(190px - 38px);
+  top: calc(190px - 20px);
   right: 24px;
   display: flex;
   align-items: center;
@@ -8932,7 +8932,7 @@ header {
 }
 
 @media (max-width: 520px) {
-  .detail-hero-badges { top: calc(170px - 38px); right: 20px; }
+  .detail-hero-badges { top: calc(170px - 20px); right: 20px; }
 }
 
 .detail-hero-score {
