@@ -949,25 +949,62 @@ header {
   color: #fde68a;
 }
 
-.collection-upcoming-day-single {
+.upcoming-single-ep {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(17,24,39,0.94) 0%, rgba(15,23,42,0.94) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 12px 22px rgba(2,6,23,0.18);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.upcoming-single-ep:hover {
+  border-color: rgba(255,255,255,0.14);
+  transform: translateY(-1px);
+}
+.upcoming-single-ep-thumb {
+  width: 52px;
+  height: 78px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #0f172a;
+}
+.upcoming-single-ep-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.upcoming-single-ep-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
-  width: auto;
 }
-
-.collection-upcoming-day-single .collection-upcoming-dayhead {
-  justify-content: center;
+.upcoming-single-ep-show {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-.collection-upcoming-day-single .collection-upcoming-daymeta {
-  padding-left: 0;
-  text-align: center;
+.upcoming-single-ep-code {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(226,232,240,0.65);
+  letter-spacing: 0.3px;
 }
-
-.collection-upcoming-day-single .collection-upcoming-cards {
-  width: auto;
-  justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
+.upcoming-single-ep-date {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(226,232,240,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 .collection-upcoming-cards {

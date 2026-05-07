@@ -2383,18 +2383,16 @@ function buildSeriesUpcomingEpisodesRow(seriesItems) {
           ? "Demain"
           : airDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
       body = `
-        <div class="collection-upcoming-seasons-row">
-          <article class="collection-upcoming-season-card" onclick="openDetail('${item.id}')">
-            <div class="collection-upcoming-season-poster">
-              ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="upcoming-poster-placeholder">📺</div>`}
-            </div>
-            <div class="collection-upcoming-season-body">
-              <div class="collection-upcoming-season-title">${escapeHtml(item.title)}</div>
-              <div class="collection-upcoming-season-num">${escapeHtml(episodeCode)}</div>
-              <div class="collection-upcoming-season-date">${escapeHtml(dateLabel)}</div>
-            </div>
-          </article>
-        </div>
+        <article class="upcoming-single-ep" onclick="openDetail('${item.id}')">
+          <div class="upcoming-single-ep-thumb">
+            ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="upcoming-poster-placeholder">📺</div>`}
+          </div>
+          <div class="upcoming-single-ep-info">
+            <div class="upcoming-single-ep-show">${escapeHtml(item.title)}</div>
+            <div class="upcoming-single-ep-code">${escapeHtml(episodeCode)}</div>
+            <div class="upcoming-single-ep-date">${escapeHtml(dateLabel)}</div>
+          </div>
+        </article>
       `;
     } else {
       body = `
