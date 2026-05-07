@@ -4316,12 +4316,10 @@ function buildDetailHTML(item, tmdb) {
   const heroMeta = [item.year || null, item.genre || null]
     .filter(Boolean)
     .join(" · ");
-  const heroChips = [statusText];
+  const heroChips = [];
   if (tmdbScore) heroChips.push(`TMDB ${tmdbScore}/5`);
   if (item.providerName) heroChips.push(item.providerName);
-  const heroActions = [
-    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Noter</button>`,
-  ];
+  const heroActions = [];
   if (getTrailerKey(tmdb)) {
     heroActions.push(
       buildDetailAnchorButton("Bande-annonce", "detailTrailerAnchor", true),
@@ -4384,7 +4382,9 @@ function buildDetailHTML(item, tmdb) {
           : ""
       }
       <div class="detail-actions detail-actions-compact">
-        <button class="btn" onclick="deleteItem()" style="flex:1;justify-content:center;">Supprimer</button>
+        <button class="btn btn-primary" onclick="openWatchedFlowForCurrentItem()" style="flex:1;justify-content:center;">Vu + noter</button>
+        <button class="btn" onclick="editItem()" style="flex:1;justify-content:center;">Modifier</button>
+        <button class="btn" onclick="deleteItem()" style="justify-content:center;color:#f87171;">Supprimer</button>
       </div>
     </div>`;
 }
@@ -4417,13 +4417,10 @@ function buildSeriesDetailHTML(item, tmdb) {
 
   const seriesStatus = STATUS_LABELS[item.status] || item.status;
   const heroChips = [
-    seriesStatus,
     `${totalSeasons} saison${totalSeasons > 1 ? "s" : ""}`,
   ];
   if (totalEpisodes !== "?") heroChips.push(`${totalEpisodes} épisodes`);
-  const heroActions = [
-    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Noter</button>`,
-  ];
+  const heroActions = [];
   if (getTrailerKey(tmdb)) {
     heroActions.push(
       buildDetailAnchorButton("Bande-annonce", "sdTabVideos", true),
