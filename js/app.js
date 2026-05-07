@@ -3990,6 +3990,8 @@ function buildDetailHeroHTML({
   posterUrl,
   actionHtml = "",
   score = null,
+  providerLogo = null,
+  providerName = null,
 }) {
   const visualUrl = backdropUrl || posterUrl || "";
   const posterEl = posterUrl
@@ -4004,7 +4006,11 @@ function buildDetailHeroHTML({
           : `<div class="detail-stream-bg detail-stream-bg-empty"></div>`
         }
         <div class="detail-stream-overlay"></div>
-        ${score ? `<span class="detail-hero-score">★ ${escapeHtml(String(score))}</span>` : ""}
+        ${score || providerLogo ? `
+          <div class="detail-hero-badges">
+            ${providerLogo ? `<span class="detail-hero-provider"><img src="${escapeHtml(providerLogo)}" alt="${escapeHtml(providerName || "")}"></span>` : ""}
+            ${score ? `<span class="detail-hero-score">★ ${escapeHtml(String(score))}</span>` : ""}
+          </div>` : ""}
       </div>
       <div class="detail-poster-row">
         <div class="detail-poster-col">${posterEl}</div>
@@ -4319,7 +4325,6 @@ function buildDetailHTML(item, tmdb) {
     .filter(Boolean)
     .join(" · ");
   const heroChips = [];
-  if (item.providerName) heroChips.push(item.providerName);
   const heroActions = [];
   if (getTrailerKey(tmdb)) {
     heroActions.push(
@@ -4344,6 +4349,8 @@ function buildDetailHTML(item, tmdb) {
         posterUrl: item.posterUrl,
         actionHtml: heroActions.join(""),
         score: tmdbScore,
+        providerLogo: item.providerLogo || null,
+        providerName: item.providerName || null,
       })}
       <div class="detail-stream-panel detail-stream-panel-info">
         <div class="sd-section-title">Informations</div>
@@ -4422,6 +4429,8 @@ function buildSeriesDetailHTML(item, tmdb) {
         posterUrl: item.posterUrl,
         actionHtml: heroActions.join(""),
         score: tmdbScore,
+        providerLogo: item.providerLogo || null,
+        providerName: item.providerName || null,
       })}
       <div class="detail-stream-panel detail-stream-panel-series">
         <div class="sd-info-bar">

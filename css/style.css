@@ -8919,10 +8919,18 @@ header {
   color: var(--text-tertiary);
 }
 
-.detail-hero-score {
+.detail-hero-badges {
   position: absolute;
   bottom: 12px;
   right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.detail-hero-score {
   background: rgba(0, 0, 0, 0.72);
   color: #f5c518;
   font-size: 13px;
@@ -8930,8 +8938,23 @@ header {
   padding: 3px 8px;
   border-radius: 6px;
   backdrop-filter: blur(4px);
-  pointer-events: none;
-  z-index: 2;
+}
+
+.detail-hero-provider {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.72);
+  padding: 3px 5px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.detail-hero-provider img {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  object-fit: cover;
+  display: block;
 }
 
 /* Rating badge — bottom-left */
