@@ -4084,37 +4084,17 @@ function buildDetailQuickBarHTML({
 
 function buildCollectionQuickBar(item) {
   const buttons = [
-    `
-    <button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "towatch" ? "active" : ""}" onclick="setItemStatusFromDetail('towatch')">À voir</button>
-  `,
+    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "towatch" ? "active" : ""}" onclick="setItemStatusFromDetail('towatch')">À voir</button>`,
   ];
 
   if (item.type === "series") {
-    buttons.push(`
-      <button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watching" ? "active" : ""}" onclick="setItemStatusFromDetail('watching')">En cours</button>
-    `);
+    buttons.push(`<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watching" ? "active" : ""}" onclick="setItemStatusFromDetail('watching')">En cours</button>`);
   }
 
-  buttons.push(`
-    <button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Vu + noter</button>
-  `);
-  buttons.push(`
-    <button class="detail-mini-btn detail-mini-btn-toolbar detail-mini-btn-ghost" onclick="editItem()">Modifier</button>
-  `);
+  buttons.push(`<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Vu + noter</button>`);
+  buttons.push(`<button class="detail-mini-btn detail-mini-btn-toolbar detail-mini-btn-ghost" onclick="editItem()">Modifier</button>`);
 
-  const pills = [];
-  if (item.year) pills.push(item.year);
-  if (item.genre) pills.push(item.genre.split(",")[0].trim());
-  if (item.providerName) pills.push(item.providerName);
-
-  return buildDetailDockHTML({
-    posterUrl: item.posterUrl,
-    title:
-      item.type === "series" ? "Statut et progression" : "Statut et actions",
-    subtitle: item.type === "series" ? "Collection série" : "Collection film",
-    pills,
-    actionsHtml: buttons.join(""),
-  });
+  return `<div class="detail-action-bar">${buttons.join("")}</div>`;
 }
 
 function buildTrendingQuickBar(item, type, alreadyAdded) {

@@ -6048,6 +6048,12 @@ header {
   border-color: rgba(52, 211, 153, 0.18);
 }
 
+.detail-action-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .detail-stream-quickcopy {
   min-width: 0;
 }
