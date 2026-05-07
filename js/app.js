@@ -4380,6 +4380,9 @@ function buildSeriesDetailHTML(item, tmdb) {
       ? Math.min(100, Math.round((epDone / totalEpisodes) * 100))
       : null;
 
+  const tmdbScore =
+    item.tmdbRating ||
+    (tmdb?.vote_average ? (tmdb.vote_average / 2).toFixed(1) : null);
   const seriesStatus = STATUS_LABELS[item.status] || item.status;
   const heroChips = [
     `${totalSeasons} saison${totalSeasons > 1 ? "s" : ""}`,
