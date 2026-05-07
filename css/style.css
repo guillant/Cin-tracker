@@ -5651,6 +5651,7 @@ header {
 }
 
 .detail-stream-hero-wrap {
+  position: relative;
   margin: -24px -24px 0;
   background: #0f172a;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -8921,13 +8922,17 @@ header {
 
 .detail-hero-badges {
   position: absolute;
-  bottom: 12px;
-  right: 14px;
+  top: calc(190px - 38px);
+  right: 24px;
   display: flex;
   align-items: center;
   gap: 6px;
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
+}
+
+@media (max-width: 520px) {
+  .detail-hero-badges { top: calc(170px - 38px); right: 20px; }
 }
 
 .detail-hero-score {
