@@ -10490,22 +10490,26 @@ header {
   text-align: right;
 }
 
-/* Split C */
+/* Split C — backdrop + affiche superposée */
 .fd-phone-c { background: #0f172a; }
+.fd-hero-short { height: 70px; }
 
 .fd-split-top {
   display: flex;
   gap: 8px;
-  padding: 10px;
+  padding: 0 10px 10px;
+  margin-top: -30px;
+  align-items: flex-end;
 }
 
 .fd-split-poster {
-  width: 44px;
-  border-radius: 8px;
+  width: 46px;
+  height: 68px;
+  border-radius: 6px;
   object-fit: cover;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  margin-top: -28px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.7);
+  border: 1px solid rgba(255,255,255,0.12);
 }
 
 .fd-split-info {
@@ -10514,6 +10518,7 @@ header {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-bottom: 2px;
 }
 
 .fd-split-actions {
