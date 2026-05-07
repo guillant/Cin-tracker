@@ -3991,30 +3991,30 @@ function buildDetailHeroHTML({
   actionHtml = "",
 }) {
   const visualUrl = backdropUrl || posterUrl || "";
+  const posterEl = posterUrl
+    ? `<img src="${escapeHtml(posterUrl)}" alt="${escapeHtml(title)}" class="detail-poster-thumb">`
+    : `<div class="detail-poster-thumb detail-poster-placeholder">${escapeHtml((title || "?").charAt(0).toUpperCase())}</div>`;
 
   return `
-    <div class="detail-stream-hero">
-      ${
-        visualUrl
+    <div class="detail-stream-hero-wrap">
+      <div class="detail-stream-hero">
+        ${visualUrl
           ? `<div class="detail-stream-bg" style="background-image:url('${escapeHtml(visualUrl)}')"></div>`
           : `<div class="detail-stream-bg detail-stream-bg-empty"></div>`
-      }
-      <div class="detail-stream-overlay"></div>
-      <div class="detail-stream-content">
-        ${kicker ? `<div class="detail-stream-kicker">${escapeHtml(kicker)}</div>` : ""}
-        <h3 class="detail-stream-title">${escapeHtml(title)}</h3>
-        ${meta ? `<div class="detail-stream-meta">${escapeHtml(meta)}</div>` : ""}
-        ${
-          chips.length
-            ? `<div class="detail-stream-chips">${chips
-                .map(
-                  (chip) =>
-                    `<span class="detail-stream-chip">${escapeHtml(chip)}</span>`,
-                )
-                .join("")}</div>`
-            : ""
         }
-        ${actionHtml ? `<div class="detail-stream-hero-actions">${actionHtml}</div>` : ""}
+        <div class="detail-stream-overlay"></div>
+      </div>
+      <div class="detail-poster-row">
+        <div class="detail-poster-col">${posterEl}</div>
+        <div class="detail-poster-info">
+          ${kicker ? `<div class="detail-stream-kicker">${escapeHtml(kicker)}</div>` : ""}
+          <h3 class="detail-poster-title">${escapeHtml(title)}</h3>
+          ${meta ? `<div class="detail-poster-meta">${escapeHtml(meta)}</div>` : ""}
+          ${chips.length
+            ? `<div class="detail-stream-chips">${chips.map((c) => `<span class="detail-stream-chip">${escapeHtml(c)}</span>`).join("")}</div>`
+            : ""}
+          ${actionHtml ? `<div class="detail-stream-hero-actions">${actionHtml}</div>` : ""}
+        </div>
       </div>
     </div>`;
 }
