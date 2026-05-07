@@ -8926,6 +8926,21 @@ header {
   color: var(--text-tertiary);
 }
 
+.detail-hero-score {
+  position: absolute;
+  bottom: 12px;
+  right: 14px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #f5c518;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  z-index: 2;
+}
+
 /* Rating badge — bottom-left */
 .discover-card-rating {
   position: absolute;

@@ -3989,6 +3989,7 @@ function buildDetailHeroHTML({
   backdropUrl,
   posterUrl,
   actionHtml = "",
+  score = null,
 }) {
   const visualUrl = backdropUrl || posterUrl || "";
   const posterEl = posterUrl
@@ -4003,6 +4004,7 @@ function buildDetailHeroHTML({
           : `<div class="detail-stream-bg detail-stream-bg-empty"></div>`
         }
         <div class="detail-stream-overlay"></div>
+        ${score ? `<span class="detail-hero-score">★ ${escapeHtml(String(score))}</span>` : ""}
       </div>
       <div class="detail-poster-row">
         <div class="detail-poster-col">${posterEl}</div>
@@ -4342,6 +4344,7 @@ function buildDetailHTML(item, tmdb) {
         backdropUrl,
         posterUrl: item.posterUrl,
         actionHtml: heroActions.join(""),
+        score: tmdbScore,
       })}
       <div class="detail-stream-panel detail-stream-panel-info">
         <div class="sd-section-title">Informations</div>
@@ -4438,6 +4441,7 @@ function buildSeriesDetailHTML(item, tmdb) {
         backdropUrl,
         posterUrl: item.posterUrl,
         actionHtml: heroActions.join(""),
+        score: tmdbScore,
       })}
       <div class="detail-stream-panel detail-stream-panel-series">
         <div class="sd-info-bar">
