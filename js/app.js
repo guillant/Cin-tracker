@@ -2772,6 +2772,7 @@ function renderItems() {
     grid.innerHTML = `
       ${buildSeriesUpcomingEpisodesRow(seriesItems)}
       ${buildSeriesUpcomingSeasonsRow(seriesItems)}
+      ${buildMovieRow("Séries en cours", "seriesWatching", watchingItems)}
       ${buildMovieRow("Séries à voir", "seriesTowatch", towatchItems)}
       ${buildMovieRow("Séries vues", "seriesWatched", watchedItems)}
       ${buildMovieRow("Autres séries", "seriesOther", otherItems)}
@@ -4271,8 +4272,6 @@ async function openWatchedFlowFromTrendingById(id, type = null) {
 function buildDetailHTML(item, tmdb) {
   if (item.type === "series") return buildSeriesDetailHTML(item, tmdb);
 
-  const starsCount = item.rating ? Math.round(item.rating) : 0;
-  const stars = "★".repeat(starsCount) + "☆".repeat(5 - starsCount);
   const backdropUrl = tmdb?.backdrop_path
     ? `https://image.tmdb.org/t/p/w1280${tmdb.backdrop_path}`
     : null;
@@ -4355,8 +4354,6 @@ function buildDetailHTML(item, tmdb) {
 }
 
 function buildSeriesDetailHTML(item, tmdb) {
-  const starsCount = item.rating ? Math.round(item.rating) : 0;
-  const stars = "★".repeat(starsCount) + "☆".repeat(5 - starsCount);
   const backdropUrl = tmdb?.backdrop_path
     ? `https://image.tmdb.org/t/p/w1280${tmdb.backdrop_path}`
     : null;
@@ -4383,7 +4380,6 @@ function buildSeriesDetailHTML(item, tmdb) {
   const tmdbScore =
     item.tmdbRating ||
     (tmdb?.vote_average ? (tmdb.vote_average / 2).toFixed(1) : null);
-  const seriesStatus = STATUS_LABELS[item.status] || item.status;
   const heroChips = [
     `${totalSeasons} saison${totalSeasons > 1 ? "s" : ""}`,
   ];
@@ -4466,7 +4462,8 @@ function buildSeriesDetailHTML(item, tmdb) {
       </div>
 
       <div class="detail-actions detail-actions-compact" style="margin-top:20px;">
-        <button class="btn" onclick="deleteItem()" style="flex:1;justify-content:center;">Supprimer</button>
+        <button class="btn" onclick="editItem()" style="flex:1;justify-content:center;">Modifier</button>
+        <button class="btn" onclick="deleteItem()" style="justify-content:center;color:#f87171;">Supprimer</button>
       </div>
     </div>`;
 }
@@ -5782,6 +5779,11 @@ function buildTrendingDetailHTML(item, type, tmdb) {
     );
   }
   const castHTML = buildCastHTML(tmdb);
+  const firstProvider = tmdb?.watchProviders?.groups?.[0]?.providers?.[0];
+  const discoverProviderLogo = firstProvider?.logo_path
+    ? `https://image.tmdb.org/t/p/w92${firstProvider.logo_path}`
+    : null;
+  const discoverProviderName = firstProvider?.provider_name || null;
 
   return `
     <div class="detail-stream-shell">
@@ -5796,6 +5798,8 @@ function buildTrendingDetailHTML(item, type, tmdb) {
         posterUrl: posterPath,
         actionHtml: heroActions.join(""),
         score: tmdbRating || null,
+        providerLogo: discoverProviderLogo,
+        providerName: discoverProviderName,
       })}
       ${buildTrendingQuickBar(item, type, alreadyAdded)}
       <div class="detail-stream-panel">
