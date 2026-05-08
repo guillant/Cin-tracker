@@ -5704,6 +5704,18 @@ header {
   background: #0f172a;
 }
 
+@media (min-width: 769px) {
+  .detail-stream-hero {
+    min-height: 300px;
+  }
+  .detail-poster-row {
+    margin-top: -60px;
+  }
+  .detail-poster-info {
+    padding-top: 60px;
+  }
+}
+
 .detail-poster-row {
   display: flex;
   align-items: flex-start;
@@ -5768,7 +5780,7 @@ header {
   position: absolute;
   inset: 0;
   background-size: cover;
-  background-position: center top;
+  background-position: center 25%;
   transform: scale(1.03);
   filter: saturate(1.05);
   transition:
