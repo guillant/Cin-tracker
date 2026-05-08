@@ -5714,6 +5714,22 @@ header {
   .detail-poster-info {
     padding-top: 60px;
   }
+  .detail-stream-overlay {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(2, 6, 23, 0.04) 0%,
+        rgba(2, 6, 23, 0.12) 60%,
+        rgba(15, 23, 42, 0.80) 82%,
+        rgba(15, 23, 42, 1) 100%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(2, 6, 23, 0.38) 0%,
+        rgba(2, 6, 23, 0.06) 55%,
+        rgba(2, 6, 23, 0.44) 100%
+      );
+  }
 }
 
 .detail-poster-row {
