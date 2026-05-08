@@ -5709,10 +5709,38 @@ header {
     min-height: 300px;
   }
   .detail-poster-row {
-    margin-top: -60px;
+    margin-top: -75px;
+    gap: 20px;
+    padding: 0 32px 6px;
+  }
+  .detail-poster-thumb,
+  .detail-poster-placeholder {
+    width: 130px;
+    height: 195px;
+    border-radius: 13px;
   }
   .detail-poster-info {
-    padding-top: 60px;
+    padding-top: 75px;
+    gap: 5px;
+  }
+  .detail-poster-title {
+    font-size: 27px;
+    letter-spacing: -0.5px;
+  }
+  .detail-poster-meta {
+    font-size: 15px;
+  }
+  .detail-stream-kicker {
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  .detail-stream-chips {
+    margin-top: 10px;
+    gap: 8px;
+  }
+  .detail-hero-actions-row {
+    padding: 6px 32px 22px;
+    gap: 10px;
   }
   .detail-stream-overlay {
     background:
