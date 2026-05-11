@@ -13,7 +13,8 @@ const TMDB_WATCH_REGION = "FR";
 const TMDB_IMAGE_LANGUAGE_PREFERENCE = "fr,null,en";
 const TMDB_MOVIE_LOCALIZATION_VERSION = 1;
 const WATCH_PROVIDER_GROUP_ORDER = ["flatrate", "free", "ads", "rent", "buy"];
-const WATCH_PROVIDER_PRIORITY_VERSION = 1;
+const WATCH_PROVIDER_INCLUDED_GROUPS = new Set(["flatrate", "free", "ads"]);
+const WATCH_PROVIDER_PRIORITY_VERSION = 2;
 const HIDDEN_SYSTEM_TAGS = new Set(["Letterboxd"]);
 const STREAMING_PROVIDER_PRIORITY = [
   "netflix",
@@ -33,6 +34,38 @@ const STREAMING_PROVIDER_PRIORITY = [
   "6play",
   "sfr-play",
 ];
+const USER_PROVIDERS_STORAGE_KEY = "cinetrackerUserProviders";
+const GROUP_PROFILES_STORAGE_KEY = "cinetrackerGroupProfiles";
+const GROUP_ACTIVE_PROFILES_STORAGE_KEY = "cinetrackerGroupActiveProfiles";
+const USER_PROVIDER_OPTIONS = [
+  { key: "netflix", label: "Netflix" },
+  { key: "prime-video", label: "Prime Video" },
+  { key: "disney+", label: "Disney+" },
+  { key: "canal+", label: "Canal+" },
+  { key: "apple-tv+", label: "Apple TV+" },
+  { key: "arte", label: "Arte" },
+  { key: "france-tv", label: "France.tv" },
+  { key: "max", label: "Max" },
+  { key: "paramount+", label: "Paramount+" },
+  { key: "crunchyroll", label: "Crunchyroll" },
+  { key: "mubi", label: "MUBI" },
+];
+const GROUP_GENRE_OPTIONS = [
+  { key: "comedy", label: "Comedie", terms: ["comedie", "comedy"] },
+  { key: "drama", label: "Drame", terms: ["drame", "drama"] },
+  { key: "horror", label: "Horreur", terms: ["horreur", "horror"] },
+  { key: "thriller", label: "Thriller", terms: ["thriller"] },
+  { key: "action", label: "Action", terms: ["action"] },
+  { key: "romance", label: "Romance", terms: ["romance"] },
+  { key: "animation", label: "Animation", terms: ["animation"] },
+  { key: "family", label: "Famille", terms: ["familial", "family"] },
+  { key: "documentary", label: "Docu", terms: ["documentaire", "documentary"] },
+  {
+    key: "scifi",
+    label: "Science-fiction",
+    terms: ["science-fiction", "sci-fi"],
+  },
+];
 
 const STATUS_LABELS = {
   watched: "Vu",
@@ -42,6 +75,52 @@ const STATUS_LABELS = {
   waiting: "Attente saison",
   dropped: "Abandonné",
 };
+
+const DEFAULT_ITEM_STATUS = "towatch";
+
+function normalizeStatusValue(status) {
+  const raw = String(status || "")
+    .toLowerCase()
+    .trim();
+  return Object.prototype.hasOwnProperty.call(STATUS_LABELS, raw)
+    ? raw
+    : DEFAULT_ITEM_STATUS;
+}
+
+function getStatusLabel(status) {
+  return STATUS_LABELS[normalizeStatusValue(status)] || STATUS_LABELS.towatch;
+}
+
+function normalizeCollectionItem(item, index = 0) {
+  if (!item || typeof item !== "object") return null;
+
+  const normalized = {
+    ...item,
+    id: String(item.id || `item-${Date.now()}-${index}`),
+    title: String(item.title || "")
+      .trim()
+      .slice(0, 300),
+    type: item.type === "series" ? "series" : "movie",
+    status: normalizeStatusValue(item.status),
+    year: String(item.year || "")
+      .trim()
+      .slice(0, 16),
+    genre: String(item.genre || "")
+      .trim()
+      .slice(0, 400),
+    notes: String(item.notes || ""),
+    posterUrl: typeof item.posterUrl === "string" ? item.posterUrl : "",
+    tags: Array.isArray(item.tags)
+      ? item.tags
+          .map((tag) => String(tag || "").trim())
+          .filter(Boolean)
+          .slice(0, 50)
+      : [],
+  };
+
+  if (!normalized.title) return null;
+  return normalized;
+}
 
 const FORCED_TMDB_MOVIE_MATCHES = [
   {
@@ -103,6 +182,10 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function inlineJsString(value) {
+  return escapeHtml(JSON.stringify(String(value ?? "")));
 }
 
 function parseItemDate(value) {
@@ -342,6 +425,8 @@ function parseLetterboxdCsv(text, fileName = "") {
       tmdbId: null,
       providerLogo: null,
       providerName: null,
+      providerAccessType: null,
+      providerPriorityVersion: 0,
       tags: importTags,
       currentSeason: null,
       currentEpisode: null,
@@ -688,7 +773,9 @@ async function hydrateMovieItemFromTmdb(item, tmdbId, statusOverride = null) {
   let provider = null;
   try {
     const watchProviders = await fetchWatchProviders("movie", tmdbId);
-    provider = getPrimaryWatchProvider(watchProviders);
+    provider = getPrimaryWatchProvider(watchProviders, {
+      includedOnly: true,
+    });
   } catch (error) {
     console.error("Erreur providers hydrate import:", error);
   }
@@ -788,12 +875,14 @@ function mergeImportedIntoExistingItem(existingItem, importedItem) {
   const mergedTags = [
     ...new Set([...(existingItem.tags || []), ...(importedItem.tags || [])]),
   ];
+  const existingStatus = normalizeStatusValue(existingItem.status);
+  const importedStatus = normalizeStatusValue(importedItem.status);
   const mergedStatus =
-    importedItem.status === "watched"
+    importedStatus === "watched"
       ? "watched"
-      : existingItem.status === "watched"
+      : existingStatus === "watched"
         ? "watched"
-        : importedItem.status || existingItem.status;
+        : importedStatus || existingStatus;
 
   return {
     ...existingItem,
@@ -818,6 +907,13 @@ function mergeImportedIntoExistingItem(existingItem, importedItem) {
     providerName: preferImportedMovieMetadata
       ? importedItem.providerName || existingItem.providerName || null
       : existingItem.providerName || importedItem.providerName || null,
+    providerAccessType: preferImportedMovieMetadata
+      ? importedItem.providerAccessType ||
+        existingItem.providerAccessType ||
+        null
+      : existingItem.providerAccessType ||
+        importedItem.providerAccessType ||
+        null,
     genre: preferImportedMovieMetadata
       ? importedItem.genre || existingItem.genre || ""
       : existingItem.genre || importedItem.genre || "",
@@ -1077,6 +1173,202 @@ function getProviderPriorityKey(providerName) {
   return normalized.replace(/[^a-z0-9+]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
+function loadUserProviderKeys() {
+  try {
+    const stored = JSON.parse(
+      localStorage.getItem(USER_PROVIDERS_STORAGE_KEY) || "[]",
+    );
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveUserProviderKeys() {
+  localStorage.setItem(
+    USER_PROVIDERS_STORAGE_KEY,
+    JSON.stringify(userProviderKeys),
+  );
+}
+
+function syncCurrentUserGroupProfile() {
+  const currentUserProfileIndex = groupProfiles.findIndex(
+    (profile) => profile.id === "me",
+  );
+  if (currentUserProfileIndex === -1) return;
+
+  groupProfiles[currentUserProfileIndex] = {
+    ...groupProfiles[currentUserProfileIndex],
+    providers: userProviderKeys,
+  };
+  saveGroupProfiles();
+}
+
+function isUserProvider(providerName) {
+  if (!providerName || !userProviderKeys.length) return false;
+  return userProviderKeys.includes(getProviderPriorityKey(providerName));
+}
+
+function hasIncludedWatchProvider(item) {
+  return Boolean(
+    item?.providerName &&
+    WATCH_PROVIDER_INCLUDED_GROUPS.has(item.providerAccessType || ""),
+  );
+}
+
+function isUserProviderAvailableItem(item) {
+  return hasIncludedWatchProvider(item) && isUserProvider(item.providerName);
+}
+
+function getGroupProviderMatchCountForItem(item) {
+  if (!hasIncludedWatchProvider(item)) return 0;
+  return getGroupProviderMatchCount(item.providerName);
+}
+
+function getUserProviderLabelList() {
+  return USER_PROVIDER_OPTIONS.filter((provider) =>
+    userProviderKeys.includes(provider.key),
+  ).map((provider) => provider.label);
+}
+
+function normalizeGroupProfile(profile) {
+  return {
+    id: profile.id,
+    name: profile.name || "Profil",
+    providers: Array.isArray(profile.providers) ? profile.providers : [],
+    likedGenres: Array.isArray(profile.likedGenres) ? profile.likedGenres : [],
+    dislikedGenres: Array.isArray(profile.dislikedGenres)
+      ? profile.dislikedGenres
+      : Array.isArray(profile.dislikes)
+        ? profile.dislikes
+        : [],
+  };
+}
+
+function createDefaultGroupProfiles() {
+  return [
+    {
+      id: "me",
+      name: "Moi",
+      providers: userProviderKeys,
+      likedGenres: [],
+      dislikedGenres: [],
+    },
+  ];
+}
+
+function loadGroupProfiles() {
+  try {
+    const stored = JSON.parse(
+      localStorage.getItem(GROUP_PROFILES_STORAGE_KEY) || "[]",
+    );
+    return Array.isArray(stored) && stored.length
+      ? stored.map(normalizeGroupProfile)
+      : createDefaultGroupProfiles();
+  } catch {
+    return createDefaultGroupProfiles();
+  }
+}
+
+function saveGroupProfiles() {
+  localStorage.setItem(
+    GROUP_PROFILES_STORAGE_KEY,
+    JSON.stringify(groupProfiles),
+  );
+}
+
+function loadActiveGroupProfileIds() {
+  try {
+    const stored = JSON.parse(
+      localStorage.getItem(GROUP_ACTIVE_PROFILES_STORAGE_KEY) || "[]",
+    );
+    return Array.isArray(stored) ? stored : ["me"];
+  } catch {
+    return ["me"];
+  }
+}
+
+function saveActiveGroupProfileIds() {
+  localStorage.setItem(
+    GROUP_ACTIVE_PROFILES_STORAGE_KEY,
+    JSON.stringify(activeGroupProfileIds),
+  );
+}
+
+function getActiveGroupProfiles() {
+  const active = groupProfiles.filter((profile) =>
+    activeGroupProfileIds.includes(profile.id),
+  );
+  return active.length ? active : groupProfiles.slice(0, 1);
+}
+
+function getGroupCommonProviderKeys() {
+  const active = getActiveGroupProfiles();
+  if (!active.length) return [];
+
+  return active.reduce((common, profile, index) => {
+    const providerSet = new Set(profile.providers || []);
+    if (index === 0) return [...providerSet];
+    return common.filter((providerKey) => providerSet.has(providerKey));
+  }, []);
+}
+
+function getGroupProviderMatchCount(providerName) {
+  const providerKey = getProviderPriorityKey(providerName);
+  if (!providerKey) return 0;
+  return getActiveGroupProfiles().filter((profile) =>
+    (profile.providers || []).includes(providerKey),
+  ).length;
+}
+
+function getItemGenreKeys(item) {
+  const text = `${item.genre || ""}`
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  return GROUP_GENRE_OPTIONS.filter((genre) =>
+    genre.terms.some((term) => text.includes(term)),
+  ).map((genre) => genre.key);
+}
+
+function getGroupGenrePreferenceStats(item) {
+  const itemGenreKeys = getItemGenreKeys(item);
+  if (!itemGenreKeys.length) {
+    return { likedBy: [], dislikedBy: [], itemGenreKeys };
+  }
+
+  return getActiveGroupProfiles().reduce(
+    (stats, profile) => {
+      const liked = itemGenreKeys.some((genreKey) =>
+        (profile.likedGenres || []).includes(genreKey),
+      );
+      const disliked = itemGenreKeys.some((genreKey) =>
+        (profile.dislikedGenres || []).includes(genreKey),
+      );
+
+      if (liked) stats.likedBy.push(profile.name);
+      if (disliked) stats.dislikedBy.push(profile.name);
+      return stats;
+    },
+    { likedBy: [], dislikedBy: [], itemGenreKeys },
+  );
+}
+
+function getProviderOptionLabel(providerKey) {
+  return (
+    USER_PROVIDER_OPTIONS.find((provider) => provider.key === providerKey)
+      ?.label || providerKey
+  );
+}
+
+function getGenreOptionLabel(genreKey) {
+  return (
+    GROUP_GENRE_OPTIONS.find((genre) => genre.key === genreKey)?.label ||
+    genreKey
+  );
+}
+
 function compareProvidersByPriority(leftProvider, rightProvider) {
   const leftName = leftProvider?.provider_name || "";
   const rightName = rightProvider?.provider_name || "";
@@ -1116,15 +1408,19 @@ async function ensureItemProviderUpToDate(item) {
   try {
     const endpoint = item.type === "series" ? "tv" : "movie";
     const watchProviders = await fetchWatchProviders(endpoint, item.tmdbId);
-    const provider = getPrimaryWatchProvider(watchProviders);
+    const provider = getPrimaryWatchProvider(watchProviders, {
+      includedOnly: true,
+    });
     const index = items.findIndex((entry) => entry.id === item.id);
     if (index === -1) return;
 
     const nextProviderLogo = provider?.providerLogo || null;
     const nextProviderName = provider?.providerName || null;
+    const nextProviderAccessType = provider?.providerAccessType || null;
     const hasChanged =
       items[index].providerLogo !== nextProviderLogo ||
       items[index].providerName !== nextProviderName ||
+      items[index].providerAccessType !== nextProviderAccessType ||
       (items[index].providerPriorityVersion || 0) !==
         WATCH_PROVIDER_PRIORITY_VERSION;
 
@@ -1134,6 +1430,7 @@ async function ensureItemProviderUpToDate(item) {
       ...items[index],
       providerLogo: nextProviderLogo,
       providerName: nextProviderName,
+      providerAccessType: nextProviderAccessType,
       providerPriorityVersion: WATCH_PROVIDER_PRIORITY_VERSION,
     };
     localStorage.setItem("watchlist", JSON.stringify(items));
@@ -1143,6 +1440,22 @@ async function ensureItemProviderUpToDate(item) {
   } finally {
     providerRefreshInFlight.delete(item.id);
   }
+}
+
+async function refreshSuggestionProviderAvailability() {
+  if (
+    suggestionFilters.availability !== "mine" ||
+    TMDB_API_KEY === "VOTRE_CLE_API_ICI"
+  ) {
+    return;
+  }
+
+  const candidates = items
+    .filter((item) => ["towatch", "watching", "paused"].includes(item.status))
+    .filter((item) => shouldRefreshItemProvider(item))
+    .slice(0, 12);
+
+  await Promise.all(candidates.map((item) => ensureItemProviderUpToDate(item)));
 }
 
 function getUpcomingMovieReleaseLabel(item, compact = false) {
@@ -1284,7 +1597,11 @@ function getSeasonProgressState(item, seasonNumber, episodeCount = 0) {
 function loadStoredItems() {
   try {
     const storedItems = JSON.parse(localStorage.getItem("watchlist") || "[]");
-    return Array.isArray(storedItems) ? storedItems : [];
+    if (!Array.isArray(storedItems)) return [];
+
+    return storedItems
+      .map((item, index) => normalizeCollectionItem(item, index))
+      .filter(Boolean);
   } catch (error) {
     console.warn(
       "Données locales illisibles, démarrage avec une collection vide.",
@@ -1363,6 +1680,23 @@ let currentSeason = 1;
 let currentEpisode = 1;
 let searchTimeout;
 let deferredPrompt;
+let lastSuggestedItemId = null;
+let suggestionFilters = {
+  mode: "solo",
+  source: "all",
+  type: "all",
+  mood: "all",
+  availability: "all",
+};
+let userProviderKeys = loadUserProviderKeys();
+let groupProfiles = loadGroupProfiles();
+let activeGroupProfileIds = loadActiveGroupProfileIds();
+syncCurrentUserGroupProfile();
+let suggestionExternalCache = {
+  key: "",
+  items: [],
+  fetchedAt: 0,
+};
 let discoverBrowseState = {
   key: null,
   page: 0,
@@ -1510,7 +1844,9 @@ function toggleMobileActionsMenu() {
 
 function closeMobileActionsMenu() {
   document.getElementById("mobileActionsMenu")?.classList.remove("active");
-  document.querySelector(".mobile-more-btn")?.setAttribute("aria-expanded", "false");
+  document
+    .querySelector(".mobile-more-btn")
+    ?.setAttribute("aria-expanded", "false");
 }
 
 function activateTabByName(tabName) {
@@ -2038,7 +2374,7 @@ function renderWatchingStrip() {
       const episodeLabel = getNextEpisodeDisplay(item, "compact");
 
       return `
-      <div class="watching-card" onclick="openDetail('${item.id}')">
+      <div class="watching-card" onclick="openDetail(${inlineJsString(item.id)})">
         <div class="watching-card-poster">
           ${
             item.posterUrl
@@ -2235,7 +2571,7 @@ function buildSeriesUpcomingSeasonsRow(seriesItems) {
           .map(({ item, season, airDate }) => {
             const dateLabel = formatFutureDistanceLabel(airDate, today);
             return `
-              <article class="collection-upcoming-season-card" onclick="openDetail('${item.id}')">
+              <article class="collection-upcoming-season-card" onclick="openDetail(${inlineJsString(item.id)})">
                 <div class="collection-upcoming-season-poster">
                   ${
                     season.poster_path
@@ -2377,13 +2713,18 @@ function buildSeriesUpcomingEpisodesRow(seriesItems) {
       const { item, next, airDate } = upcoming[0];
       const episodeCode = `S${String(next.season_number).padStart(2, "0")} · E${String(next.episode_number).padStart(2, "0")}`;
       const daysLeft = Math.round((airDate - today) / 86400000);
-      const dateLabel = daysLeft === 0
-        ? "Aujourd'hui"
-        : daysLeft === 1
-          ? "Demain"
-          : airDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+      const dateLabel =
+        daysLeft === 0
+          ? "Aujourd'hui"
+          : daysLeft === 1
+            ? "Demain"
+            : airDate.toLocaleDateString("fr-FR", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              });
       body = `
-        <article class="upcoming-single-ep" onclick="openDetail('${item.id}')">
+        <article class="upcoming-single-ep" onclick="openDetail(${inlineJsString(item.id)})">
           <div class="upcoming-single-ep-thumb">
             ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="upcoming-poster-placeholder">📺</div>`}
           </div>
@@ -2400,7 +2741,7 @@ function buildSeriesUpcomingEpisodesRow(seriesItems) {
           ${sections
             .map((section) => {
               return `
-                <section class="collection-upcoming-day collection-upcoming-day-${section.type}">
+                <section class="collection-upcoming-day collection-upcoming-day-${section.type}" style="--upcoming-count:${section.entries.length}">
                   <div class="collection-upcoming-dayhead">
                     <div class="collection-upcoming-daybadge">${escapeHtml(section.badge)}</div>
                   </div>
@@ -2408,13 +2749,17 @@ function buildSeriesUpcomingEpisodesRow(seriesItems) {
                   <div class="collection-upcoming-cards">
                     ${section.entries
                       .map(({ item, next, airDate }, index) => {
-                        const daysLeft = Math.round((airDate - today) / 86400000);
+                        const daysLeft = Math.round(
+                          (airDate - today) / 86400000,
+                        );
                         const isUrgent = daysLeft <= 2;
                         const isFeatured = index === 0;
                         const episodeCode = `S${String(next.season_number).padStart(2, "0")} E${String(next.episode_number).padStart(2, "0")}`;
-                        const providerLabel = getCompactProviderLabel(item.providerName);
+                        const providerLabel = getCompactProviderLabel(
+                          item.providerName,
+                        );
                         return `
-                  <article class="collection-upcoming-card ${isFeatured ? "collection-upcoming-card-featured" : ""} ${isUrgent ? "collection-upcoming-card-urgent" : ""}" onclick="openDetail('${item.id}')">
+                  <article class="collection-upcoming-card ${isFeatured ? "collection-upcoming-card-featured" : ""} ${isUrgent ? "collection-upcoming-card-urgent" : ""}" onclick="openDetail(${inlineJsString(item.id)})">
                     <div class="collection-upcoming-card-image">
                       ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="upcoming-poster-placeholder">📺</div>`}
                       <div class="collection-upcoming-card-imagefade"></div>
@@ -2508,16 +2853,16 @@ function renderListRow(item) {
   }
   ensureItemProviderUpToDate(item);
 
+  const normalizedStatus = normalizeStatusValue(item.status);
   const statusText =
     (item.type === "movie" && getUpcomingMovieReleaseLabel(item, true)) ||
-    STATUS_LABELS[item.status] ||
-    item.status;
+    getStatusLabel(normalizedStatus);
   const starsCount = item.rating ? Math.round(item.rating) : 0;
   const stars =
     starsCount > 0 ? "★".repeat(starsCount) + "☆".repeat(5 - starsCount) : "";
 
   return `
-    <div class="list-row" onclick="openDetail('${item.id}')">
+    <div class="list-row" onclick="openDetail(${inlineJsString(item.id)})">
       <div class="list-row-poster">
         ${
           item.posterUrl
@@ -2535,7 +2880,7 @@ function renderListRow(item) {
       </div>
       <div class="list-row-right">
         ${stars ? `<span class="list-row-stars">${stars}</span>` : ""}
-        <span class="list-row-badge card-badge ${item.status}">${statusText}</span>
+        <span class="list-row-badge card-badge ${normalizedStatus}">${escapeHtml(statusText)}</span>
         ${item.providerLogo ? `<img src="${escapeHtml(item.providerLogo)}" class="list-row-provider" title="${escapeHtml(item.providerName || "")}" alt="">` : ""}
       </div>
     </div>`;
@@ -2602,13 +2947,12 @@ function renderItems() {
     }
     ensureItemProviderUpToDate(item);
 
-    const statusClass = item.status;
+    const statusClass = normalizeStatusValue(item.status);
     const itemTypeClass = item.type === "movie" ? "card-movie" : "card-series";
     const itemTypeLabel = item.type === "movie" ? "Film" : "Série";
     const statusText =
       (item.type === "movie" && getUpcomingMovieReleaseLabel(item, true)) ||
-      STATUS_LABELS[item.status] ||
-      item.status;
+      getStatusLabel(statusClass);
 
     const starsCount = item.rating ? Math.round(item.rating) : 0;
     const stars = "★".repeat(starsCount) + "☆".repeat(5 - starsCount);
@@ -2639,7 +2983,7 @@ function renderItems() {
     const canQuickAdvanceSeries = isActiveSeries && isSeriesReleased(item);
 
     return `
-          <div class="card ${itemTypeClass}" onclick="openDetail('${item.id}')">
+          <div class="card ${itemTypeClass}" onclick="openDetail(${inlineJsString(item.id)})">
             <div class="card-image">
               ${
                 item.posterUrl
@@ -2647,10 +2991,10 @@ function renderItems() {
                   : `<div class="card-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`
               }
               <div class="card-imagefade"></div>
-              <div class="card-badge ${statusClass}">${statusText}</div>
+              <div class="card-badge ${statusClass}">${escapeHtml(statusText)}</div>
               ${buildCardProviderHTML(item)}
               ${tagsHtml}
-              ${canQuickAdvanceSeries ? `<button class="card-next-ep" onclick="quickNextEpisode('${item.id}', event)" title="Épisode suivant">+1 ▶</button>` : ""}
+              ${canQuickAdvanceSeries ? `<button class="card-next-ep" onclick="quickNextEpisode(${inlineJsString(item.id)}, event)" title="Épisode suivant">+1 ▶</button>` : ""}
             </div>
             <div class="card-content">
               <div class="card-kicker">${itemTypeLabel}</div>
@@ -2998,7 +3342,7 @@ function renderStats() {
                 : "history-item-movie",
             ].join(" ");
             return `
-        <div class="${historyClasses}" onclick="openDetail('${item.id}')">
+        <div class="${historyClasses}" onclick="openDetail(${inlineJsString(item.id)})">
           <div class="history-poster">
             ${
               item.posterUrl
@@ -3010,7 +3354,7 @@ function renderStats() {
             <div class="timeline-date">${isWatched ? "Vu le " : "Ajouté le "}${dateStr}</div>
             <div class="timeline-text">
               <strong>${escapeHtml(item.title)}</strong>
-              ${item.year ? `<span class="history-year"> · ${item.year}</span>` : ""}
+              ${item.year ? `<span class="history-year"> · ${escapeHtml(item.year)}</span>` : ""}
             </div>
             ${stars ? `<div class="history-rating">${stars} <span class="history-rating-value">${item.rating}/5</span></div>` : ""}
           </div>
@@ -3041,7 +3385,7 @@ function renderStats() {
                 : "stats-comment-card-movie",
             ].join(" ");
             return `
-        <article class="${commentClasses}" onclick="openDetail('${item.id}')">
+        <article class="${commentClasses}" onclick="openDetail(${inlineJsString(item.id)})">
           <div class="stats-comment-head">
             <div>
               <div class="stats-comment-title">${escapeHtml(item.title)}</div>
@@ -3386,7 +3730,7 @@ function renderLists() {
                     : "Sans note";
                   const statusText = STATUS_LABELS[item.status] || "À voir";
                   return `
-                <div class="card card-${item.type === "series" ? "series" : "movie"}" onclick="openDetail('${item.id}')">
+                <div class="card card-${item.type === "series" ? "series" : "movie"}" onclick="openDetail(${inlineJsString(item.id)})">
                   <div class="card-image">
                     ${
                       item.posterUrl
@@ -3574,7 +3918,8 @@ function normalizeWatchProviders(payload, region = TMDB_WATCH_REGION) {
   };
 }
 
-function getPrimaryWatchProvider(watchProviders) {
+function getPrimaryWatchProvider(watchProviders, options = {}) {
+  const includedOnly = Boolean(options.includedOnly);
   const sortedGroups = Array.isArray(watchProviders?.groups)
     ? [...watchProviders.groups].sort(
         (leftGroup, rightGroup) =>
@@ -3582,9 +3927,14 @@ function getPrimaryWatchProvider(watchProviders) {
           WATCH_PROVIDER_GROUP_ORDER.indexOf(rightGroup?.key),
       )
     : [];
-  const provider = sortedGroups.find(
-    (group) => Array.isArray(group?.providers) && group.providers.length > 0,
-  )?.providers?.[0];
+  const group = sortedGroups.find(
+    (candidateGroup) =>
+      (!includedOnly ||
+        WATCH_PROVIDER_INCLUDED_GROUPS.has(candidateGroup?.key)) &&
+      Array.isArray(candidateGroup?.providers) &&
+      candidateGroup.providers.length > 0,
+  );
+  const provider = group?.providers?.[0];
   if (!provider) return null;
 
   return {
@@ -3592,19 +3942,24 @@ function getPrimaryWatchProvider(watchProviders) {
     providerLogo: provider.logo_path
       ? `https://image.tmdb.org/t/p/w92${provider.logo_path}`
       : null,
+    providerAccessType: group?.key || null,
   };
 }
 
 function setProviderDataset(input, watchProviders) {
-  const provider = getPrimaryWatchProvider(watchProviders);
+  const provider = getPrimaryWatchProvider(watchProviders, {
+    includedOnly: true,
+  });
   if (provider?.providerLogo) {
     input.dataset.providerLogo = provider.providerLogo;
     input.dataset.providerName = provider.providerName;
+    input.dataset.providerAccessType = provider.providerAccessType || "";
     return;
   }
 
   delete input.dataset.providerLogo;
   delete input.dataset.providerName;
+  delete input.dataset.providerAccessType;
 }
 
 function buildCardProviderHTML(item) {
@@ -3689,17 +4044,17 @@ function buildSeasonsHTML(item, tmdb) {
           <div class="season-actions">
             ${
               !isDone && epCount > 0
-                ? `<button class="btn season-btn" onclick="markSeasonDone('${item.id}', ${season.number}, event)">Terminée ✓</button>`
+                ? `<button class="btn season-btn" onclick="markSeasonDone(${inlineJsString(item.id)}, ${season.number}, event)">Terminée ✓</button>`
                 : ""
             }
             ${
               !isCurrent && !isDone && season.airDate
-                ? `<button class="btn season-btn" onclick="jumpToSeason('${item.id}', ${season.number}, '${season.airDate}', event)">Reprendre</button>`
+                ? `<button class="btn season-btn" onclick="jumpToSeason(${inlineJsString(item.id)}, ${season.number}, ${inlineJsString(season.airDate)}, event)">Reprendre</button>`
                 : ""
             }
             ${
               isCurrent && canQuickAdvanceSeries
-                ? `<button class="btn season-btn season-btn-active" onclick="quickNextEpisodeInDetail('${item.id}', event)">+1 ▶</button>`
+                ? `<button class="btn season-btn season-btn-active" onclick="quickNextEpisodeInDetail(${inlineJsString(item.id)}, event)">+1 ▶</button>`
                 : ""
             }
           </div>
@@ -3885,6 +4240,91 @@ function buildWatchProvidersHTML(watchProviders) {
   `;
 }
 
+function getWatchProviderGroup(watchProviders, groupKey) {
+  return (
+    watchProviders?.groups?.find((group) => group.key === groupKey) || null
+  );
+}
+
+function getWatchProviderNamesFromGroups(watchProviders, groupKeys) {
+  const names = [];
+  groupKeys.forEach((groupKey) => {
+    const group = getWatchProviderGroup(watchProviders, groupKey);
+    (group?.providers || []).forEach((provider) => {
+      if (provider?.provider_name && !names.includes(provider.provider_name)) {
+        names.push(provider.provider_name);
+      }
+    });
+  });
+  return names;
+}
+
+function buildAvailabilityInline(names, variant = "") {
+  if (!names.length) return "";
+  const variantClass = variant ? ` ${variant}` : "";
+  return `
+    <div class="detail-availability-inline${variantClass}">
+      ${names
+        .slice(0, 4)
+        .map(
+          (name) => `<span>${escapeHtml(getCompactProviderLabel(name))}</span>`,
+        )
+        .join("")}
+      ${names.length > 4 ? `<small>+${names.length - 4}</small>` : ""}
+    </div>
+  `;
+}
+
+function buildAvailabilityInfoRow(item, watchProviders) {
+  if (!watchProviders && !hasIncludedWatchProvider(item)) {
+    return buildDetailInfoRow(
+      "Disponibilite",
+      `<span class="detail-availability-note">Verification des plateformes en cours...</span>`,
+      "detail-row-availability detail-row-availability-muted",
+    );
+  }
+
+  const includedNames = getWatchProviderNamesFromGroups(watchProviders, [
+    "flatrate",
+    "free",
+    "ads",
+  ]);
+
+  if (includedNames.length) {
+    return buildDetailInfoRow(
+      "Disponibilite",
+      `<strong>Inclus en streaming</strong>${buildAvailabilityInline(includedNames)}`,
+      "detail-row-availability",
+    );
+  }
+
+  if (hasIncludedWatchProvider(item)) {
+    return buildDetailInfoRow(
+      "Disponibilite",
+      `<strong>Inclus en streaming</strong>${buildAvailabilityInline([item.providerName])}`,
+      "detail-row-availability",
+    );
+  }
+
+  const paidNames = getWatchProviderNamesFromGroups(watchProviders, [
+    "rent",
+    "buy",
+  ]);
+  if (paidNames.length) {
+    return buildDetailInfoRow(
+      "Disponibilite",
+      `<strong>Pas inclus en streaming</strong><span class="detail-availability-note">Location/achat sur ${escapeHtml(paidNames.slice(0, 3).map(getCompactProviderLabel).join(", "))}</span>`,
+      "detail-row-availability detail-row-availability-muted",
+    );
+  }
+
+  return buildDetailInfoRow(
+    "Disponibilite",
+    `<span class="detail-availability-note">Aucune disponibilite FR detectee pour le moment.</span>`,
+    "detail-row-availability detail-row-availability-muted",
+  );
+}
+
 async function fetchWatchProviders(endpoint, tmdbId) {
   try {
     const res = await fetch(
@@ -4019,16 +4459,21 @@ function buildDetailHeroHTML({
   return `
     <div class="detail-stream-hero-wrap">
       <div class="detail-stream-hero">
-        ${visualUrl
-          ? `<div class="detail-stream-bg" style="background-image:url('${escapeHtml(visualUrl)}')"></div>`
-          : `<div class="detail-stream-bg detail-stream-bg-empty"></div>`
+        ${
+          visualUrl
+            ? `<div class="detail-stream-bg" style="background-image:url('${escapeHtml(visualUrl)}')"></div>`
+            : `<div class="detail-stream-bg detail-stream-bg-empty"></div>`
         }
         <div class="detail-stream-overlay"></div>
-        ${score || providerLogo ? `
+        ${
+          score || providerLogo
+            ? `
           <div class="detail-hero-badges">
             ${providerLogo ? `<span class="detail-hero-provider"><img src="${escapeHtml(providerLogo)}" alt="${escapeHtml(providerName || "")}"></span>` : ""}
             ${score ? `<span class="detail-hero-score">★ ${escapeHtml(String(score))}</span>` : ""}
-          </div>` : ""}
+          </div>`
+            : ""
+        }
       </div>
       <div class="detail-poster-row">
         <div class="detail-poster-col">${posterEl}</div>
@@ -4036,9 +4481,11 @@ function buildDetailHeroHTML({
           ${kicker ? `<div class="detail-stream-kicker">${escapeHtml(kicker)}</div>` : ""}
           <h3 class="detail-poster-title">${escapeHtml(title)}</h3>
           ${meta ? `<div class="detail-poster-meta">${escapeHtml(meta)}</div>` : ""}
-          ${chips.length
-            ? `<div class="detail-stream-chips">${chips.map((c) => `<span class="detail-stream-chip">${escapeHtml(c)}</span>`).join("")}</div>`
-            : ""}
+          ${
+            chips.length
+              ? `<div class="detail-stream-chips">${chips.map((c) => `<span class="detail-stream-chip">${escapeHtml(c)}</span>`).join("")}</div>`
+              : ""
+          }
         </div>
       </div>
       ${actionHtml ? `<div class="detail-hero-actions-row">${actionHtml}</div>` : ""}
@@ -4114,11 +4561,17 @@ function buildCollectionQuickBar(item) {
   ];
 
   if (item.type === "series") {
-    buttons.push(`<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watching" ? "active" : ""}" onclick="setItemStatusFromDetail('watching')">En cours</button>`);
+    buttons.push(
+      `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watching" ? "active" : ""}" onclick="setItemStatusFromDetail('watching')">En cours</button>`,
+    );
   }
 
-  buttons.push(`<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Vu + noter</button>`);
-  buttons.push(`<button class="detail-mini-btn detail-mini-btn-toolbar detail-mini-btn-ghost" onclick="editItem()">Modifier</button>`);
+  buttons.push(
+    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Vu + noter</button>`,
+  );
+  buttons.push(
+    `<button class="detail-mini-btn detail-mini-btn-toolbar detail-mini-btn-ghost" onclick="editItem()">Modifier</button>`,
+  );
 
   return `<div class="detail-action-bar">${buttons.join("")}</div>`;
 }
@@ -4173,6 +4626,7 @@ function buildCollectionItemFromTrending(
     tmdbId: item.id,
     providerLogo: provider?.providerLogo || null,
     providerName: provider?.providerName || null,
+    providerAccessType: provider?.providerAccessType || null,
     providerPriorityVersion: WATCH_PROVIDER_PRIORITY_VERSION,
     tags: [],
     currentSeason: type === "tv" ? 1 : null,
@@ -4232,6 +4686,8 @@ function populateAddModalFromCollectionItem(
       item.providerLogo;
     document.getElementById("titleInput").dataset.providerName =
       item.providerName || "";
+    document.getElementById("titleInput").dataset.providerAccessType =
+      item.providerAccessType || "";
   }
   if (item.seasonData) {
     document.getElementById("titleInput").dataset.seasonData = JSON.stringify(
@@ -4330,7 +4786,7 @@ function buildDetailHTML(item, tmdb) {
   const castHTML = buildCastHTML(tmdb);
 
   return `
-    <div class="detail-stream-shell">
+    <div class="detail-stream-shell detail-layout-d">
       ${buildDetailHeroHTML({
         title: item.title,
         kicker: "Film · Dans ta collection",
@@ -4347,6 +4803,7 @@ function buildDetailHTML(item, tmdb) {
         <div class="sd-section-title">Informations</div>
         ${buildDetailInfoRow("Année", escapeHtml(item.year) || "—")}
         ${buildDetailInfoRow("Statut", `${statusText}${item.watchedAt ? ` <span class="watched-date">· Vu le ${new Date(item.watchedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>` : ""}`)}
+        ${buildAvailabilityInfoRow(item, tmdb?.watchProviders)}
         ${item.rating ? buildDetailInfoRow("Ma note", buildUserRatingInline(item.rating), "detail-row-highlight") : ""}
         ${item.genre ? buildDetailInfoRow("Genre", escapeHtml(item.genre)) : ""}
         ${extraRows}
@@ -4397,9 +4854,7 @@ function buildSeriesDetailHTML(item, tmdb) {
   const tmdbScore =
     item.tmdbRating ||
     (tmdb?.vote_average ? (tmdb.vote_average / 2).toFixed(1) : null);
-  const heroChips = [
-    `${totalSeasons} saison${totalSeasons > 1 ? "s" : ""}`,
-  ];
+  const heroChips = [`${totalSeasons} saison${totalSeasons > 1 ? "s" : ""}`];
   if (totalEpisodes !== "?") heroChips.push(`${totalEpisodes} épisodes`);
   const heroActions = [];
   if (getTrailerKey(tmdb)) {
@@ -4410,7 +4865,7 @@ function buildSeriesDetailHTML(item, tmdb) {
   heroActions.push(buildDetailAnchorButton("Détails", "sdTabDetails"));
 
   return `
-    <div class="detail-stream-shell detail-stream-shell-series">
+    <div class="detail-stream-shell detail-stream-shell-series detail-layout-d">
       ${buildDetailHeroHTML({
         title: item.title,
         kicker: "Série · Dans ta collection",
@@ -4541,15 +4996,15 @@ function buildProgressTab(item, tmdb) {
       const pct = isUnreleased ? 0 : seasonState.pct;
 
       return `
-      <div class="sd-season-block" id="sdSeasonBlock_${item.id}_${sNum}">
-        <div class="sd-season-header" onclick="toggleSeasonEpisodes('${item.id}', ${sNum}, event)">
+      <div class="sd-season-block" id="sdSeasonBlock_${escapeHtml(item.id)}_${sNum}">
+        <div class="sd-season-header" onclick="toggleSeasonEpisodes(${inlineJsString(item.id)}, ${sNum}, event)">
           <div class="sd-season-title-wrap">
             <div class="sd-season-title">${escapeHtml(s.name || `Saison ${sNum}`)}</div>
             <span class="sd-season-chevron">▸</span>
           </div>
           <button class="sd-mark-btn ${isDone ? "sd-mark-done" : ""} ${isUnreleased ? "sd-mark-disabled" : ""}"
             ${isUnreleased ? "disabled" : ""}
-            onclick="markSeasonDone('${item.id}', ${sNum}, event)">
+            onclick="markSeasonDone(${inlineJsString(item.id)}, ${sNum}, event)">
             ${isDone ? "✓ Terminée" : isUnreleased ? "Pas sortie" : "Marquer terminée"}
           </button>
         </div>
@@ -4560,12 +5015,12 @@ function buildProgressTab(item, tmdb) {
           <span class="sd-season-pct">${isUnreleased ? escapeHtml(seasonAirDateLabel) : `${epDone}/${epCount}`}</span>
         </div>
 
-        <div class="sd-ep-list" id="sdEpList_${item.id}_${sNum}" style="display:none;"></div>
+        <div class="sd-ep-list" id="sdEpList_${escapeHtml(item.id)}_${sNum}" style="display:none;"></div>
 
         ${
           !isCurrent && !isDone && !isUnreleased
             ? `
-          <button class="btn season-btn" style="margin-top:8px;" onclick="jumpToSeason('${item.id}', ${sNum}, '${s.air_date || ""}', event)">
+          <button class="btn season-btn" style="margin-top:8px;" onclick="jumpToSeason(${inlineJsString(item.id)}, ${sNum}, ${inlineJsString(s.air_date || "")}, event)">
             Reprendre cette saison
           </button>`
             : ""
@@ -4708,7 +5163,7 @@ async function toggleSeasonEpisodes(itemId, season, event) {
                 : `<button
                   class="sd-ep-mark ${isDone ? "sd-ep-mark-done" : ""} ${isCurrent ? "sd-ep-mark-current" : ""}"
                   ${isDone ? "disabled" : ""}
-                  onclick="markEpisodeSeen('${itemId}', ${season}, ${epNum}, event)">
+                  onclick="markEpisodeSeen(${inlineJsString(itemId)}, ${season}, ${epNum}, event)">
                   ${isDone ? "✓ Vu" : "Pas vu"}
                 </button>`
             }
@@ -4734,6 +5189,7 @@ function buildDetailsTab(item, tmdb) {
       "Terminée le",
       `<span class="watched-date-full">${new Date(item.watchedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>`,
     );
+  rows += buildAvailabilityInfoRow(item, tmdb?.watchProviders);
   if (item.genre) rows += buildDetailInfoRow("Genre", escapeHtml(item.genre));
   if (creators) rows += buildDetailInfoRow("Créateur", creators);
   const tmdbScore =
@@ -4808,7 +5264,9 @@ async function openDetail(id) {
       if (res.ok) {
         const tmdb = await res.json();
         tmdb.watchProviders = watchProviders;
-        const provider = getPrimaryWatchProvider(watchProviders);
+        const provider = getPrimaryWatchProvider(watchProviders, {
+          includedOnly: true,
+        });
         const canonicalReleaseDate =
           item.type === "movie" ? tmdb.release_date : tmdb.first_air_date;
 
@@ -4831,6 +5289,10 @@ async function openDetail(id) {
                 provider?.providerLogo || items[idx].providerLogo || null,
               providerName:
                 provider?.providerName || items[idx].providerName || null,
+              providerAccessType:
+                provider?.providerAccessType ||
+                items[idx].providerAccessType ||
+                null,
               providerPriorityVersion: WATCH_PROVIDER_PRIORITY_VERSION,
               releaseDate:
                 canonicalReleaseDate || items[idx].releaseDate || null,
@@ -4847,6 +5309,7 @@ async function openDetail(id) {
               ...items[idx],
               providerLogo: provider.providerLogo,
               providerName: provider.providerName,
+              providerAccessType: provider.providerAccessType || null,
               providerPriorityVersion: WATCH_PROVIDER_PRIORITY_VERSION,
               releaseDate:
                 canonicalReleaseDate || items[idx].releaseDate || null,
@@ -5153,85 +5616,779 @@ function deleteItem() {
   showToast("Contenu supprimé");
 }
 
-function randomSuggestion() {
-  if (items.length === 0) {
+function getSuggestionFilterGroups() {
+  return [
+    {
+      key: "mode",
+      options: [
+        { value: "solo", label: "Solo" },
+        { value: "group", label: "Groupe" },
+      ],
+    },
+    {
+      key: "source",
+      options: [
+        { value: "all", label: "Tout" },
+        { value: "collection", label: "Ma liste" },
+        { value: "discover", label: "Découvrir" },
+      ],
+    },
+    {
+      key: "type",
+      options: [
+        { value: "all", label: "Films + séries" },
+        { value: "movie", label: "Films" },
+        { value: "series", label: "Séries" },
+      ],
+    },
+    {
+      key: "mood",
+      options: [
+        { value: "all", label: "Toute ambiance" },
+        { value: "light", label: "Léger" },
+        { value: "intense", label: "Intense" },
+      ],
+    },
+    {
+      key: "availability",
+      options: [
+        { value: "all", label: "Toutes plateformes" },
+        { value: "mine", label: "Sur mes plateformes" },
+      ],
+    },
+  ];
+}
+
+function buildSuggestionFiltersHTML() {
+  return getSuggestionFilterGroups()
+    .map(
+      (group) => `
+      <div class="watch-pick-filter-group">
+        ${group.options
+          .map(
+            (option) => `
+          <button
+            class="${suggestionFilters[group.key] === option.value ? "active" : ""}"
+            onclick="setSuggestionFilter('${group.key}', '${option.value}')"
+          >
+            ${escapeHtml(option.label)}
+          </button>
+        `,
+          )
+          .join("")}
+      </div>
+    `,
+    )
+    .join("");
+}
+
+function buildGroupPickerHTML() {
+  if (suggestionFilters.mode !== "group") return "";
+  const activeProfiles = getActiveGroupProfiles();
+  const commonProviders = getGroupCommonProviderKeys();
+  const commonProviderLabel = commonProviders.length
+    ? commonProviders.map(getProviderOptionLabel).join(", ")
+    : "Aucune plateforme commune";
+
+  return `
+    <div class="watch-pick-group">
+      <div class="watch-pick-group-head">
+        <span>Mode groupe</span>
+        <button onclick="addGroupProfile()">+ Profil</button>
+      </div>
+      <div class="watch-pick-group-people">
+        ${groupProfiles
+          .map(
+            (profile) => `
+          <button
+            class="${activeGroupProfileIds.includes(profile.id) ? "active" : ""}"
+            onclick="toggleActiveGroupProfile('${profile.id}')"
+          >
+            ${escapeHtml(profile.name)}
+          </button>
+        `,
+          )
+          .join("")}
+      </div>
+      <div class="watch-pick-group-common">
+        <strong>${activeProfiles.length}/${groupProfiles.length} participant${activeProfiles.length > 1 ? "s" : ""}</strong>
+        <span>Plateformes communes: ${escapeHtml(commonProviderLabel)}</span>
+      </div>
+      <div class="watch-pick-group-profiles">
+        ${activeProfiles
+          .map(
+            (profile) => `
+          <div class="watch-pick-profile">
+            <div class="watch-pick-profile-title">
+              <strong>${escapeHtml(profile.name)}</strong>
+              <span>${(profile.providers || []).length} plateforme${(profile.providers || []).length > 1 ? "s" : ""}</span>
+            </div>
+            <div class="watch-pick-profile-label">Plateformes</div>
+            <div class="watch-pick-profile-chips">
+              ${USER_PROVIDER_OPTIONS.map(
+                (provider) => `
+                <button
+                  class="${(profile.providers || []).includes(provider.key) ? "active" : ""}"
+                  onclick="toggleGroupProfileProvider('${profile.id}', '${provider.key}')"
+                >
+                  ${escapeHtml(provider.label)}
+                </button>
+              `,
+              ).join("")}
+            </div>
+            <div class="watch-pick-profile-label">Genres a eviter</div>
+            <div class="watch-pick-profile-chips">
+              ${GROUP_GENRE_OPTIONS.map(
+                (genre) => `
+                <button
+                  class="${(profile.dislikedGenres || []).includes(genre.key) ? "danger active" : ""}"
+                  onclick="toggleGroupProfileGenre('${profile.id}', '${genre.key}', 'dislikedGenres')"
+                >
+                  ${escapeHtml(genre.label)}
+                </button>
+              `,
+              ).join("")}
+            </div>
+          </div>
+        `,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
+function setSuggestionFilter(key, value) {
+  if (!(key in suggestionFilters)) return;
+  suggestionFilters[key] = value;
+  randomSuggestion();
+}
+
+function toggleActiveGroupProfile(profileId) {
+  if (activeGroupProfileIds.includes(profileId)) {
+    activeGroupProfileIds = activeGroupProfileIds.filter(
+      (id) => id !== profileId,
+    );
+  } else {
+    activeGroupProfileIds = [...activeGroupProfileIds, profileId];
+  }
+  if (!activeGroupProfileIds.length && groupProfiles.length) {
+    activeGroupProfileIds = [groupProfiles[0].id];
+  }
+  saveActiveGroupProfileIds();
+  randomSuggestion();
+}
+
+function addGroupProfile() {
+  const name = prompt("Nom du profil");
+  if (!name || !name.trim()) return;
+  const id = `profile-${Date.now()}`;
+  groupProfiles = [
+    ...groupProfiles,
+    {
+      id,
+      name: name.trim().slice(0, 24),
+      providers: userProviderKeys,
+      likedGenres: [],
+      dislikedGenres: [],
+    },
+  ];
+  activeGroupProfileIds = [...new Set([...activeGroupProfileIds, id])];
+  saveGroupProfiles();
+  saveActiveGroupProfileIds();
+  randomSuggestion();
+}
+
+function updateGroupProfile(profileId, updater) {
+  groupProfiles = groupProfiles.map((profile) =>
+    profile.id === profileId
+      ? normalizeGroupProfile(updater(profile))
+      : profile,
+  );
+  saveGroupProfiles();
+  if (profileId === "me") {
+    userProviderKeys =
+      groupProfiles.find((profile) => profile.id === "me")?.providers || [];
+    saveUserProviderKeys();
+  }
+  randomSuggestion();
+}
+
+function toggleGroupProfileProvider(profileId, providerKey) {
+  updateGroupProfile(profileId, (profile) => {
+    const providers = profile.providers || [];
+    return {
+      ...profile,
+      providers: providers.includes(providerKey)
+        ? providers.filter((key) => key !== providerKey)
+        : [...providers, providerKey],
+    };
+  });
+}
+
+function toggleGroupProfileGenre(profileId, genreKey, preferenceKey) {
+  if (!["likedGenres", "dislikedGenres"].includes(preferenceKey)) return;
+
+  updateGroupProfile(profileId, (profile) => {
+    const preferences = profile[preferenceKey] || [];
+    return {
+      ...profile,
+      [preferenceKey]: preferences.includes(genreKey)
+        ? preferences.filter((key) => key !== genreKey)
+        : [...preferences, genreKey],
+    };
+  });
+}
+
+function getItemMood(item) {
+  const text = `${item.genre || ""} ${item.title || ""}`.toLowerCase();
+  const lightWords = [
+    "animation",
+    "comédie",
+    "comedie",
+    "familial",
+    "family",
+    "romance",
+    "music",
+    "musique",
+  ];
+  const intenseWords = [
+    "crime",
+    "drame",
+    "drama",
+    "horreur",
+    "horror",
+    "thriller",
+    "guerre",
+    "war",
+    "mystère",
+    "mystery",
+  ];
+
+  if (lightWords.some((word) => text.includes(word))) return "light";
+  if (intenseWords.some((word) => text.includes(word))) return "intense";
+  return "all";
+}
+
+function matchesSuggestionFilters(item, source) {
+  if (
+    suggestionFilters.source !== "all" &&
+    suggestionFilters.source !== source
+  ) {
+    return false;
+  }
+  if (
+    suggestionFilters.type !== "all" &&
+    item.type !== suggestionFilters.type
+  ) {
+    return false;
+  }
+  if (
+    suggestionFilters.mood !== "all" &&
+    getItemMood(item) !== suggestionFilters.mood
+  ) {
+    return false;
+  }
+  if (suggestionFilters.availability === "mine") {
+    if (suggestionFilters.mode === "group") {
+      if (!getGroupProviderMatchCountForItem(item)) return false;
+    } else if (!isUserProviderAvailableItem(item)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function getSuggestionScore(item, index) {
+  let score = 0;
+
+  if (item.isExternalSuggestion) score += 54;
+  if (item.status === "towatch") score += 70;
+  if (item.status === "watching") score += 62;
+  if (item.status === "paused") score += 22;
+  if (item.status === "watched") score -= 45;
+
+  if (item.rating) score += Number(item.rating) * 8;
+  if (item.tmdbRating) score += Number(item.tmdbRating) * 4;
+  if (hasIncludedWatchProvider(item)) score += 12;
+  if (isUserProviderAvailableItem(item)) score += 38;
+  if (suggestionFilters.mode === "group" && hasIncludedWatchProvider(item)) {
+    const activeCount = getActiveGroupProfiles().length || 1;
+    const matchCount = getGroupProviderMatchCountForItem(item);
+    score += matchCount * 22;
+    if (matchCount === activeCount) score += 28;
+  }
+  if (suggestionFilters.mode === "group") {
+    const genreStats = getGroupGenrePreferenceStats(item);
+    score += genreStats.likedBy.length * 12;
+    score -= genreStats.dislikedBy.length * 55;
+  }
+  if (item.posterUrl) score += 6;
+  if (item.notes) score += 4;
+  if (item.id === lastSuggestedItemId) score -= 80;
+
+  const addedTime = new Date(item.dateAdded || 0).getTime();
+  if (addedTime) {
+    const ageDays = Math.max(0, (Date.now() - addedTime) / 86400000);
+    score += Math.min(ageDays / 7, 16);
+  }
+
+  return score + Math.max(0, 8 - index) * 0.6;
+}
+
+function getSuggestionReasons(item) {
+  const reasons = [];
+
+  if (item.isExternalSuggestion) {
+    reasons.push("Suggestion hors collection, trouvée via TMDB.");
+  }
+  if (item.status === "towatch") reasons.push("Il est dans ta liste à voir.");
+  if (item.status === "watching") reasons.push("Tu l'as déjà commencé.");
+  if (hasIncludedWatchProvider(item)) {
+    const groupMatchCount =
+      suggestionFilters.mode === "group"
+        ? getGroupProviderMatchCountForItem(item)
+        : 0;
+    reasons.push(
+      suggestionFilters.mode === "group" && groupMatchCount > 0
+        ? `Disponible pour ${groupMatchCount}/${getActiveGroupProfiles().length} participant${getActiveGroupProfiles().length > 1 ? "s" : ""} via ${item.providerName}.`
+        : isUserProvider(item.providerName)
+          ? `Disponible sur ${item.providerName}, une de tes plateformes.`
+          : `Plateforme détectée: ${item.providerName}.`,
+    );
+  }
+  if (suggestionFilters.mode === "group") {
+    const genreStats = getGroupGenrePreferenceStats(item);
+    if (genreStats.likedBy.length) {
+      reasons.push(
+        `Genre apprecie par ${genreStats.likedBy.slice(0, 2).join(", ")}.`,
+      );
+    }
+    if (genreStats.dislikedBy.length) {
+      reasons.push(
+        `Compromis imparfait: ${genreStats.dislikedBy.slice(0, 2).join(", ")} evite ce genre.`,
+      );
+    }
+  }
+  if (item.rating) {
+    reasons.push(`Tu lui as mis ${item.rating}/5.`);
+  } else if (item.tmdbRating) {
+    reasons.push(`Bon signal TMDB: ${item.tmdbRating}/5.`);
+  }
+  if (item.dateAdded) {
+    const ageDays = Math.floor(
+      Math.max(0, Date.now() - new Date(item.dateAdded).getTime()) / 86400000,
+    );
+    if (ageDays >= 14) reasons.push(`Ajouté depuis ${ageDays} jours.`);
+  }
+  if (item.type === "series" && item.currentSeason && item.currentEpisode) {
+    reasons.push(
+      `Reprise possible à ${getNextEpisodeDisplay(item, "compact")}.`,
+    );
+  }
+
+  return reasons.length
+    ? reasons.slice(0, 3)
+    : [
+        "Choix équilibré dans ta collection.",
+        "Pas besoin de repartir chercher ailleurs.",
+      ];
+}
+
+function normalizeExternalSuggestionItem(tmdbItem, mediaType) {
+  const type = getCollectionTypeFromTmdbType(mediaType);
+  const genreMap = type === "movie" ? GENRE_MAP.movie : GENRE_MAP.tv;
+  const genre = Array.isArray(tmdbItem.genre_ids)
+    ? tmdbItem.genre_ids
+        .map((genreId) => genreMap[genreId])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join(", ")
+    : "";
+
+  setTrendingCacheItem(tmdbItem, mediaType);
+
+  return {
+    id: `tmdb-${mediaType}-${tmdbItem.id}`,
+    title: tmdbItem.title || tmdbItem.name || "",
+    type,
+    year: (tmdbItem.release_date || tmdbItem.first_air_date || "").slice(0, 4),
+    status: "external",
+    rating: null,
+    genre,
+    notes: "",
+    posterUrl: tmdbItem.poster_path
+      ? `${TMDB_IMAGE_BASE}${tmdbItem.poster_path}`
+      : "",
+    tmdbId: tmdbItem.id,
+    providerLogo: null,
+    providerName: null,
+    providerAccessType: null,
+    providerPriorityVersion: WATCH_PROVIDER_PRIORITY_VERSION,
+    tags: [],
+    currentSeason: null,
+    currentEpisode: null,
+    dateAdded: null,
+    watchedAt: null,
+    tmdbRating: tmdbItem.vote_average
+      ? (tmdbItem.vote_average / 2).toFixed(1)
+      : null,
+    isExternalSuggestion: true,
+    mediaType,
+  };
+}
+
+async function fetchExternalSuggestionItems() {
+  if (TMDB_API_KEY === "VOTRE_CLE_API_ICI") return [];
+
+  const cacheKey = `${suggestionFilters.type}:${suggestionFilters.mood}`;
+  const cacheIsFresh =
+    suggestionExternalCache.key === cacheKey &&
+    Date.now() - suggestionExternalCache.fetchedAt < 10 * 60 * 1000;
+  if (cacheIsFresh) return suggestionExternalCache.items;
+
+  const endpoints = [];
+  if (suggestionFilters.type === "all" || suggestionFilters.type === "movie") {
+    endpoints.push({
+      mediaType: "movie",
+      url: `${TMDB_BASE_URL}/trending/movie/week?api_key=${TMDB_API_KEY}&language=fr-FR`,
+    });
+  }
+  if (suggestionFilters.type === "all" || suggestionFilters.type === "series") {
+    endpoints.push({
+      mediaType: "tv",
+      url: `${TMDB_BASE_URL}/trending/tv/week?api_key=${TMDB_API_KEY}&language=fr-FR`,
+    });
+  }
+
+  try {
+    const payloads = await Promise.all(
+      endpoints.map(async (endpoint) => {
+        const response = await fetch(endpoint.url);
+        if (!response.ok) return [];
+        const data = await response.json();
+        return (data.results || [])
+          .filter(
+            (tmdbItem) =>
+              !items.some((item) =>
+                isSameTmdbCollectionItem(item, tmdbItem.id, endpoint.mediaType),
+              ),
+          )
+          .slice(0, 14)
+          .map((tmdbItem) =>
+            normalizeExternalSuggestionItem(tmdbItem, endpoint.mediaType),
+          );
+      }),
+    );
+    const externalItems = payloads.flat();
+    suggestionExternalCache = {
+      key: cacheKey,
+      items: externalItems,
+      fetchedAt: Date.now(),
+    };
+    return externalItems;
+  } catch (error) {
+    console.error("Erreur suggestion découverte:", error);
+    return [];
+  }
+}
+
+async function getSmartSuggestion() {
+  await refreshSuggestionProviderAvailability();
+
+  const collectionCandidates = items
+    .filter((item) => ["towatch", "watching", "paused"].includes(item.status))
+    .filter((item) => matchesSuggestionFilters(item, "collection"));
+
+  let pool = [...collectionCandidates];
+  if (suggestionFilters.source !== "collection") {
+    const externalItems = await fetchExternalSuggestionItems();
+    pool = [
+      ...pool,
+      ...externalItems.filter((item) =>
+        matchesSuggestionFilters(item, "discover"),
+      ),
+    ];
+  }
+
+  if (!pool.length && suggestionFilters.source !== "discover") {
+    pool = items.filter((item) => matchesSuggestionFilters(item, "collection"));
+  }
+
+  return [...pool]
+    .map((item, index) => ({
+      item,
+      score: getSuggestionScore(item, index),
+      randomTieBreaker: Math.random(),
+    }))
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        right.randomTieBreaker - left.randomTieBreaker,
+    )[0]?.item;
+}
+
+async function randomSuggestion() {
+  if (items.length === 0 && suggestionFilters.source === "collection") {
     showToast("Ajoutez des contenus d'abord !");
     return;
   }
 
-  const towatch = items.filter((i) => i.status === "towatch");
-  const watching = items.filter((i) => i.status === "watching");
-
-  let pool =
-    towatch.length > 0 ? towatch : watching.length > 0 ? watching : items;
-  const randomItem = pool[Math.floor(Math.random() * pool.length)];
-
+  document.getElementById("suggestionModalTitle").textContent =
+    "Que regarder ?";
   document.getElementById("suggestionModal").classList.add("active");
-  renderSuggestion(randomItem);
+  document.getElementById("suggestionContent").innerHTML = `
+    <div class="watch-pick">
+      <div class="watch-pick-filters">${buildSuggestionFiltersHTML()}</div>
+      ${buildGroupPickerHTML()}
+      <div class="watch-pick-loading">Recherche d'une bonne option...</div>
+    </div>
+  `;
+
+  const suggestedItem = await getSmartSuggestion();
+  if (!suggestedItem) {
+    document.getElementById("suggestionContent").innerHTML = `
+      <div class="watch-pick">
+        <div class="watch-pick-filters">${buildSuggestionFiltersHTML()}</div>
+        ${buildGroupPickerHTML()}
+        <div class="watch-pick-empty">
+          <strong>Aucune suggestion avec ces filtres.</strong>
+          <p>Essaie "Tout", ou repasse sur "Ma liste".</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  lastSuggestedItemId = suggestedItem.id;
+  renderSuggestion(suggestedItem);
 }
 
 function renderSuggestion(item) {
-  const stars = item.rating ? "⭐".repeat(Math.floor(item.rating)) : "";
-  const statusText = STATUS_LABELS[item.status] || item.status;
+  const statusText = item.isExternalSuggestion
+    ? "Hors collection"
+    : getStatusLabel(item.status);
+  const year = item.year ? `<span>${escapeHtml(item.year)}</span>` : "";
+  const genre = item.genre
+    ? `<span>${escapeHtml(item.genre.split(",")[0].trim())}</span>`
+    : "";
+  const provider = item.providerName
+    ? `<span>${escapeHtml(item.providerName)}</span>`
+    : "";
+  const rating = item.rating || item.tmdbRating || null;
+  const ratingLabel = item.rating ? "Ta note" : "TMDB";
+  const reasons = getSuggestionReasons(item);
+  const primaryAction = item.isExternalSuggestion
+    ? `showTrendingDetail(${Number(item.tmdbId)}, '${item.mediaType}')`
+    : `openDetail(${inlineJsString(item.id)})`;
+  const secondaryAction = item.isExternalSuggestion
+    ? `addFromTrendingById(${Number(item.tmdbId)}, '${item.mediaType}')`
+    : `openWatchedFlowForSuggestion(${inlineJsString(item.id)})`;
+  const alternatives = items
+    .filter((candidate) => candidate.id !== item.id)
+    .filter((candidate) =>
+      ["towatch", "watching", "paused"].includes(candidate.status),
+    )
+    .sort(
+      (left, right) =>
+        getSuggestionScore(right, 0) - getSuggestionScore(left, 0),
+    )
+    .slice(0, 3);
 
   document.getElementById("suggestionContent").innerHTML = `
-        ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}" class="detail-poster">` : ""}
+        <div class="watch-pick">
+          <div class="watch-pick-filters">${buildSuggestionFiltersHTML()}</div>
+          ${buildGroupPickerHTML()}
 
-        <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 16px; text-align: center;">${escapeHtml(item.title)}</h3>
-
-        <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; font-size: 14px; color: var(--text-tertiary);">
-          <span>${item.type === "movie" ? "Film" : "Série"}</span>
-          ${item.year ? `<span>${escapeHtml(item.year)}</span>` : ""}
-          ${item.genre ? `<span>${escapeHtml(item.genre.split(",")[0].trim())}</span>` : ""}
-        </div>
-
-        ${
-          item.rating
-            ? `
-          <div style="text-align: center; margin-bottom: 20px; font-size: 16px;">
-            ${stars} <span style="color: var(--text-secondary); font-weight: 600;">${item.rating}/5</span>
+          <div class="watch-pick-hero">
+            <div class="watch-pick-poster">
+              ${
+                item.posterUrl
+                  ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
+                  : `<div class="watch-pick-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`
+              }
+            </div>
+            <div class="watch-pick-main">
+              <span class="watch-pick-kicker">Notre choix</span>
+              <h3>${escapeHtml(item.title)}</h3>
+              <div class="watch-pick-meta">
+                <span>${item.type === "movie" ? "Film" : "Série"}</span>
+                ${year}
+                ${genre}
+                ${provider}
+              </div>
+              <div class="watch-pick-badges">
+                <span>${escapeHtml(statusText)}</span>
+                ${
+                  item.isExternalSuggestion
+                    ? `<span>Découverte TMDB</span>`
+                    : ""
+                }
+                ${
+                  rating
+                    ? `<span>${ratingLabel}: ${Number(rating).toFixed(1)}/5</span>`
+                    : ""
+                }
+                ${
+                  item.type === "series" &&
+                  item.currentSeason &&
+                  item.currentEpisode
+                    ? `<span>${escapeHtml(getNextEpisodeDisplay(item, "compact"))}</span>`
+                    : ""
+                }
+              </div>
+            </div>
           </div>
-        `
-            : ""
-        }
 
-        <div style="padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-sm); margin-bottom: 20px;">
-          <strong style="font-size: 13px; color: var(--text-secondary);">Statut:</strong> ${statusText}
-          ${item.type === "series" && item.currentSeason && item.currentEpisode ? `<br><strong style="font-size: 13px; color: var(--text-secondary);">Progression:</strong> ${escapeHtml(getNextEpisodeDisplay(item, "inline"))}` : ""}
-        </div>
-
-        ${
-          item.notes
-            ? `
-          <div style="padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-sm); margin-bottom: 20px;">
-            <strong style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 8px;">Vos notes:</strong>
-            <div style="font-size: 14px; color: var(--text-primary);">${escapeHtml(item.notes)}</div>
+          <div class="watch-pick-reasons">
+            <span>Pourquoi celui-là ?</span>
+            <ul>
+              ${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}
+            </ul>
           </div>
-        `
-            : ""
-        }
 
-        <div style="display: flex; gap: 12px;">
-          <button class="btn btn-primary" onclick="randomSuggestion()" style="flex: 1; justify-content: center;">
-            Autre suggestion
-          </button>
-          <button class="btn" onclick="openDetail('${item.id}'); closeSuggestion();" style="flex: 1; justify-content: center;">
-            Voir les détails
-          </button>
+          ${
+            item.notes
+              ? `
+            <div class="watch-pick-note">
+              <span>Ta note</span>
+              <p>${escapeHtml(item.notes)}</p>
+            </div>
+          `
+              : ""
+          }
+
+          <div class="watch-pick-actions">
+            <button class="btn btn-primary" onclick="${primaryAction}; closeSuggestion();">
+              Ouvrir la fiche
+            </button>
+            <button class="btn" onclick="${secondaryAction}; closeSuggestion();">
+              ${item.isExternalSuggestion ? "Ajouter" : "Vu + noter"}
+            </button>
+            <button class="btn" onclick="randomSuggestion()">
+              Autre choix
+            </button>
+          </div>
+
+          ${
+            alternatives.length
+              ? `
+            <div class="watch-pick-alternatives">
+              <span>Autres pistes</span>
+              <div>
+                ${alternatives
+                  .map(
+                    (candidate) => `
+                  <button onclick="showSuggestionById(${inlineJsString(candidate.id)})">
+                    ${
+                      candidate.posterUrl
+                        ? `<img src="${escapeHtml(candidate.posterUrl)}" alt="">`
+                        : `<span>${candidate.type === "movie" ? "🎬" : "📺"}</span>`
+                    }
+                    <strong>${escapeHtml(candidate.title)}</strong>
+                  </button>
+                `,
+                  )
+                  .join("")}
+              </div>
+            </div>
+          `
+              : ""
+          }
         </div>
       `;
+}
+
+function showSuggestionById(itemId) {
+  const item = items.find((entry) => entry.id === itemId);
+  if (!item) return;
+  lastSuggestedItemId = item.id;
+  renderSuggestion(item);
+}
+
+function openWatchedFlowForSuggestion(itemId) {
+  currentItemId = itemId;
+  closeSuggestion();
+  openWatchedFlowForCurrentItem();
 }
 
 function closeSuggestion() {
   document.getElementById("suggestionModal").classList.remove("active");
 }
 
+function openProviderSettings() {
+  renderProviderSettings();
+  document.getElementById("providerSettingsModal").classList.add("active");
+}
+
+function closeProviderSettings() {
+  document.getElementById("providerSettingsModal").classList.remove("active");
+}
+
+function toggleUserProvider(providerKey) {
+  if (userProviderKeys.includes(providerKey)) {
+    userProviderKeys = userProviderKeys.filter((key) => key !== providerKey);
+  } else {
+    userProviderKeys = [...userProviderKeys, providerKey];
+  }
+  saveUserProviderKeys();
+  syncCurrentUserGroupProfile();
+  renderProviderSettings();
+  showToast("Plateformes mises à jour");
+}
+
+function renderProviderSettings() {
+  const container = document.getElementById("providerSettingsContent");
+  if (!container) return;
+
+  const selectedLabels = getUserProviderLabelList();
+
+  container.innerHTML = `
+    <div class="provider-settings">
+      <p class="provider-settings-copy">
+        Ces plateformes servent à mieux classer les suggestions dans "Que regarder ?".
+      </p>
+      <div class="provider-settings-grid">
+        ${USER_PROVIDER_OPTIONS.map(
+          (provider) => `
+            <button
+              class="${userProviderKeys.includes(provider.key) ? "active" : ""}"
+              onclick="toggleUserProvider('${provider.key}')"
+            >
+              <span>${escapeHtml(provider.label)}</span>
+              <small>${userProviderKeys.includes(provider.key) ? "Activée" : "Désactivée"}</small>
+            </button>
+          `,
+        ).join("")}
+      </div>
+      <div class="provider-settings-summary">
+        ${
+          selectedLabels.length
+            ? `Actives: ${escapeHtml(selectedLabels.join(", "))}`
+            : "Aucune plateforme active pour le moment."
+        }
+      </div>
+    </div>
+  `;
+}
+
 function openDesignMockups() {
-  document.getElementById("designMockupModal").classList.add("active");
+  const targetUrl = `design-lab.html?v=${Date.now()}#mockup-info-layouts`;
+  const isMobileViewport = window.matchMedia("(max-width: 900px)").matches;
+
+  if (isMobileViewport) {
+    window.location.href = targetUrl;
+    return;
+  }
+
+  const popup = window.open(targetUrl, "mockups", "width=1200,height=900");
+  if (!popup) {
+    window.location.href = targetUrl;
+  }
 }
 
 function closeDesignMockups() {
-  document.getElementById("designMockupModal").classList.remove("active");
+  // Design mockups modal no longer exists
 }
 
 async function loadUpcoming() {
@@ -5318,7 +6475,7 @@ async function loadUpcoming() {
         const isUrgent = daysLeft <= 2;
 
         return `
-        <div class="upcoming-row" onclick="openDetail('${item.id}')">
+        <div class="upcoming-row" onclick="openDetail(${inlineJsString(item.id)})">
           <div class="upcoming-poster">
             ${
               item.posterUrl
@@ -5386,7 +6543,7 @@ async function loadUpcoming() {
                     });
 
               return `
-              <div class="upcoming-season-card" onclick="openDetail('${item.id}')">
+              <div class="upcoming-season-card" onclick="openDetail(${inlineJsString(item.id)})">
                 <div class="upcoming-season-poster">
                   ${
                     season.poster_path
@@ -5803,7 +6960,7 @@ function buildTrendingDetailHTML(item, type, tmdb) {
   const discoverProviderName = firstProvider?.provider_name || null;
 
   return `
-    <div class="detail-stream-shell">
+    <div class="detail-stream-shell detail-layout-d detail-layout-d-discover">
       ${buildDetailHeroHTML({
         title,
         kicker: alreadyAdded
@@ -5912,7 +7069,9 @@ async function addFromTrending(
 ) {
   const title = item.title || item.name;
 
-  if (items.some((existing) => isSameTmdbCollectionItem(existing, item.id, type))) {
+  if (
+    items.some((existing) => isSameTmdbCollectionItem(existing, item.id, type))
+  ) {
     showToast("Déjà dans la collection");
     return null;
   }
@@ -5921,7 +7080,9 @@ async function addFromTrending(
     type === "movie" ? "movie" : "tv",
     item.id,
   );
-  const provider = getPrimaryWatchProvider(watchProviders);
+  const provider = getPrimaryWatchProvider(watchProviders, {
+    includedOnly: true,
+  });
   const newItem = buildCollectionItemFromTrending(item, type, provider, status);
 
   items.unshift(newItem);
@@ -5994,6 +7155,14 @@ function importData() {
 
       if (!Array.isArray(importedItems)) {
         throw new Error("Format invalide");
+      }
+
+      importedItems = importedItems
+        .map((item, index) => normalizeCollectionItem(item, index))
+        .filter(Boolean);
+
+      if (importedItems.length === 0) {
+        throw new Error("Aucun élément valide dans le fichier");
       }
 
       const isLetterboxdCsv = /\.csv$/i.test(file.name);
@@ -6080,13 +7249,43 @@ function importData() {
   reader.readAsText(file);
 }
 
+let toastHideTimer = null;
+
 function showToast(message) {
   const toast = document.getElementById("toast");
+  const normalizedMessage = String(message || "").toLowerCase();
+
+  let tone = "info";
+  if (
+    /ajout|mis a jour|mis à jour|restaur|installe|installé|mises à jour|repare|répar|terminee|terminée|marqué vu|✓/.test(
+      normalizedMessage,
+    )
+  ) {
+    tone = "success";
+  } else if (
+    /impossible|non disponible|pas encore|d'abord|ajoutez|selectionne|sélectionne/.test(
+      normalizedMessage,
+    )
+  ) {
+    tone = "warning";
+  }
+
   toast.textContent = message;
+  toast.classList.remove("toast-info", "toast-success", "toast-warning");
+  toast.classList.add(`toast-${tone}`);
+
+  // Rejoue l'animation correctement si plusieurs toasts arrivent vite.
+  toast.classList.remove("show");
+  void toast.offsetWidth;
   toast.classList.add("show");
-  setTimeout(() => {
+
+  if (toastHideTimer) {
+    clearTimeout(toastHideTimer);
+  }
+
+  toastHideTimer = setTimeout(() => {
     toast.classList.remove("show");
-  }, 3000);
+  }, 3200);
 }
 
 document.getElementById("addForm").addEventListener("submit", function (e) {
@@ -6098,6 +7297,7 @@ document.getElementById("addForm").addEventListener("submit", function (e) {
   const releaseDate = titleInput.dataset.releaseDate || null;
   const providerLogo = titleInput.dataset.providerLogo || null;
   const providerName = titleInput.dataset.providerName || null;
+  const providerAccessType = titleInput.dataset.providerAccessType || null;
 
   if (!tmdbId) {
     showToast("Sélectionne d'abord un résultat TMDB");
@@ -6131,6 +7331,8 @@ document.getElementById("addForm").addEventListener("submit", function (e) {
     tmdbId: tmdbId,
     providerLogo: providerLogo,
     providerName: providerName,
+    providerAccessType: providerAccessType,
+    providerPriorityVersion: WATCH_PROVIDER_PRIORITY_VERSION,
     tags: currentTags,
     currentSeason: isSeries ? currentSeason : null,
     currentEpisode: isSeries ? currentEpisode : null,
@@ -6172,6 +7374,7 @@ document.getElementById("addForm").addEventListener("submit", function (e) {
   delete titleInput.dataset.tmdbId;
   delete titleInput.dataset.providerLogo;
   delete titleInput.dataset.providerName;
+  delete titleInput.dataset.providerAccessType;
   delete titleInput.dataset.releaseDate;
   updateSelectedTMDBUI(null);
 });
@@ -6338,6 +7541,8 @@ window.addEventListener("hashchange", applyLaunchActionFromHash);
 window.app = {
   installPWA,
   switchTab,
+  toggleMobileActionsMenu,
+  closeMobileActionsMenu,
   toggleEpisodeTracker,
   changeEpisode,
   resetEpisode,
@@ -6358,6 +7563,14 @@ window.app = {
   deleteItem,
   randomSuggestion,
   closeSuggestion,
+  openProviderSettings,
+  closeProviderSettings,
+  toggleUserProvider,
+  setSuggestionFilter,
+  toggleActiveGroupProfile,
+  addGroupProfile,
+  toggleGroupProfileProvider,
+  toggleGroupProfileGenre,
   openDesignMockups,
   closeDesignMockups,
   loadUpcoming,
