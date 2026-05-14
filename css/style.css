@@ -9615,7 +9615,7 @@ header {
   }
 
   [data-theme="dark"] .mobile-nav-item {
-    color: rgba(235, 235, 245, 0.62);
+    color: rgba(235, 235, 245, 0.78);
   }
 
   .mobile-nav-item.active,
