@@ -3627,6 +3627,7 @@ function renderStats() {
         .join("")
     : '<p class="stats-empty">Aucun genre assez représenté pour le moment.</p>';
 
+  renderProvidersChart();
   renderMonthlyChart();
   renderRatingDistribution();
   renderHeatmap();
@@ -3709,6 +3710,42 @@ function renderHistory() {
       `;
           })
           .join("");
+}
+
+function renderProvidersChart() {
+  const container = document.getElementById("providersChart");
+  if (!container) return;
+
+  const counts = {};
+  const logos = {};
+  items.forEach((item) => {
+    if (!item.providerName) return;
+    const name = item.providerName;
+    counts[name] = (counts[name] || 0) + 1;
+    if (!logos[name] && item.providerLogo) logos[name] = item.providerLogo;
+  });
+
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const max = sorted[0]?.[1] || 1;
+
+  container.innerHTML = sorted.length
+    ? sorted.map(([name, count]) => {
+        const pct = Math.round((count / max) * 100);
+        const logoHtml = logos[name]
+          ? `<img class="provider-bar-logo" src="${escapeHtml(logos[name])}" alt="" aria-hidden="true">`
+          : "";
+        return `
+        <div class="genre-bar genre-bar-active">
+          <div class="genre-bar-header">
+            <span class="genre-bar-name provider-bar-name">${logoHtml}${escapeHtml(name)}</span>
+            <span class="genre-bar-count">${count}</span>
+          </div>
+          <div class="genre-bar-track">
+            <div class="genre-bar-fill" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+      }).join("")
+    : '<p class="stats-empty">Aucune plateforme enregistrée pour le moment.</p>';
 }
 
 function renderMonthlyChart() {
