@@ -9117,6 +9117,23 @@ header {
   border-radius: 3px;
 }
 
+.header-actions .btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+  flex-shrink: 0;
+}
+
+.header-actions .mobile-more-btn svg {
+  fill: currentColor;
+  stroke: none;
+}
+
 @media (max-width: 768px) {
   .premium-buttons-mockup {
     grid-template-columns: 1fr;
