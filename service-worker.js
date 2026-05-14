@@ -1,4 +1,6 @@
-const CACHE_NAME = "cinetracker-shell-v4";
+const SHELL_CACHE_NAME = "cinetracker-shell-v5";
+const RUNTIME_IMAGE_CACHE_NAME = "cinetracker-runtime-images-v1";
+const TMDB_IMAGE_CACHE_LIMIT = 120;
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -17,7 +19,7 @@ const APP_SHELL = [
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
-      .open(CACHE_NAME)
+      .open(SHELL_CACHE_NAME)
       .then((cache) => cache.addAll(APP_SHELL))
       .then(() => self.skipWaiting()),
   );
@@ -30,13 +32,26 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key !== CACHE_NAME)
+            .filter(
+              (key) =>
+                key !== SHELL_CACHE_NAME && key !== RUNTIME_IMAGE_CACHE_NAME,
+            )
             .map((key) => caches.delete(key)),
         ),
       )
       .then(() => self.clients.claim()),
   );
 });
+
+async function trimCache(cacheName, maxEntries) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+
+  if (keys.length <= maxEntries) return;
+
+  const toDelete = keys.slice(0, keys.length - maxEntries);
+  await Promise.all(toDelete.map((request) => cache.delete(request)));
+}
 
 function isSameOrigin(requestUrl) {
   return new URL(requestUrl).origin === self.location.origin;
@@ -70,7 +85,7 @@ self.addEventListener("fetch", (event) => {
             if (networkResponse && networkResponse.status === 200) {
               const responseClone = networkResponse.clone();
               caches
-                .open(CACHE_NAME)
+                .open(SHELL_CACHE_NAME)
                 .then((cache) => cache.put(request, responseClone));
             }
 
@@ -92,7 +107,7 @@ self.addEventListener("fetch", (event) => {
 
           const responseClone = networkResponse.clone();
           caches
-            .open(CACHE_NAME)
+            .open(SHELL_CACHE_NAME)
             .then((cache) => cache.put(request, responseClone));
           return networkResponse;
         });
@@ -103,22 +118,24 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin.includes("image.tmdb.org")) {
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        const networkFetch = fetch(request)
-          .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              const responseClone = networkResponse.clone();
-              caches
-                .open(CACHE_NAME)
-                .then((cache) => cache.put(request, responseClone));
-            }
+      caches.open(RUNTIME_IMAGE_CACHE_NAME).then((runtimeCache) =>
+        runtimeCache.match(request).then((cachedResponse) => {
+          const networkFetch = fetch(request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                const responseClone = networkResponse.clone();
+                runtimeCache.put(request, responseClone).then(() => {
+                  trimCache(RUNTIME_IMAGE_CACHE_NAME, TMDB_IMAGE_CACHE_LIMIT);
+                });
+              }
 
-            return networkResponse;
-          })
-          .catch(() => cachedResponse);
+              return networkResponse;
+            })
+            .catch(() => cachedResponse);
 
-        return cachedResponse || networkFetch;
-      }),
+          return cachedResponse || networkFetch;
+        }),
+      ),
     );
   }
 });

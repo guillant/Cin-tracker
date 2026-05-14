@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -34,31 +34,38 @@
           <button
             class="btn btn-icon mobile-secondary-action"
             onclick="app.randomSuggestion()"
-            title="Suggestion aleatoire"
+            title="Que regarder ?"
           >
-            <span>🎲</span>
+            <span>&#x1F3B2;</span>
           </button>
           <button
             class="btn btn-icon mobile-secondary-action"
             onclick="app.showTrending()"
             title="Tendances"
           >
-            <span>🔥</span>
+            <span>&#x1F525;</span>
           </button>
           <button
             class="btn btn-icon mobile-secondary-action mobile-mockup-action"
             onclick="app.openDesignMockups()"
-            title="Maquette boutons premium"
-            aria-label="Ouvrir la maquette des boutons premium"
+            title="Laboratoire design"
+            aria-label="Ouvrir le laboratoire design"
           >
-            <span>▦</span>
+            <span>&#x25A6;</span>
           </button>
           <button
             class="btn btn-icon mobile-secondary-action"
             onclick="app.openImportExport()"
             title="Importer/Exporter"
           >
-            <span>↕</span>
+            <span>&#x2195;</span>
+          </button>
+          <button
+            class="btn btn-icon mobile-secondary-action"
+            onclick="app.openProviderSettings()"
+            title="Mes plateformes"
+          >
+            <span>&#x25A3;</span>
           </button>
           <button
             class="btn btn-icon"
@@ -66,7 +73,7 @@
             id="darkToggleBtn"
             title="Changer de theme"
           >
-            <span id="darkToggleIcon">◑</span>
+            <span id="darkToggleIcon">&#x25D1;</span>
           </button>
           <button
             class="btn btn-icon mobile-secondary-action"
@@ -75,14 +82,14 @@
             title="Installer"
             style="display: none"
           >
-            <span>↓</span>
+            <span>&#x2193;</span>
           </button>
           <button
             class="btn btn-icon"
             onclick="app.openSearch()"
             title="Rechercher"
           >
-            <span>⌕</span>
+            <span>&#x2315;</span>
           </button>
           <button
             class="btn btn-icon mobile-more-btn"
@@ -91,7 +98,7 @@
             aria-expanded="false"
             aria-controls="mobileActionsMenu"
           >
-            <span>⋯</span>
+            <span>&#x22EF;</span>
           </button>
           <button
             class="btn btn-primary desktop-add-btn"
@@ -104,21 +111,50 @@
       </header>
 
       <div id="mobileActionsMenu" class="mobile-actions-menu">
-        <button onclick="app.randomSuggestion(); app.closeMobileActionsMenu()">
-          <span>🎲</span>
-          <span>Suggestion aleatoire</span>
+        <button
+          onclick="
+            app.randomSuggestion();
+            app.closeMobileActionsMenu();
+          "
+        >
+          <span>&#x1F3B2;</span>
+          <span>Que regarder ?</span>
         </button>
-        <button onclick="app.showTrending(); app.closeMobileActionsMenu()">
-          <span>🔥</span>
+        <button
+          onclick="
+            app.showTrending();
+            app.closeMobileActionsMenu();
+          "
+        >
+          <span>&#x1F525;</span>
           <span>Tendances</span>
         </button>
-        <button onclick="app.openDesignMockups(); app.closeMobileActionsMenu()">
-          <span>▦</span>
+        <button
+          onclick="
+            app.openDesignMockups();
+            app.closeMobileActionsMenu();
+          "
+        >
+          <span>&#x25A6;</span>
           <span>Maquettes</span>
         </button>
-        <button onclick="app.openImportExport(); app.closeMobileActionsMenu()">
-          <span>↕</span>
+        <button
+          onclick="
+            app.openImportExport();
+            app.closeMobileActionsMenu();
+          "
+        >
+          <span>&#x2195;</span>
           <span>Importer / Exporter</span>
+        </button>
+        <button
+          onclick="
+            app.openProviderSettings();
+            app.closeMobileActionsMenu();
+          "
+        >
+          <span>&#x25A3;</span>
+          <span>Mes plateformes</span>
         </button>
       </div>
 
@@ -128,7 +164,7 @@
           data-tab="collection"
           onclick="app.switchTab('collection', this)"
         >
-          <span class="nav-icon">▦</span>
+          <span class="nav-icon">&#x25A6;</span>
           Collection
         </button>
         <button
@@ -136,7 +172,7 @@
           data-tab="stats"
           onclick="app.switchTab('stats', this)"
         >
-          <span class="nav-icon">◉</span>
+          <span class="nav-icon">&#x25C9;</span>
           Statistiques
         </button>
         <button
@@ -144,7 +180,7 @@
           data-tab="lists"
           onclick="app.switchTab('lists', this)"
         >
-          <span class="nav-icon">☰</span>
+          <span class="nav-icon">&#x2630;</span>
           Listes
         </button>
         <button
@@ -152,7 +188,7 @@
           data-tab="discover"
           onclick="app.switchTab('discover', this)"
         >
-          <span class="nav-icon">⌕</span>
+          <span class="nav-icon">&#x2315;</span>
           Decouvrir
         </button>
       </nav>
@@ -172,7 +208,7 @@
               onclick="app.setViewMode('grid')"
               title="Vue grille"
             >
-              ⊞
+              &#x229E;
             </button>
             <button
               class="view-toggle-btn"
@@ -180,15 +216,15 @@
               onclick="app.setViewMode('list')"
               title="Vue liste"
             >
-              ☰
+              &#x2630;
             </button>
           </div>
 
           <select class="sort-select" id="sortSelect">
             <option value="date-desc">Recent d'abord</option>
             <option value="date-asc">Ancien d'abord</option>
-            <option value="title-asc">Titre A → Z</option>
-            <option value="title-desc">Titre Z → A</option>
+            <option value="title-asc">Titre A &#x2192; Z</option>
+            <option value="title-desc">Titre Z &#x2192; A</option>
             <option value="year-desc">Annee (recent)</option>
             <option value="year-asc">Annee (ancien)</option>
             <option value="rating-desc">Mieux notes</option>
@@ -205,7 +241,7 @@
         <div id="contentGrid" class="grid"></div>
 
         <div id="emptyState" class="empty-state" style="display: none">
-          <div class="empty-icon">📚</div>
+          <div class="empty-icon">&#x1F4DA;</div>
           <h3 class="empty-title">Aucun contenu</h3>
           <p class="empty-text">
             Commencez par ajouter vos films et series preferes.
@@ -304,28 +340,30 @@
         <div id="discoverRows">
           <div class="discover-row-wrap" id="discoverTrendingMovies">
             <div class="discover-row-header">
-              <h3 class="discover-row-title">🎬 Films tendances</h3>
+              <h3 class="discover-row-title">&#x1F3AC; Films tendances</h3>
             </div>
             <div class="discover-scroll" id="discoverTrendingMoviesGrid">
-              <div class="discover-loading">Chargement…</div>
+              <div class="discover-loading">Chargement...</div>
             </div>
           </div>
 
           <div class="discover-row-wrap" id="discoverTrendingSeries">
             <div class="discover-row-header">
-              <h3 class="discover-row-title">📺 Séries tendances</h3>
+              <h3 class="discover-row-title">&#x1F4FA; Séries tendances</h3>
             </div>
             <div class="discover-scroll" id="discoverTrendingSeriesGrid">
-              <div class="discover-loading">Chargement…</div>
+              <div class="discover-loading">Chargement...</div>
             </div>
           </div>
 
           <div class="discover-row-wrap" id="discoverAnticipatedMovies">
             <div class="discover-row-header">
-              <h3 class="discover-row-title">🍿 Films les plus attendus</h3>
+              <h3 class="discover-row-title">
+                &#x1F37F; Films les plus attendus
+              </h3>
             </div>
             <div class="discover-scroll" id="discoverAnticipatedMoviesGrid">
-              <div class="discover-loading">Chargement…</div>
+              <div class="discover-loading">Chargement...</div>
             </div>
           </div>
 
@@ -334,16 +372,18 @@
               <h3 class="discover-row-title">⏳ Séries les plus attendues</h3>
             </div>
             <div class="discover-scroll" id="discoverAnticipatedSeriesGrid">
-              <div class="discover-loading">Chargement…</div>
+              <div class="discover-loading">Chargement...</div>
             </div>
           </div>
 
           <div class="discover-row-wrap" id="discoverNowPlaying">
             <div class="discover-row-header">
-              <h3 class="discover-row-title">🎟️ Actuellement au cinéma</h3>
+              <h3 class="discover-row-title">
+                &#x1F39F;&#xFE0F; Actuellement au cinéma
+              </h3>
             </div>
             <div class="discover-scroll" id="discoverNowPlayingGrid">
-              <div class="discover-loading">Chargement…</div>
+              <div class="discover-loading">Chargement...</div>
             </div>
           </div>
 
@@ -351,7 +391,7 @@
             <div class="chart-card">
               <div class="discover-browse-header">
                 <button class="btn" onclick="app.closeDiscoverCollection()">
-                  ← Retour
+                  &#x2190; Retour
                 </button>
                 <div class="discover-browse-copy">
                   <h3 class="chart-title" id="discoverBrowseTitle"></h3>
@@ -382,17 +422,17 @@
       </div>
     </div>
 
-    <button class="mobile-fab" onclick="app.openAddModal()" title="Ajouter">
+    <button class="mobile-fab h2" onclick="app.openAddModal()" title="Ajouter">
       +
     </button>
 
-    <nav class="mobile-bottom-nav" aria-label="Navigation mobile">
+    <nav class="mobile-bottom-nav h2" aria-label="Navigation mobile">
       <button
         class="mobile-nav-item active"
         data-tab="collection"
         onclick="app.switchTab('collection', this)"
       >
-        <span class="mobile-nav-icon">▦</span>
+        <span class="mobile-nav-icon">&#x25A6;</span>
         <span>Collection</span>
       </button>
       <button
@@ -400,7 +440,7 @@
         data-tab="stats"
         onclick="app.switchTab('stats', this)"
       >
-        <span class="mobile-nav-icon">◎</span>
+        <span class="mobile-nav-icon">&#x25CE;</span>
         <span>Stats</span>
       </button>
       <button
@@ -408,7 +448,7 @@
         data-tab="lists"
         onclick="app.switchTab('lists', this)"
       >
-        <span class="mobile-nav-icon">≡</span>
+        <span class="mobile-nav-icon">&#x2261;</span>
         <span>Listes</span>
       </button>
       <button
@@ -416,17 +456,19 @@
         data-tab="discover"
         onclick="app.switchTab('discover', this)"
       >
-        <span class="mobile-nav-icon">⌕</span>
+        <span class="mobile-nav-icon">&#x2315;</span>
         <span>Explorer</span>
       </button>
     </nav>
 
     <!-- Add Modal -->
-    <div id="addModal" class="modal">
+    <div id="addModal" class="modal add-modal">
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-title">Ajouter un contenu</h2>
-          <button class="close-btn" onclick="app.closeAddModal()">×</button>
+          <button class="close-btn" onclick="app.closeAddModal()">
+            &times;
+          </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -496,7 +538,7 @@
                   id="addChoiceWatched"
                   onclick="app.selectAddStatus('watched')"
                 >
-                  ✓ Je l'ai déjà vu
+                  &#x2713; Je l'ai déjà vu
                 </button>
               </div>
             </div>
@@ -505,12 +547,13 @@
               <div class="form-group">
                 <label class="form-label">Ma note (sur 5)</label>
                 <div class="star-picker" id="starPicker">
-                  <span class="star-pick" data-value="1">★</span>
-                  <span class="star-pick" data-value="2">★</span>
-                  <span class="star-pick" data-value="3">★</span>
-                  <span class="star-pick" data-value="4">★</span>
-                  <span class="star-pick" data-value="5">★</span>
+                  <span class="star-pick" data-value="1">&#x2605;</span>
+                  <span class="star-pick" data-value="2">&#x2605;</span>
+                  <span class="star-pick" data-value="3">&#x2605;</span>
+                  <span class="star-pick" data-value="4">&#x2605;</span>
+                  <span class="star-pick" data-value="5">&#x2605;</span>
                 </div>
+                <p class="rating-help">Astuce : clique a gauche d'une etoile pour mettre 0,5.</p>
                 <input type="hidden" id="ratingInput" />
               </div>
 
@@ -539,17 +582,17 @@
                   <span
                     class="quick-tag"
                     onclick="app.addQuickTag('En famille')"
-                    >👨‍👩‍👧‍👦 En famille</span
+                    >&#x1F46A; En famille</span
                   >
                   <span
                     class="quick-tag"
                     onclick="app.addQuickTag('Soirée détente')"
-                    >🍿 Soirée</span
+                    >&#x1F37F; Soirée</span
                   >
                   <span
                     class="quick-tag"
                     onclick="app.addQuickTag('Coup de cœur')"
-                    >💖 Coup de cœur</span
+                    >&#x1F496; Coup de cœur</span
                   >
                 </div>
               </div>
@@ -582,7 +625,9 @@
       <div class="modal-content detail-modal-content">
         <div class="modal-header detail-modal-header">
           <h2 class="modal-title detail-modal-title" id="detailTitle"></h2>
-          <button class="close-btn" onclick="app.closeDetailModal()">×</button>
+          <button class="close-btn" onclick="app.closeDetailModal()">
+            &times;
+          </button>
         </div>
         <div class="modal-body detail-modal-body" id="detailContent"></div>
       </div>
@@ -592,714 +637,44 @@
     <div id="suggestionModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2 class="modal-title">Suggestion aléatoire</h2>
-          <button class="close-btn" onclick="app.closeSuggestion()">×</button>
+          <h2 class="modal-title" id="suggestionModalTitle">Que regarder ?</h2>
+          <button class="close-btn" onclick="app.closeSuggestion()">
+            &times;
+          </button>
         </div>
         <div class="modal-body" id="suggestionContent"></div>
       </div>
     </div>
 
-    <!-- Design Mockups Modal -->
-    <div id="designMockupModal" class="modal">
-      <div class="modal-content mockup-modal-content premium-buttons-modal">
+    <!-- Provider Settings Modal -->
+    <div id="providerSettingsModal" class="modal">
+      <div class="modal-content">
         <div class="modal-header">
           <div>
-            <h2 class="modal-title">Maquettes design</h2>
+            <h2 class="modal-title">Mes plateformes</h2>
             <p class="mockup-modal-subtitle">
-              Logos, icônes et propositions pour la fiche film.
+              Choisis les services que tu utilises pour améliorer les
+              suggestions.
             </p>
           </div>
-          <button class="close-btn" onclick="app.closeDesignMockups()">
-            ×
+          <button class="close-btn" onclick="app.closeProviderSettings()">
+            &times;
           </button>
         </div>
-        <div class="modal-body">
-
-          <section class="icon-mockup-section">
-            <div class="premium-buttons-copy">
-              <span class="mockup-chip">Icône app</span>
-              <h3 class="mockup-subsection-title">CINÉ / TRACKER — 4 coloris</h3>
-              <p class="mockup-copy">CINÉ grand qui remplit la case, TRACKER fin en dessous.</p>
-            </div>
-
-            <div class="icon-mockup-grid icon-mockup-grid-featured">
-
-              <!-- Coloris 1 : Blanc sur noir -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="ct1-bg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#080808"/>
-                        <stop offset="100%" stop-color="#101010"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#ct1-bg)"/>
-                    <text x="256" y="308" font-family="'Arial Black','Helvetica Neue',sans-serif" font-size="198" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-6">CINÉ</text>
-                    <text x="256" y="392" font-family="'Arial','Helvetica Neue',sans-serif" font-size="64" font-weight="300" fill="rgba(255,255,255,0.38)" text-anchor="middle" letter-spacing="18">TRACKER</text>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#fff"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Blanc sur noir</strong>
-                <p>Maximal, sans couleur — typographie pure</p>
-              </article>
-
-              <!-- Coloris 2 : Or sur noir -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="ct2-bg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#080808"/>
-                        <stop offset="100%" stop-color="#101010"/>
-                      </linearGradient>
-                      <linearGradient id="ct2-gold" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#f0d080"/>
-                        <stop offset="100%" stop-color="#b8882a"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#ct2-bg)"/>
-                    <text x="256" y="308" font-family="'Arial Black','Helvetica Neue',sans-serif" font-size="198" font-weight="900" fill="url(#ct2-gold)" text-anchor="middle" letter-spacing="-6">CINÉ</text>
-                    <text x="256" y="392" font-family="'Arial','Helvetica Neue',sans-serif" font-size="64" font-weight="300" fill="rgba(240,200,100,0.45)" text-anchor="middle" letter-spacing="18">TRACKER</text>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#c8962e"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Or sur noir</strong>
-                <p>Luxe cinéma — doré dégradé, très premium</p>
-              </article>
-
-              <!-- Coloris 3 : Violet sur noir -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="ct3-bg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#080808"/>
-                        <stop offset="100%" stop-color="#0e0812"/>
-                      </linearGradient>
-                      <linearGradient id="ct3-violet" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#c4b5fd"/>
-                        <stop offset="100%" stop-color="#7c3aed"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#ct3-bg)"/>
-                    <text x="256" y="308" font-family="'Arial Black','Helvetica Neue',sans-serif" font-size="198" font-weight="900" fill="url(#ct3-violet)" text-anchor="middle" letter-spacing="-6">CINÉ</text>
-                    <text x="256" y="392" font-family="'Arial','Helvetica Neue',sans-serif" font-size="64" font-weight="300" fill="rgba(196,181,253,0.4)" text-anchor="middle" letter-spacing="18">TRACKER</text>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Violet sur noir</strong>
-                <p>Cohérent avec l'app — dégradé violet signature</p>
-              </article>
-
-              <!-- Coloris 4 : Couleurs de l'app -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="ct4-bg" x1="0" y1="1" x2="1" y2="0">
-                        <stop offset="0%" stop-color="#1e1b4b"/>
-                        <stop offset="100%" stop-color="#312e81"/>
-                      </linearGradient>
-                      <linearGradient id="ct4-cine" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#ffffff"/>
-                        <stop offset="100%" stop-color="#e0e7ff"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#ct4-bg)"/>
-                    <!-- Halo accent -->
-                    <ellipse cx="256" cy="260" rx="260" ry="180" fill="#6366f1" opacity="0.18"/>
-                    <text x="256" y="295" font-family="'Arial Black','Helvetica Neue',Arial,sans-serif" font-size="200" font-weight="900" fill="url(#ct4-cine)" text-anchor="middle" textLength="420" lengthAdjust="spacing">CINÉ</text>
-                    <text x="256" y="385" font-family="'Arial','Helvetica Neue',Arial,sans-serif" font-size="62" font-weight="300" fill="rgba(199,210,254,0.6)" text-anchor="middle" textLength="380" lengthAdjust="spacing">TRACKER</text>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#6366f1"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Couleurs de l'app</strong>
-                <p>Fond indigo profond, texte blanc — identité visuelle complète</p>
-              </article>
-
-            </div>
-
-            <div class="premium-buttons-copy premium-variant-copy" style="margin-top:36px">
-              <span class="mockup-chip">Nouvelles directions</span>
-              <h3 class="mockup-subsection-title">5 couleurs complètement différentes</h3>
-              <p class="mockup-copy">Mêmes typo, fonds radicalement différents.</p>
-            </div>
-
-            <div class="icon-mockup-grid icon-mockup-grid-featured">
-
-              <!-- Bordeaux Hollywood -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="n1-bg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#2d0010"/>
-                        <stop offset="100%" stop-color="#1a0008"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#n1-bg)"/>
-                    <text x="256" y="295" font-family="'Arial Black','Helvetica Neue',Arial,sans-serif" font-size="200" font-weight="900" fill="#fff5f5" text-anchor="middle" textLength="420" lengthAdjust="spacing">CINÉ</text>
-                    <text x="256" y="385" font-family="'Arial','Helvetica Neue',Arial,sans-serif" font-size="62" font-weight="300" fill="rgba(255,220,220,0.4)" text-anchor="middle" textLength="380" lengthAdjust="spacing">TRACKER</text>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#7f1d1d"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Bordeaux</strong>
-                <p>Rouge cinéma profond — Hollywood, glamour, velours</p>
-              </article>
-
-              <!-- Vert nuit -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="n2-bg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#071510"/>
-                        <stop offset="100%" stop-color="#0d1f18"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#n2-bg)"/>
-                    <text x="256" y="295" font-family="'Arial Black','Helvetica Neue',Arial,sans-serif" font-size="200" font-weight="900" fill="#f0fdf4" text-anchor="middle" textLength="420" lengthAdjust="spacing">CINÉ</text>
-                    <text x="256" y="385" font-family="'Arial','Helvetica Neue',Arial,sans-serif" font-size="62" font-weight="300" fill="rgba(220,252,231,0.38)" text-anchor="middle" textLength="380" lengthAdjust="spacing">TRACKER</text>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#14532d"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Vert nuit</strong>
-                <p>Vert forêt très sombre — inattendu, prestige, nature</p>
-              </article>
-
-              <!-- Marine -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="n3-bg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#03080f"/>
-                        <stop offset="100%" stop-color="#060d1a"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#n3-bg)"/>
-                    <text x="256" y="295" font-family="'Arial Black','Helvetica Neue',Arial,sans-serif" font-size="200" font-weight="900" fill="#f0f6ff" text-anchor="middle" textLength="420" lengthAdjust="spacing">CINÉ</text>
-                    <text x="256" y="385" font-family="'Arial','Helvetica Neue',Arial,sans-serif" font-size="62" font-weight="300" fill="rgba(214,228,255,0.38)" text-anchor="middle" textLength="380" lengthAdjust="spacing">TRACKER</text>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#1e3a5f"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Marine</strong>
-                <p>Bleu nuit ultra-profond — sobre, élégant, intemporel</p>
-              </article>
-
-              <!-- Sépia vintage -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="n4-bg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#160e04"/>
-                        <stop offset="100%" stop-color="#1e1408"/>
-                      </linearGradient>
-                      <linearGradient id="n4-txt" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#fdf6e3"/>
-                        <stop offset="100%" stop-color="#e8d5a3"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#n4-bg)"/>
-                    <text x="256" y="295" font-family="'Arial Black','Helvetica Neue',Arial,sans-serif" font-size="200" font-weight="900" fill="url(#n4-txt)" text-anchor="middle" textLength="420" lengthAdjust="spacing">CINÉ</text>
-                    <text x="256" y="385" font-family="'Arial','Helvetica Neue',Arial,sans-serif" font-size="62" font-weight="300" fill="rgba(232,213,163,0.4)" text-anchor="middle" textLength="380" lengthAdjust="spacing">TRACKER</text>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#78350f"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Sépia</strong>
-                <p>Brun très sombre, crème chaud — cinéma vintage, pellicule ancienne</p>
-              </article>
-
-              <!-- Blanc éditorial -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="512" height="512" rx="115" fill="#f8f8f8"/>
-                    <text x="256" y="295" font-family="'Arial Black','Helvetica Neue',Arial,sans-serif" font-size="200" font-weight="900" fill="#0a0a0a" text-anchor="middle" textLength="420" lengthAdjust="spacing">CINÉ</text>
-                    <text x="256" y="385" font-family="'Arial','Helvetica Neue',Arial,sans-serif" font-size="62" font-weight="300" fill="rgba(10,10,10,0.35)" text-anchor="middle" textLength="380" lengthAdjust="spacing">TRACKER</text>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#0a0a0a"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Blanc éditorial</strong>
-                <p>Inversé — fond blanc, texte noir — inattendu, très graphique</p>
-              </article>
-
-              <!-- Fondu bleu -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="nb-bg" x1="0" y1="0" x2="0.6" y2="1">
-                        <stop offset="0%" stop-color="#0ea5e9"/>
-                        <stop offset="45%" stop-color="#1d4ed8"/>
-                        <stop offset="100%" stop-color="#030712"/>
-                      </linearGradient>
-                      <linearGradient id="nb-shine" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stop-color="rgba(255,255,255,0.12)"/>
-                        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#nb-bg)"/>
-                    <rect width="512" height="512" rx="115" fill="url(#nb-shine)"/>
-                    <text x="256" y="295" font-family="'Arial Black','Helvetica Neue',Arial,sans-serif" font-size="200" font-weight="900" fill="#ffffff" text-anchor="middle" textLength="420" lengthAdjust="spacing">CINÉ</text>
-                    <text x="256" y="385" font-family="'Arial','Helvetica Neue',Arial,sans-serif" font-size="62" font-weight="300" fill="rgba(255,255,255,0.45)" text-anchor="middle" textLength="380" lengthAdjust="spacing">TRACKER</text>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#0ea5e9"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Fondu bleu</strong>
-                <p>Ciel bleu vif vers noir — lumineux en haut, profond en bas</p>
-              </article>
-
-            </div>
-
-            <div class="premium-buttons-copy premium-variant-copy" style="margin-top:32px">
-              <span class="mockup-chip">Autres directions</span>
-              <h3 class="mockup-subsection-title">Propositions précédentes</h3>
-            </div>
-
-            <div class="icon-mockup-grid">
-
-              <!-- Actuelle -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <img src="assets/icon-192.svg" class="icon-mockup-svg" alt="Icône actuelle">
-                  <div class="icon-mockup-homescreen">
-                    <span class="icon-current-tag">Actuelle</span>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Actuelle</strong>
-                <p>Pour référence</p>
-              </article>
-
-              <!-- 1 : C doré -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="p1-bg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#0a0a0a"/>
-                        <stop offset="100%" stop-color="#111111"/>
-                      </linearGradient>
-                      <linearGradient id="p1-gold" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#e8c97a"/>
-                        <stop offset="100%" stop-color="#b8882a"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#p1-bg)"/>
-                    <text x="270" y="360" font-family="Georgia, 'Times New Roman', serif" font-size="340" font-weight="400" fill="url(#p1-gold)" text-anchor="middle" font-style="italic">C</text>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#b8882a"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>C doré</strong>
-                <p>Initiale en or sur noir mat — minimalisme absolu</p>
-              </article>
-
-              <!-- 2 : Spotlight -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="p2-bg" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#080810"/>
-                        <stop offset="100%" stop-color="#0f0f1a"/>
-                      </linearGradient>
-                      <radialGradient id="p2-spot" cx="50%" cy="20%" r="65%">
-                        <stop offset="0%" stop-color="rgba(255,245,220,0.95)"/>
-                        <stop offset="40%" stop-color="rgba(255,230,160,0.35)"/>
-                        <stop offset="100%" stop-color="rgba(255,200,80,0)"/>
-                      </radialGradient>
-                      <radialGradient id="p2-glow" cx="50%" cy="20%" r="30%">
-                        <stop offset="0%" stop-color="rgba(255,255,240,1)"/>
-                        <stop offset="100%" stop-color="rgba(255,255,240,0)"/>
-                      </radialGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#p2-bg)"/>
-                    <ellipse cx="256" cy="90" rx="320" ry="420" fill="url(#p2-spot)"/>
-                    <ellipse cx="256" cy="72" rx="60" ry="52" fill="url(#p2-glow)"/>
-                    <!-- Sol de scène -->
-                    <ellipse cx="256" cy="420" rx="180" ry="22" fill="rgba(255,230,150,0.07)"/>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#e8c060"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Spotlight</strong>
-                <p>Faisceau lumineux de salle de cinéma — dramatique et unique</p>
-              </article>
-
-              <!-- 3 : Arc cinéma -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="p3-bg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#0c0c14"/>
-                        <stop offset="100%" stop-color="#12121e"/>
-                      </linearGradient>
-                      <linearGradient id="p3-arc" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#a78bfa"/>
-                        <stop offset="100%" stop-color="#7c3aed"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#p3-bg)"/>
-                    <!-- Arc principal -->
-                    <path d="M 112 340 A 200 200 0 1 1 400 340" fill="none" stroke="url(#p3-arc)" stroke-width="36" stroke-linecap="round"/>
-                    <!-- Point bas gauche -->
-                    <circle cx="112" cy="340" r="18" fill="#a78bfa"/>
-                    <!-- Point bas droite -->
-                    <circle cx="400" cy="340" r="18" fill="#7c3aed"/>
-                    <!-- Étoile centrale -->
-                    <circle cx="256" cy="148" r="14" fill="#c4b5fd"/>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Arc</strong>
-                <p>Arc géométrique violet — épuré, tension visuelle</p>
-              </article>
-
-              <!-- 4 : Étoile solitaire -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="p4-bg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#080808"/>
-                        <stop offset="100%" stop-color="#141414"/>
-                      </linearGradient>
-                      <linearGradient id="p4-star" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#fde68a"/>
-                        <stop offset="100%" stop-color="#d97706"/>
-                      </linearGradient>
-                      <filter id="p4-glow">
-                        <feGaussianBlur stdDeviation="12" result="blur"/>
-                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                      </filter>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#p4-bg)"/>
-                    <polygon filter="url(#p4-glow)" points="256,118 284,204 376,204 303,258 330,344 256,290 182,344 209,258 136,204 228,204" fill="url(#p4-star)"/>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#d97706"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Étoile</strong>
-                <p>Une seule étoile dorée avec halo — notation, cinema, nuit</p>
-              </article>
-
-              <!-- 5 : Pellicule fine -->
-              <article class="icon-mockup-card">
-                <div class="icon-mockup-wrap">
-                  <svg viewBox="0 0 512 512" class="icon-mockup-svg" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="p5-bg" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#0a0a0a"/>
-                        <stop offset="100%" stop-color="#111111"/>
-                      </linearGradient>
-                      <linearGradient id="p5-strip" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#e2e8f0"/>
-                        <stop offset="100%" stop-color="#94a3b8"/>
-                      </linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="115" fill="url(#p5-bg)"/>
-                    <!-- Bande centrale -->
-                    <rect x="196" y="60" width="120" height="392" rx="8" fill="url(#p5-strip)" opacity="0.12"/>
-                    <!-- Perforations haut -->
-                    <rect x="216" y="80" width="32" height="22" rx="5" fill="url(#p5-strip)"/>
-                    <rect x="264" y="80" width="32" height="22" rx="5" fill="url(#p5-strip)"/>
-                    <rect x="216" y="116" width="32" height="22" rx="5" fill="url(#p5-strip)"/>
-                    <rect x="264" y="116" width="32" height="22" rx="5" fill="url(#p5-strip)"/>
-                    <!-- Perforations bas -->
-                    <rect x="216" y="374" width="32" height="22" rx="5" fill="url(#p5-strip)"/>
-                    <rect x="264" y="374" width="32" height="22" rx="5" fill="url(#p5-strip)"/>
-                    <rect x="216" y="410" width="32" height="22" rx="5" fill="url(#p5-strip)"/>
-                    <rect x="264" y="410" width="32" height="22" rx="5" fill="url(#p5-strip)"/>
-                    <!-- Frame central avec play -->
-                    <rect x="204" y="156" width="104" height="200" rx="6" fill="#1e293b"/>
-                    <polygon points="238,210 238,302 310,256" fill="#e2e8f0" opacity="0.9"/>
-                  </svg>
-                  <div class="icon-mockup-homescreen">
-                    <div class="icon-mockup-dot" style="background:#94a3b8"></div>
-                    <span>CineTracker</span>
-                  </div>
-                </div>
-                <strong>Pellicule</strong>
-                <p>Bande de film verticale, très graphique et cinéma</p>
-              </article>
-
-            </div>
-          </section>
-
-          <section class="logo-mockup-section">
-            <div class="premium-buttons-copy">
-              <span class="mockup-chip">Logo</span>
-              <h3 class="mockup-subsection-title">5 directions pour le logo</h3>
-              <p class="mockup-copy">
-                Propositions typographiques — du plus sobre au plus affirmé. Actuel à gauche pour référence.
-              </p>
-            </div>
-
-            <div class="logo-current-wrap">
-              <div class="logo-current-preview">
-                <span class="logo-current-label">Actuel</span>
-                <div class="logo-current-inner">CineTracker</div>
-              </div>
-            </div>
-
-            <div class="logo-mockup-grid">
-
-              <article class="logo-mockup-card">
-                <div class="logo-mockup-preview lm-bg-dark">
-                  <span class="lm-logo lm-split">
-                    <span class="lm-accent">Ciné</span><span class="lm-light">Tracker</span>
-                  </span>
-                </div>
-                <div class="logo-mockup-label">
-                  <strong>Split couleur</strong>
-                  <p>Ciné en accent, Tracker en blanc léger — deux poids, une identité</p>
-                </div>
-              </article>
-
-              <article class="logo-mockup-card">
-                <div class="logo-mockup-preview lm-bg-dark">
-                  <span class="lm-logo lm-editorial">
-                    CINE<span class="lm-editorial-dot">◆</span>TRACKER
-                  </span>
-                </div>
-                <div class="logo-mockup-label">
-                  <strong>Éditorial caps</strong>
-                  <p>Tout en majuscules, séparateur diamant — style affiche de cinéma</p>
-                </div>
-              </article>
-
-              <article class="logo-mockup-card">
-                <div class="logo-mockup-preview lm-bg-dark">
-                  <span class="lm-logo lm-monogram-wrap">
-                    <span class="lm-monogram">C</span>
-                    <span class="lm-monogram-text">CineTracker</span>
-                  </span>
-                </div>
-                <div class="logo-mockup-label">
-                  <strong>Monogramme</strong>
-                  <p>Initiale dans un cercle accent à gauche du nom — icône + wordmark</p>
-                </div>
-              </article>
-
-              <article class="logo-mockup-card">
-                <div class="logo-mockup-preview lm-bg-dark">
-                  <span class="lm-logo lm-frame-wrap">
-                    <span class="lm-frame">▣</span>
-                    <span class="lm-frame-text">CineTracker</span>
-                  </span>
-                </div>
-                <div class="logo-mockup-label">
-                  <strong>Icône cadre</strong>
-                  <p>Symbole cadre cinéma + nom — évoque l'écran et le format</p>
-                </div>
-              </article>
-
-              <article class="logo-mockup-card">
-                <div class="logo-mockup-preview lm-bg-dark">
-                  <span class="lm-logo lm-stacked">
-                    <span class="lm-stacked-top">CINÉ</span>
-                    <span class="lm-stacked-bottom">TRACKER</span>
-                  </span>
-                </div>
-                <div class="logo-mockup-label">
-                  <strong>Empilé bicolore</strong>
-                  <p>Deux lignes, deux tailles — CINÉ large en accent, TRACKER petit en blanc</p>
-                </div>
-              </article>
-
-            </div>
-          </section>
-
-          <!-- ═══ FICHE FILM MOCKUPS ═══ -->
-          <section class="card-bg-mockup-section">
-            <div class="premium-buttons-copy">
-              <span class="mockup-chip">Fiche film</span>
-              <h3 class="mockup-subsection-title">4 directions pour la fiche détail</h3>
-              <p class="mockup-copy">Héro + zone statut + infos — 4 traitements différents.</p>
-            </div>
-
-            <div class="fd-mockup-grid">
-
-              <!-- A : Actuel — dock flottant avec miniature -->
-              <div class="fd-mockup-item">
-                <div class="fd-mockup-phone">
-                  <div class="fd-hero" style="background-image:url('https://picsum.photos/seed/fd1/400/220')">
-                    <div class="fd-hero-overlay"></div>
-                    <div class="fd-hero-content">
-                      <div class="fd-kicker">FILM · DANS TA COLLECTION</div>
-                      <div class="fd-title">Super Mario Galaxy</div>
-                      <div class="fd-meta">2026 · Familial, Aventure</div>
-                      <div class="fd-chips">
-                        <span class="fd-chip">À voir</span>
-                        <span class="fd-chip">TMDB 3.4/5</span>
-                      </div>
-                      <div class="fd-hero-btns">
-                        <span class="fd-btn fd-btn-primary">Bande-annonce</span>
-                        <span class="fd-btn">Synopsis</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="fd-dock fd-dock-a">
-                    <img class="fd-dock-poster" src="https://picsum.photos/seed/fd1p/80/120" alt="">
-                    <div class="fd-dock-body">
-                      <div class="fd-dock-title">Statut et actions</div>
-                      <div class="fd-dock-sub">COLLECTION FILM</div>
-                      <div class="fd-dock-pills"><span class="fd-pill">2026</span><span class="fd-pill">Familial</span></div>
-                    </div>
-                    <div class="fd-dock-actions">
-                      <span class="fd-mini active">À voir</span>
-                      <span class="fd-mini">Vu</span>
-                      <span class="fd-mini">✏</span>
-                    </div>
-                  </div>
-                  <div class="fd-info-block">
-                    <div class="fd-info-title">Informations</div>
-                    <div class="fd-info-row"><span class="fd-info-label">ANNÉE</span><span class="fd-info-val">2026</span></div>
-                    <div class="fd-info-row"><span class="fd-info-label">STATUT</span><span class="fd-info-val">À voir</span></div>
-                  </div>
-                </div>
-                <div class="fd-mockup-label"><strong>A — Actuel</strong><p>Dock flottant avec miniature</p></div>
-              </div>
-
-              <!-- B : Pleine page — héro plein écran, infos en bas -->
-              <div class="fd-mockup-item">
-                <div class="fd-mockup-phone">
-                  <div class="fd-hero fd-hero-tall" style="background-image:url('https://picsum.photos/seed/fd2/400/300')">
-                    <div class="fd-hero-overlay fd-hero-overlay-strong"></div>
-                    <div class="fd-hero-content fd-hero-content-bottom">
-                      <div class="fd-kicker fd-kicker-white">FILM · DANS TA COLLECTION</div>
-                      <div class="fd-title fd-title-xl">Super Mario Galaxy</div>
-                      <div class="fd-meta">2026 · Familial</div>
-                      <div class="fd-action-row">
-                        <span class="fd-action-btn fd-action-primary">▶ Bande-annonce</span>
-                        <span class="fd-action-btn">À voir</span>
-                        <span class="fd-action-btn">✏</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="fd-info-block fd-info-block-b">
-                    <div class="fd-info-row"><span class="fd-info-label">TMDB</span><span class="fd-info-val">★ 3.4/5</span></div>
-                    <div class="fd-info-row"><span class="fd-info-label">GENRE</span><span class="fd-info-val">Familial, Aventure</span></div>
-                    <div class="fd-info-row"><span class="fd-info-label">STATUT</span><span class="fd-info-val">À voir</span></div>
-                  </div>
-                </div>
-                <div class="fd-mockup-label"><strong>B — Cinéma</strong><p>Héro plein écran · actions intégrées · infos compactes</p></div>
-              </div>
-
-              <!-- C : Backdrop + affiche superposée + infos -->
-              <div class="fd-mockup-item">
-                <div class="fd-mockup-phone fd-phone-c">
-                  <div class="fd-hero fd-hero-short" style="background-image:url('https://picsum.photos/seed/fd3/400/220')">
-                    <div class="fd-hero-overlay fd-hero-overlay-strong"></div>
-                  </div>
-                  <div class="fd-split-top">
-                    <img class="fd-split-poster" src="https://picsum.photos/seed/fd3p/120/180" alt="">
-                    <div class="fd-split-info">
-                      <div class="fd-kicker fd-kicker-accent">FILM</div>
-                      <div class="fd-title fd-title-sm">Super Mario Galaxy</div>
-                      <div class="fd-meta fd-meta-sm">2026 · Familial, Aventure</div>
-                      <div class="fd-chips fd-chips-sm">
-                        <span class="fd-chip fd-chip-active">À voir</span>
-                        <span class="fd-chip">★ 3.4</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="fd-split-btns">
-                    <span class="fd-btn fd-btn-primary" style="flex:1;text-align:center">▶ Bande-annonce</span>
-                    <span class="fd-btn">✏</span>
-                  </div>
-                  <div class="fd-info-block">
-                    <div class="fd-info-row"><span class="fd-info-label">DURÉE</span><span class="fd-info-val">1h 52min</span></div>
-                    <div class="fd-info-row"><span class="fd-info-label">STATUT</span><span class="fd-info-val">À voir</span></div>
-                  </div>
-                </div>
-                <div class="fd-mockup-label"><strong>C — Backdrop + affiche</strong><p>Image large · affiche superposée · infos</p></div>
-              </div>
-
-              <!-- D : Card expandable — hero minimal, tout dans des cards -->
-              <div class="fd-mockup-item">
-                <div class="fd-mockup-phone">
-                  <div class="fd-hero fd-hero-mini" style="background-image:url('https://picsum.photos/seed/fd4/400/160')">
-                    <div class="fd-hero-overlay"></div>
-                    <div class="fd-hero-content">
-                      <div class="fd-kicker">FILM · DANS TA COLLECTION</div>
-                      <div class="fd-title">Super Mario Galaxy</div>
-                      <div class="fd-meta">2026 · Familial</div>
-                    </div>
-                  </div>
-                  <div class="fd-card-actions">
-                    <span class="fd-card-btn fd-card-btn-active">À voir</span>
-                    <span class="fd-card-btn">Vu + noter</span>
-                    <span class="fd-card-btn">Modifier</span>
-                  </div>
-                  <div class="fd-card-section">
-                    <div class="fd-card-section-title">Note TMDB</div>
-                    <div class="fd-card-rating">★★★☆☆ <span>3.4/5</span></div>
-                  </div>
-                  <div class="fd-card-section">
-                    <div class="fd-info-row"><span class="fd-info-label">GENRE</span><span class="fd-info-val">Familial</span></div>
-                    <div class="fd-info-row"><span class="fd-info-label">DURÉE</span><span class="fd-info-val">1h 52min</span></div>
-                  </div>
-                </div>
-                <div class="fd-mockup-label"><strong>D — Cards</strong><p>Héro court · actions en barre · sections cards</p></div>
-              </div>
-
-            </div>
-          </section>
-
-      </div>
+        <div class="modal-body" id="providerSettingsContent"></div>
       </div>
     </div>
+
+    <!-- Design Mockups moved to design-lab.html -->
+
     <!-- Import/Export Modal -->
     <div id="importExportModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-title">Importer / Exporter</h2>
-          <button class="close-btn" onclick="app.closeImportExport()">×</button>
+          <button class="close-btn" onclick="app.closeImportExport()">
+            &times;
+          </button>
         </div>
         <div class="modal-body">
           <div style="margin-bottom: 32px">
@@ -1356,16 +731,16 @@
     <div id="searchOverlay" class="search-overlay">
       <div class="search-overlay-inner">
         <div class="search-overlay-bar">
-          <span class="search-overlay-icon">🔍</span>
+          <span class="search-overlay-icon">&#x1F50D;</span>
           <input
             type="text"
             id="searchInput"
             class="search-overlay-input"
-            placeholder="Rechercher un film ou une série…"
+            placeholder="Rechercher un film ou une série..."
             autocomplete="off"
           />
           <button class="search-overlay-close" onclick="app.closeSearch()">
-            ✕
+            &#x2715;
           </button>
         </div>
         <div id="overlaySearchResults" class="search-overlay-results"></div>
@@ -1373,10 +748,17 @@
     </div>
 
     <!-- Toast -->
-    <div id="toast" class="toast"></div>
+    <div
+      id="toast"
+      class="toast"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
 
     <!-- Scripts -->
     <script src="js/config.js"></script>
+    <script src="js/config.local.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

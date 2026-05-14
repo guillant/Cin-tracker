@@ -2047,36 +2047,102 @@ function selectAddStatus(status) {
       : "Ajouter à la collection";
 }
 
+function normalizeHalfStepRating(value) {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) return 0;
+  const clamped = Math.max(0, Math.min(5, parsed));
+  return Math.round(clamped * 2) / 2;
+}
+
+function formatRatingDisplayValue(value) {
+  const normalized = normalizeHalfStepRating(value);
+  return Number.isInteger(normalized)
+    ? String(normalized)
+    : normalized.toFixed(1);
+}
+
+function buildRatingStarsHTML(rating, options = {}) {
+  const { max = 5, includeEmpty = true, extraClass = "" } = options;
+  const normalized = normalizeHalfStepRating(rating);
+  if (!normalized && !includeEmpty) return "";
+
+  const stars = [];
+  for (let index = 1; index <= max; index++) {
+    if (normalized >= index) {
+      stars.push('<span class="rating-star rating-star-full">★</span>');
+    } else if (normalized >= index - 0.5) {
+      stars.push('<span class="rating-star rating-star-half">★</span>');
+    } else if (includeEmpty) {
+      stars.push('<span class="rating-star rating-star-empty">★</span>');
+    }
+  }
+
+  const classNames = ["rating-stars", extraClass].filter(Boolean).join(" ");
+  return `<span class="${classNames}">${stars.join("")}</span>`;
+}
+
+function getPickerRatingFromPointer(starElement, event) {
+  const starValue = Number.parseInt(starElement.dataset.value, 10) || 0;
+  if (!event || typeof event.clientX !== "number") {
+    return normalizeHalfStepRating(starValue);
+  }
+
+  const bounds = starElement.getBoundingClientRect();
+  const isLeftHalf = event.clientX - bounds.left <= bounds.width / 2;
+  return normalizeHalfStepRating(starValue - (isLeftHalf ? 0.5 : 0));
+}
+
+function setStarPickerVisualState(value, stateClass, halfClass) {
+  const normalized = normalizeHalfStepRating(value);
+  document.querySelectorAll(".star-pick").forEach((star) => {
+    const starValue = Number.parseInt(star.dataset.value, 10) || 0;
+    const full = normalized >= starValue;
+    const half = !full && normalized >= starValue - 0.5;
+    star.classList.toggle(stateClass, full || half);
+    star.classList.toggle(halfClass, half);
+  });
+}
+
 function initStarPicker() {
+  const starPicker = document.getElementById("starPicker");
+  const ratingInput = document.getElementById("ratingInput");
+  if (!starPicker || !ratingInput) return;
+
   const stars = document.querySelectorAll(".star-pick");
+
+  if (starPicker.dataset.boundLeave !== "true") {
+    starPicker.dataset.boundLeave = "true";
+    starPicker.addEventListener("mouseleave", () => {
+      setStarPickerVisualState(0, "hovered", "hovered-half");
+      updateStarPicker(ratingInput.value);
+    });
+  }
+
   stars.forEach((star) => {
     if (star.dataset.bound === "true") return;
     star.dataset.bound = "true";
-    star.addEventListener("mouseenter", () => {
-      const val = parseInt(star.dataset.value);
-      stars.forEach((s) => {
-        s.classList.toggle("hovered", parseInt(s.dataset.value) <= val);
-      });
+    star.addEventListener("mouseenter", (event) => {
+      const val = getPickerRatingFromPointer(star, event);
+      setStarPickerVisualState(val, "hovered", "hovered-half");
     });
-    star.addEventListener("mouseleave", () => {
-      stars.forEach((s) => s.classList.remove("hovered"));
+    star.addEventListener("mousemove", (event) => {
+      const val = getPickerRatingFromPointer(star, event);
+      setStarPickerVisualState(val, "hovered", "hovered-half");
     });
-    star.addEventListener("click", () => {
-      const val = parseInt(star.dataset.value);
-      const current = parseInt(document.getElementById("ratingInput").value);
+    star.addEventListener("click", (event) => {
+      const val = getPickerRatingFromPointer(star, event);
+      const current = normalizeHalfStepRating(ratingInput.value);
       // cliquer sur la même étoile annule la note
-      const newVal = current === val ? "" : val;
-      document.getElementById("ratingInput").value = newVal;
+      const newVal = current === val ? "" : formatRatingDisplayValue(val);
+      ratingInput.value = newVal;
       updateStarPicker(newVal);
     });
   });
 }
 
 function updateStarPicker(value) {
-  const val = parseFloat(value) || 0;
-  document.querySelectorAll(".star-pick").forEach((s) => {
-    s.classList.toggle("selected", parseInt(s.dataset.value) <= val);
-  });
+  setStarPickerVisualState(0, "hovered", "hovered-half");
+  setStarPickerVisualState(value, "selected", "selected-half");
 }
 
 document.getElementById("tagInput")?.addEventListener("keydown", function (e) {
@@ -2857,9 +2923,12 @@ function renderListRow(item) {
   const statusText =
     (item.type === "movie" && getUpcomingMovieReleaseLabel(item, true)) ||
     getStatusLabel(normalizedStatus);
-  const starsCount = item.rating ? Math.round(item.rating) : 0;
-  const stars =
-    starsCount > 0 ? "★".repeat(starsCount) + "☆".repeat(5 - starsCount) : "";
+  const stars = item.rating
+    ? buildRatingStarsHTML(item.rating, {
+        includeEmpty: true,
+        extraClass: "list-row-stars-inline",
+      })
+    : "";
 
   return `
     <div class="list-row" onclick="openDetail(${inlineJsString(item.id)})">
@@ -2954,8 +3023,12 @@ function renderItems() {
       (item.type === "movie" && getUpcomingMovieReleaseLabel(item, true)) ||
       getStatusLabel(statusClass);
 
-    const starsCount = item.rating ? Math.round(item.rating) : 0;
-    const stars = "★".repeat(starsCount) + "☆".repeat(5 - starsCount);
+    const stars = item.rating
+      ? buildRatingStarsHTML(item.rating, {
+          includeEmpty: true,
+          extraClass: "card-rating-stars-inline",
+        })
+      : "";
     const ratingText = item.rating ? item.rating.toFixed(1) : "";
 
     const tagsHtml =
@@ -3008,7 +3081,7 @@ function renderItems() {
                 item.rating
                   ? `
                 <div class="card-rating">
-                  <span class="stars">${stars}</span>
+                  ${stars}
                   <span>${ratingText}</span>
                 </div>
               `
@@ -3327,16 +3400,18 @@ function renderStats() {
               month: "long",
               year: "numeric",
             });
-            const starsCount = item.rating ? Math.round(item.rating) : 0;
-            const stars =
-              starsCount > 0
-                ? `<span class="history-rating-stars">${"★".repeat(starsCount)}</span>`
-                : "";
+            const hasRating = normalizeHalfStepRating(item.rating) > 0;
+            const stars = hasRating
+              ? buildRatingStarsHTML(item.rating, {
+                  includeEmpty: false,
+                  extraClass: "history-rating-stars",
+                })
+              : "";
             const typeIcon = item.type === "movie" ? "🎬" : "📺";
             const historyClasses = [
               "timeline-item",
               "history-item",
-              starsCount > 0 ? "history-item-rated" : "history-item-unrated",
+              hasRating ? "history-item-rated" : "history-item-unrated",
               item.type === "series"
                 ? "history-item-series"
                 : "history-item-movie",
@@ -3356,7 +3431,7 @@ function renderStats() {
               <strong>${escapeHtml(item.title)}</strong>
               ${item.year ? `<span class="history-year"> · ${escapeHtml(item.year)}</span>` : ""}
             </div>
-            ${stars ? `<div class="history-rating">${stars} <span class="history-rating-value">${item.rating}/5</span></div>` : ""}
+            ${stars ? `<div class="history-rating">${stars} <span class="history-rating-value">${formatRatingDisplayValue(item.rating)}/5</span></div>` : ""}
           </div>
         </div>
       `;
@@ -3477,11 +3552,22 @@ function renderRatingDistribution() {
   const container = document.getElementById("ratingChart");
   if (!container) return;
 
-  const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  const ratingSteps = Array.from({ length: 10 }, (_, index) =>
+    (10 - index) / 2,
+  );
+  const dist = Object.fromEntries(
+    ratingSteps.map((step) => [formatRatingDisplayValue(step), 0]),
+  );
+
   items.forEach((item) => {
     if (item.rating) {
-      const r = Math.round(item.rating);
-      if (r >= 1 && r <= 5) dist[r]++;
+      const r = normalizeHalfStepRating(item.rating);
+      if (r >= 0.5) {
+        const key = formatRatingDisplayValue(r);
+        if (Object.prototype.hasOwnProperty.call(dist, key)) {
+          dist[key]++;
+        }
+      }
     }
   });
 
@@ -3495,14 +3581,15 @@ function renderRatingDistribution() {
   }
 
   container.innerHTML = Object.entries(dist)
-    .map(([star, count]) => {
+    .map(([starLabel, count]) => {
+      const starValue = Number.parseFloat(starLabel);
       const pct = total > 0 ? Math.round((count / total) * 100) : 0;
       const width = Math.round((count / max) * 100);
       const rowClass = `rating-dist-row ${count > 0 ? "rating-dist-row-active" : "rating-dist-row-empty"}`;
-      const label = `${star} étoile${Number(star) > 1 ? "s" : ""} : ${count} note${count > 1 ? "s" : ""}, ${pct}%`;
+      const label = `${starLabel} étoile${starValue > 1 ? "s" : ""} : ${count} note${count > 1 ? "s" : ""}, ${pct}%`;
       return `
       <div class="${rowClass}" title="${label}" aria-label="${label}">
-        <div class="rating-dist-label">${"★".repeat(Number(star))}<span class="rating-dist-label-muted">${"☆".repeat(5 - Number(star))}</span></div>
+        <div class="rating-dist-label">${buildRatingStarsHTML(starValue, { includeEmpty: true, extraClass: "rating-dist-stars-inline" })}</div>
         <div class="rating-dist-bar-wrap">
           <div class="rating-dist-bar" style="width:${width}%"></div>
         </div>
@@ -3869,9 +3956,11 @@ function buildTmdbRatingInline(score, voteCount) {
 
 function buildUserRatingInline(rating) {
   if (!rating) return "";
-  const starsCount = Math.round(rating);
-  const stars = "★".repeat(starsCount) + "☆".repeat(5 - starsCount);
-  return `<span class="detail-rating-inline"><span class="detail-rating-stars detail-rating-stars-user">${stars}</span><span class="detail-muted-meta-strong">${rating}/5</span></span>`;
+  const stars = buildRatingStarsHTML(rating, {
+    includeEmpty: true,
+    extraClass: "detail-rating-stars detail-rating-stars-user",
+  });
+  return `<span class="detail-rating-inline">${stars}<span class="detail-muted-meta-strong">${formatRatingDisplayValue(rating)}/5</span></span>`;
 }
 
 function loadTrailer(container, key) {
@@ -6705,8 +6794,12 @@ function buildDiscoverGridCardHTML(item, type, showDate = false) {
     ? `${TMDB_IMAGE_BASE}${item.poster_path}`
     : "";
   const rating = item.vote_average ? (item.vote_average / 2).toFixed(1) : "";
-  const starsCount = rating ? Math.round(parseFloat(rating)) : 0;
-  const stars = "★".repeat(starsCount) + "☆".repeat(5 - starsCount);
+  const stars = rating
+    ? buildRatingStarsHTML(rating, {
+        includeEmpty: true,
+        extraClass: "card-rating-stars-inline",
+      })
+    : "";
 
   return `
     <div class="card" onclick="showTrendingDetail(${item.id}, '${itemType}')">
@@ -6723,7 +6816,7 @@ function buildDiscoverGridCardHTML(item, type, showDate = false) {
         <div class="card-meta">
           <span>${dateLabel ? escapeHtml(dateLabel) : escapeHtml(year) || "—"}</span>
         </div>
-        ${rating ? `<div class="card-rating"><span class="stars">${stars}</span><span>${rating}/5</span></div>` : ""}
+        ${rating ? `<div class="card-rating">${stars}<span>${rating}/5</span></div>` : ""}
       </div>
     </div>`;
 }
@@ -6982,7 +7075,7 @@ function buildTrendingDetailHTML(item, type, tmdb) {
         <div class="detail-row"><div class="detail-label">Année</div><div class="detail-value">${escapeHtml(year) || "—"}</div></div>
         ${
           tmdbRating
-            ? `<div class="detail-row"><div class="detail-label">Note TMDB</div><div class="detail-value"><span style="color:#f59e0b;letter-spacing:2px;">${"★".repeat(Math.round(parseFloat(tmdbRating)))}${"☆".repeat(5 - Math.round(parseFloat(tmdbRating)))}</span> <span style="color:var(--text-secondary)">${tmdbRating}/5</span></div></div>`
+            ? `<div class="detail-row"><div class="detail-label">Note TMDB</div><div class="detail-value">${buildRatingStarsHTML(tmdbRating, { includeEmpty: true })} <span style="color:var(--text-secondary)">${tmdbRating}/5</span></div></div>`
             : ""
         }
         ${extraRows}

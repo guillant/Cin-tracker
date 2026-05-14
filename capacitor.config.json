@@ -1,0 +1,8 @@
+{
+  "appId": "com.cinetracker.app",
+  "appName": "CineTracker",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

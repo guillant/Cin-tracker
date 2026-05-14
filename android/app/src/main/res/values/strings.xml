@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CineTracker</string>
+    <string name="title_activity_main">CineTracker</string>
+    <string name="package_name">com.cinetracker.app</string>
+    <string name="custom_url_scheme">com.cinetracker.app</string>
+</resources>
