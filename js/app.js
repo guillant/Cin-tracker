@@ -4053,7 +4053,7 @@ function renderLists() {
                 (item) => item.tags && item.tags.includes(tag),
               ).length;
               return `
-            <button class="filter-tag" onclick="filterByTag(${JSON.stringify(tag)})">
+            <button class="filter-tag" onclick="filterByTag(${inlineJsString(tag)})">
               <span class="lists-filter-label">${escapeHtml(tag)}</span>
               <span class="lists-filter-count">${tagCount}</span>
             </button>
@@ -7988,7 +7988,7 @@ async function runSectionSearch(query) {
       .slice(0, 10);
 
     if (results.length === 0) {
-      container.innerHTML = `<p class="search-overlay-hint">Aucun rÃ©sultat pour Â« ${escapeHtml(query)} Â»</p>`;
+      container.innerHTML = `<p class="search-overlay-hint">Aucun résultat pour « ${escapeHtml(query)} »</p>`;
       return;
     }
 
@@ -7999,8 +7999,8 @@ async function runSectionSearch(query) {
         const poster = r.poster_path
           ? `${TMDB_IMAGE_BASE}${r.poster_path}`
           : null;
-        const typeLabel = r.media_type === "movie" ? "Film" : "SÃ©rie";
-        const typeIcon = r.media_type === "movie" ? "ðŸŽ¬" : "ðŸ“º";
+        const typeLabel = r.media_type === "movie" ? "Film" : "Série";
+        const typeIcon = r.media_type === "movie" ? "🎬" : "📺";
         const rating = r.vote_average ? r.vote_average.toFixed(1) : null;
         const inCollection = items.some((i) =>
           isSameTmdbCollectionItem(i, r.id, r.media_type),
@@ -8013,7 +8013,7 @@ async function runSectionSearch(query) {
           <div class="search-overlay-poster" onclick="showTrendingDetail(${r.id}, '${r.media_type}')" style="cursor:pointer;">
             ${
               poster
-                ? `<img src="${escapeHtml(poster)}" alt="">`
+                ? `<img src="${escapeHtml(poster)}" alt="${escapeHtml(title)}">`
                 : `<div class="search-overlay-poster-ph">${typeIcon}</div>`
             }
           </div>
@@ -8022,14 +8022,14 @@ async function runSectionSearch(query) {
             <div class="search-overlay-meta">
               <span>${typeLabel}</span>
               ${year ? `<span>${year}</span>` : ""}
-              ${rating ? `<span>â­ ${rating}</span>` : ""}
+              ${rating ? `<span>⭐ ${rating}</span>` : ""}
             </div>
           </div>
           <div class="search-overlay-actions">
             ${
               inCollection
-                ? `<span class="search-overlay-owned">âœ“ Collection</span>`
-                : `<button class="search-overlay-add" onclick="addFromTrendingById(${r.id}, '${r.media_type}'); this.textContent='âœ“'; this.disabled=true;" title="Ajouter Ã  la collection">+ Ajouter</button>`
+                ? `<span class="search-overlay-owned">✓ Collection</span>`
+                : `<button class="search-overlay-add" onclick="addFromTrendingById(${r.id}, '${r.media_type}'); this.textContent='✓'; this.disabled=true;" title="Ajouter à la collection">+ Ajouter</button>`
             }
           </div>
         </div>`;
@@ -8095,7 +8095,7 @@ async function runOverlaySearch(query) {
           <div class="search-overlay-poster" onclick="closeSearch(); showTrendingDetail(${r.id}, '${r.media_type}')" style="cursor:pointer;">
             ${
               poster
-                ? `<img src="${escapeHtml(poster)}" alt="">`
+                ? `<img src="${escapeHtml(poster)}" alt="${escapeHtml(title)}">`
                 : `<div class="search-overlay-poster-ph">${typeIcon}</div>`
             }
           </div>
