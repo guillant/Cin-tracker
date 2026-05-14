@@ -4039,38 +4039,16 @@ function renderLists() {
                 </h4>
               </div>
             </div>
-            <div class="grid lists-tag-grid">
+            <div class="lists-poster-grid">
               ${tagItems
-                .map((item) => {
-                  const itemTypeLabel =
-                    item.type === "series" ? "Série" : "Film";
-                  const ratingText = item.rating
-                    ? `⭐ ${item.rating}/5`
-                    : "Sans note";
-                  const statusText = STATUS_LABELS[item.status] || "À voir";
-                  return `
-                <div class="card card-${item.type === "series" ? "series" : "movie"}" onclick="openDetail(${inlineJsString(item.id)})">
-                  <div class="card-image">
-                    ${
-                      item.posterUrl
-                        ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
-                        : `<div class="card-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`
-                    }
-                    <div class="card-imagefade"></div>
-                    ${buildCardProviderHTML(item)}
-                  </div>
-                  <div class="card-content">
-                    <div class="card-kicker">${itemTypeLabel}</div>
-                    <div class="card-title">${escapeHtml(item.title)}</div>
-                    <div class="card-meta">
-                      <span>${escapeHtml(item.year) || "—"}</span>
-                      <span>${ratingText}</span>
-                      <span>${statusText}</span>
-                    </div>
-                  </div>
-                </div>
-              `;
-                })
+                .map((item) => `
+                <div class="lists-poster-item" onclick="openDetail(${inlineJsString(item.id)})" title="${escapeHtml(item.title)}">
+                  ${
+                    item.posterUrl
+                      ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
+                      : `<div class="lists-poster-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`
+                  }
+                </div>`)
                 .join("")}
             </div>
           </section>
