@@ -1766,6 +1766,11 @@ async function registerServiceWorker() {
   if (!canRegister) return;
   if (!window.isSecureContext && !isLocalHost) return;
 
+  // Reload when a new SW takes over so stale JS (including CONFIG) is replaced
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    window.location.reload();
+  });
+
   try {
     const registration = await navigator.serviceWorker.register(
       "./service-worker.js",
