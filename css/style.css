@@ -9140,6 +9140,23 @@ header {
     font-size: 17px;
   }
 
+  .header-actions .btn svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  .mobile-more-btn svg {
+    fill: currentColor;
+    stroke: none;
+  }
+
   .mobile-secondary-action,
   .desktop-add-btn {
     display: none;
@@ -9213,6 +9230,18 @@ header {
     border-radius: 10px;
     background: var(--bg-tertiary);
     font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .mobile-actions-menu button span:first-child svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    display: block;
   }
 
   .mobile-bottom-nav {

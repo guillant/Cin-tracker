@@ -3138,7 +3138,6 @@ function toggleDarkMode() {
   const next = isDark ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   localStorage.setItem("theme", next);
-  document.getElementById("darkToggleIcon").textContent = "◑";
 }
 
 (function initTheme() {
@@ -3147,8 +3146,6 @@ function toggleDarkMode() {
   const theme = saved || (prefersDark ? "dark" : "light");
   if (theme === "dark") {
     document.documentElement.setAttribute("data-theme", "dark");
-    const icon = document.getElementById("darkToggleIcon");
-    if (icon) icon.textContent = "◑";
   }
 })();
 
