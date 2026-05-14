@@ -4117,5 +4117,593 @@
       </div>
     </section>
 
+
+    <section id="mockup-que-regarder">
+      <style>
+        /* ── Que regarder? mockups ── */
+        .wpr-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 32px;
+        }
+        @media (min-width: 900px) {
+          .wpr-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        .wpr-card {
+          background: #111827;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 16px;
+          overflow: hidden;
+        }
+
+        .wpr-card-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+          padding: 16px 20px 12px;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .wpr-card-head strong { font-size: 15px; font-weight: 700; }
+        .wpr-card-head span { font-size: 12px; color: rgba(255,255,255,0.4); }
+
+        .wpr-modal {
+          background: #0f172a;
+          margin: 0;
+          padding: 0;
+        }
+
+        .wpr-modal-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 14px 16px 12px;
+          border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .wpr-modal-bar h4 {
+          font-size: 15px;
+          font-weight: 700;
+          color: #f1f5f9;
+        }
+        .wpr-modal-bar span {
+          width: 28px; height: 28px;
+          background: rgba(255,255,255,0.08);
+          border-radius: 50%;
+          display: grid;
+          place-items: center;
+          font-size: 14px;
+          color: rgba(255,255,255,0.5);
+          cursor: default;
+        }
+
+        .wpr-modal-body { padding: 14px 16px; display: grid; gap: 12px; }
+
+        /* ── Segmented filters ── */
+        .wpr-filters { display: grid; gap: 6px; }
+        .wpr-filter-row { display: flex; align-items: center; gap: 8px; }
+        .wpr-filter-label {
+          flex: 0 0 58px;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.07em;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.3);
+          text-align: right;
+        }
+        .wpr-seg {
+          flex: 1;
+          display: flex;
+          background: rgba(255,255,255,0.06);
+          border-radius: 999px;
+          padding: 3px;
+          gap: 2px;
+        }
+        .wpr-seg-btn {
+          flex: 1;
+          padding: 5px 8px;
+          border-radius: 999px;
+          font-size: 11px;
+          font-weight: 600;
+          text-align: center;
+          color: rgba(255,255,255,0.45);
+          white-space: nowrap;
+        }
+        .wpr-seg-btn.on {
+          background: #1e293b;
+          color: #f1f5f9;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        }
+
+        /* ── Hero card ── */
+        .wpr-hero {
+          position: relative;
+          border-radius: 12px;
+          overflow: hidden;
+          background: #0a0f1e;
+        }
+        .wpr-hero-bg {
+          position: absolute;
+          inset: -20px;
+          background-size: cover;
+          filter: blur(28px) brightness(0.22) saturate(1.5);
+          transform: scale(1.12);
+        }
+        .wpr-hero-bg.grad-a {
+          background: linear-gradient(135deg, #1a0533 0%, #0d3b6e 50%, #0a2a1a 100%);
+        }
+        .wpr-hero-bg.grad-b {
+          background: linear-gradient(135deg, #3b0a28 0%, #1a0a3b 50%, #0a2230 100%);
+        }
+        .wpr-hero-bg.grad-c {
+          background: linear-gradient(135deg, #0a1f3b 0%, #2a1a00 50%, #1a0a0a 100%);
+        }
+        .wpr-hero-inner {
+          position: relative;
+          display: flex;
+          gap: 14px;
+          padding: 18px 16px 16px;
+          align-items: flex-end;
+        }
+        .wpr-poster {
+          flex: 0 0 88px;
+          aspect-ratio: 2/3;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 8px 28px rgba(0,0,0,0.7);
+        }
+        .wpr-poster-fill {
+          width: 100%; height: 100%;
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          font-size: 28px;
+          gap: 6px;
+        }
+        .wpr-poster-fill.pa { background: linear-gradient(160deg,#1a0533,#0d3b6e); }
+        .wpr-poster-fill.pb { background: linear-gradient(160deg,#3b0a28,#1a0a3b); }
+        .wpr-poster-fill.pc { background: linear-gradient(160deg,#0a1f3b,#2a1a00); }
+        .wpr-poster-title {
+          font-size: 8px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.7);
+          text-align: center;
+          letter-spacing: 0.06em;
+          padding: 0 4px;
+        }
+
+        .wpr-main { flex: 1; min-width: 0; }
+        .wpr-kicker {
+          display: block;
+          font-size: 10px; font-weight: 800;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #3b82f6;
+          margin-bottom: 5px;
+        }
+        .wpr-title {
+          font-size: 20px; font-weight: 800;
+          color: #fff;
+          line-height: 1.1;
+          margin-bottom: 8px;
+          text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .wpr-meta {
+          font-size: 12px;
+          color: rgba(255,255,255,0.55);
+          margin-bottom: 10px;
+        }
+        .wpr-badges { display: flex; flex-wrap: wrap; gap: 5px; }
+        .wpr-badge {
+          padding: 4px 9px;
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.08);
+          font-size: 11px; font-weight: 600;
+          color: rgba(255,255,255,0.8);
+        }
+
+        /* ── Reasons ── */
+        .wpr-reasons {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 10px;
+          padding: 12px 14px;
+        }
+        .wpr-reasons-label {
+          font-size: 11px; font-weight: 800;
+          color: rgba(255,255,255,0.5);
+          text-transform: uppercase;
+          letter-spacing: 0.07em;
+          margin-bottom: 7px;
+        }
+        .wpr-reasons ul {
+          padding-left: 16px;
+          display: grid; gap: 4px;
+          color: rgba(255,255,255,0.55);
+          font-size: 12px;
+        }
+
+        /* ── Actions ── */
+        .wpr-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .wpr-btn {
+          padding: 10px 12px;
+          border-radius: 8px;
+          font-size: 12px; font-weight: 700;
+          text-align: center;
+        }
+        .wpr-btn.primary { background: #2563eb; color: #fff; }
+        .wpr-btn.secondary { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+        .wpr-btn.shuffle {
+          grid-column: 1 / -1;
+          background: transparent;
+          border: 1px dashed rgba(255,255,255,0.2);
+          color: rgba(255,255,255,0.5);
+          display: flex; align-items: center;
+          justify-content: center; gap: 6px;
+        }
+
+        /* ── Alternatives ── */
+        .wpr-alts { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+        .wpr-alt {
+          border-radius: 6px;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+        .wpr-alt-img {
+          aspect-ratio: 2/3;
+          font-size: 20px;
+          display: grid; place-items: center;
+        }
+        .wpr-alt-img.p1 { background: linear-gradient(160deg,#0d3b6e,#1a0533); }
+        .wpr-alt-img.p2 { background: linear-gradient(160deg,#1a3b0a,#0d2a3b); }
+        .wpr-alt-img.p3 { background: linear-gradient(160deg,#3b2a0a,#1a0a2a); }
+        .wpr-alt-name {
+          font-size: 10px; font-weight: 700;
+          padding: 6px 8px;
+          color: rgba(255,255,255,0.7);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          background: #1e293b;
+        }
+
+        /* ── Filters collapsed (option B) ── */
+        .wpr-filters-toggle {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 14px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 8px;
+          font-size: 12px;
+          color: rgba(255,255,255,0.45);
+          cursor: default;
+        }
+        .wpr-filters-toggle-chips {
+          display: flex; gap: 5px; flex: 1; overflow: hidden;
+        }
+        .wpr-filters-toggle-chip {
+          padding: 2px 8px;
+          background: rgba(59,130,246,0.2);
+          border: 1px solid rgba(59,130,246,0.3);
+          border-radius: 999px;
+          font-size: 10px; font-weight: 600;
+          color: #93c5fd;
+          white-space: nowrap;
+        }
+        .wpr-filters-toggle-arrow {
+          margin-left: auto;
+          font-size: 14px;
+          color: rgba(255,255,255,0.3);
+        }
+
+        /* ── Option C: large poster ── */
+        .wpr-poster-large {
+          border-radius: 10px;
+          overflow: hidden;
+          box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+        }
+        .wpr-poster-large-img {
+          width: 100%;
+          aspect-ratio: 2/3;
+          background: linear-gradient(160deg,#0a1f3b 0%, #2a1a00 60%, #1a0a0a 100%);
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          font-size: 48px;
+          position: relative;
+        }
+        .wpr-poster-large-overlay {
+          position: absolute;
+          bottom: 0; left: 0; right: 0;
+          padding: 20px 16px 14px;
+          background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%);
+        }
+        .wpr-poster-large-title {
+          font-size: 20px; font-weight: 800;
+          color: #fff;
+          margin-bottom: 5px;
+          line-height: 1.1;
+        }
+        .wpr-poster-large-meta {
+          font-size: 12px;
+          color: rgba(255,255,255,0.6);
+          margin-bottom: 12px;
+        }
+        .wpr-poster-large-actions {
+          display: flex; gap: 8px;
+        }
+        .wpr-poster-large-actions .wpr-btn {
+          flex: 1;
+          padding: 8px 10px;
+          font-size: 11px;
+        }
+        .wpr-poster-large-actions .wpr-btn.small-shuffle {
+          flex: 0 0 40px;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.7);
+          font-size: 16px;
+        }
+
+        /* ── Option C compact filters ── */
+        .wpr-compact-filters {
+          display: flex; gap: 5px; flex-wrap: wrap;
+          padding: 10px 14px;
+          border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .wpr-compact-chip {
+          padding: 5px 11px;
+          border-radius: 999px;
+          font-size: 11px; font-weight: 600;
+        }
+        .wpr-compact-chip.on {
+          background: #2563eb;
+          color: #fff;
+        }
+        .wpr-compact-chip.off {
+          background: rgba(255,255,255,0.07);
+          border: 1px solid rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.45);
+        }
+
+        .wpr-card-note {
+          padding: 12px 20px;
+          font-size: 12px;
+          color: rgba(255,255,255,0.35);
+          border-top: 1px solid rgba(255,255,255,0.06);
+          font-style: italic;
+        }
+      </style>
+
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Que regarder ?</span>
+        <h3 class="mockup-subsection-title">Modal "Que regarder ?" — 3 directions</h3>
+        <p class="mockup-copy">Trois variantes de layout pour le modal de suggestion. Meme fond flou, meme algo — seul le placement des elements change.</p>
+      </div>
+
+      <div class="wpr-grid">
+
+        <!-- ── Option A : Filtres en haut ── -->
+        <article class="wpr-card">
+          <div class="wpr-card-head">
+            <strong>A — Filtres en haut</strong>
+            <span>Controle maximum</span>
+          </div>
+          <div class="wpr-modal">
+            <div class="wpr-modal-bar">
+              <h4>Que regarder ?</h4>
+              <span>✕</span>
+            </div>
+            <div class="wpr-modal-body">
+              <div class="wpr-filters">
+                <div class="wpr-filter-row">
+                  <span class="wpr-filter-label">Mode</span>
+                  <div class="wpr-seg">
+                    <div class="wpr-seg-btn on">Solo</div>
+                    <div class="wpr-seg-btn">Groupe</div>
+                  </div>
+                </div>
+                <div class="wpr-filter-row">
+                  <span class="wpr-filter-label">Source</span>
+                  <div class="wpr-seg">
+                    <div class="wpr-seg-btn on">Tout</div>
+                    <div class="wpr-seg-btn">Ma liste</div>
+                    <div class="wpr-seg-btn">Découvrir</div>
+                  </div>
+                </div>
+                <div class="wpr-filter-row">
+                  <span class="wpr-filter-label">Type</span>
+                  <div class="wpr-seg">
+                    <div class="wpr-seg-btn on">Tout</div>
+                    <div class="wpr-seg-btn">Films</div>
+                    <div class="wpr-seg-btn">Séries</div>
+                  </div>
+                </div>
+                <div class="wpr-filter-row">
+                  <span class="wpr-filter-label">Ambiance</span>
+                  <div class="wpr-seg">
+                    <div class="wpr-seg-btn on">Toute</div>
+                    <div class="wpr-seg-btn">Léger</div>
+                    <div class="wpr-seg-btn">Intense</div>
+                  </div>
+                </div>
+                <div class="wpr-filter-row">
+                  <span class="wpr-filter-label">Dispo</span>
+                  <div class="wpr-seg">
+                    <div class="wpr-seg-btn on">Tout</div>
+                    <div class="wpr-seg-btn">Mes plates.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="wpr-hero">
+                <div class="wpr-hero-bg grad-a"></div>
+                <div class="wpr-hero-inner">
+                  <div class="wpr-poster">
+                    <div class="wpr-poster-fill pa">🎬<div class="wpr-poster-title">DUNE</div></div>
+                  </div>
+                  <div class="wpr-main">
+                    <span class="wpr-kicker">Notre choix</span>
+                    <div class="wpr-title">Dune: Part Two</div>
+                    <div class="wpr-meta">Film · 2024 · Sci-Fi · HBO Max</div>
+                    <div class="wpr-badges">
+                      <span class="wpr-badge">À regarder</span>
+                      <span class="wpr-badge">★ 4.2</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="wpr-reasons">
+                <div class="wpr-reasons-label">Pourquoi ?</div>
+                <ul>
+                  <li>Dans ta liste depuis 3 semaines</li>
+                  <li>Disponible sur ta plateforme</li>
+                  <li>Bien noté TMDB</li>
+                </ul>
+              </div>
+
+              <div class="wpr-actions">
+                <div class="wpr-btn primary">Ouvrir la fiche</div>
+                <div class="wpr-btn secondary">Marquer vu</div>
+                <div class="wpr-btn shuffle">⇄ Autre choix</div>
+              </div>
+
+              <div class="wpr-alts">
+                <div class="wpr-alt"><div class="wpr-alt-img p1">🎭</div><div class="wpr-alt-name">Past Lives</div></div>
+                <div class="wpr-alt"><div class="wpr-alt-img p2">📺</div><div class="wpr-alt-name">The Bear</div></div>
+                <div class="wpr-alt"><div class="wpr-alt-img p3">🎬</div><div class="wpr-alt-name">Oppenheimer</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="wpr-card-note">Tous les filtres visibles d'emblée. Idéal si tu changes souvent les réglages.</div>
+        </article>
+
+        <!-- ── Option B : Hero en premier, filtres repliés ── -->
+        <article class="wpr-card">
+          <div class="wpr-card-head">
+            <strong>B — Hero en premier</strong>
+            <span>Immersion directe</span>
+          </div>
+          <div class="wpr-modal">
+            <div class="wpr-modal-bar">
+              <h4>Que regarder ?</h4>
+              <span>✕</span>
+            </div>
+            <div class="wpr-modal-body">
+
+              <div class="wpr-hero">
+                <div class="wpr-hero-bg grad-b"></div>
+                <div class="wpr-hero-inner">
+                  <div class="wpr-poster">
+                    <div class="wpr-poster-fill pb">🎭<div class="wpr-poster-title">PAST LIVES</div></div>
+                  </div>
+                  <div class="wpr-main">
+                    <span class="wpr-kicker">Notre choix</span>
+                    <div class="wpr-title">Past Lives</div>
+                    <div class="wpr-meta">Film · 2023 · Drame · MUBI</div>
+                    <div class="wpr-badges">
+                      <span class="wpr-badge">À regarder</span>
+                      <span class="wpr-badge">★ 4.5</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="wpr-reasons">
+                <div class="wpr-reasons-label">Pourquoi ?</div>
+                <ul>
+                  <li>Ton genre préféré : Drame</li>
+                  <li>Très bien noté par TMDB</li>
+                  <li>Disponible sur MUBI</li>
+                </ul>
+              </div>
+
+              <div class="wpr-actions">
+                <div class="wpr-btn primary">Ouvrir la fiche</div>
+                <div class="wpr-btn secondary">Marquer vu</div>
+                <div class="wpr-btn shuffle">⇄ Autre choix</div>
+              </div>
+
+              <div class="wpr-alts">
+                <div class="wpr-alt"><div class="wpr-alt-img p2">🎬</div><div class="wpr-alt-name">Oppenheimer</div></div>
+                <div class="wpr-alt"><div class="wpr-alt-img p3">📺</div><div class="wpr-alt-name">Shōgun</div></div>
+                <div class="wpr-alt"><div class="wpr-alt-img p1">🎭</div><div class="wpr-alt-name">Killers…</div></div>
+              </div>
+
+              <div class="wpr-filters-toggle">
+                <span style="font-size:14px">⚙</span>
+                <div class="wpr-filters-toggle-chips">
+                  <span class="wpr-filters-toggle-chip">Solo</span>
+                  <span class="wpr-filters-toggle-chip">Tout</span>
+                  <span class="wpr-filters-toggle-chip">Drame</span>
+                </div>
+                <span class="wpr-filters-toggle-arrow">▾</span>
+              </div>
+
+            </div>
+          </div>
+          <div class="wpr-card-note">Le contenu d'abord. Les filtres actifs sont visibles en chips, dépliables si besoin.</div>
+        </article>
+
+        <!-- ── Option C : Grande affiche ── -->
+        <article class="wpr-card">
+          <div class="wpr-card-head">
+            <strong>C — Grande affiche</strong>
+            <span>Focus visuel</span>
+          </div>
+          <div class="wpr-modal">
+            <div class="wpr-modal-bar">
+              <h4>Que regarder ?</h4>
+              <span>✕</span>
+            </div>
+            <div class="wpr-compact-filters">
+              <span class="wpr-compact-chip on">Solo</span>
+              <span class="wpr-compact-chip on">Tout</span>
+              <span class="wpr-compact-chip off">Films</span>
+              <span class="wpr-compact-chip on">Intense</span>
+              <span class="wpr-compact-chip off">Mes plates.</span>
+            </div>
+            <div class="wpr-modal-body">
+
+              <div class="wpr-poster-large">
+                <div class="wpr-poster-large-img">
+                  🌌
+                  <div class="wpr-poster-large-overlay">
+                    <div class="wpr-kicker" style="margin-bottom:4px">Notre choix</div>
+                    <div class="wpr-poster-large-title">Oppenheimer</div>
+                    <div class="wpr-poster-large-meta">Film · 2023 · Thriller · Netflix</div>
+                    <div class="wpr-poster-large-actions">
+                      <div class="wpr-btn primary" style="font-size:11px">Ouvrir</div>
+                      <div class="wpr-btn secondary" style="font-size:11px">Marquer vu</div>
+                      <div class="wpr-btn small-shuffle">⇄</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="wpr-reasons">
+                <div class="wpr-reasons-label">Pourquoi ?</div>
+                <ul>
+                  <li>Correspond à ton filtre "Intense"</li>
+                  <li>Très bien noté TMDB (8.1)</li>
+                  <li>Disponible sur Netflix</li>
+                </ul>
+              </div>
+
+              <div class="wpr-alts">
+                <div class="wpr-alt"><div class="wpr-alt-img p1">🎬</div><div class="wpr-alt-name">Dune: Part 2</div></div>
+                <div class="wpr-alt"><div class="wpr-alt-img p3">🎭</div><div class="wpr-alt-name">Past Lives</div></div>
+                <div class="wpr-alt"><div class="wpr-alt-img p2">📺</div><div class="wpr-alt-name">The Bear S2</div></div>
+              </div>
+
+            </div>
+          </div>
+          <div class="wpr-card-note">L'affiche prend toute la largeur. Filtres réduits à une ligne de chips actifs/inactifs.</div>
+        </article>
+
+      </div>
+    </section>
+
   </body>
 </html>
