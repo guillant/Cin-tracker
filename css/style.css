@@ -35,17 +35,17 @@
 
 /* Dark mode */
 [data-theme="dark"] {
-  --bg-primary: #0f0f0f;
-  --bg-secondary: #171717;
-  --bg-tertiary: #232323;
-  --text-primary: #f5f5f5;
-  --text-secondary: #a0a0a0;
-  --text-tertiary: #6b6b6b;
-  --border: #2d2d2d;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.65);
-  --heatmap-empty: #2d2d2d;
+  --bg-primary: #080e1a;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --border: #263148;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.7);
+  --heatmap-empty: #1e293b;
 }
 
 [data-theme="dark"] .card-badge.watched {

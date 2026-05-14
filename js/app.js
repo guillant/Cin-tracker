@@ -4068,6 +4068,10 @@ function openAddModal() {
   initStarPicker();
   const tmdbSearchGroup = document.getElementById("tmdbSearchGroup");
   if (tmdbSearchGroup) tmdbSearchGroup.style.display = "";
+  const watchedDateInput = document.getElementById("watchedDateInput");
+  if (watchedDateInput) watchedDateInput.value = new Date().toISOString().split("T")[0];
+  const watchedWithInput = document.getElementById("watchedWithInput");
+  if (watchedWithInput) watchedWithInput.value = "";
 }
 
 function closeAddModal() {
@@ -4947,6 +4951,10 @@ function populateAddModalFromCollectionItem(
   document.getElementById("ratingInput").value = item.rating || "";
   document.getElementById("genreInput").value = item.genre || "";
   document.getElementById("notesInput").value = item.notes || "";
+  const wdInput = document.getElementById("watchedDateInput");
+  if (wdInput) wdInput.value = item.watchedDate || "";
+  const wwInput = document.getElementById("watchedWithInput");
+  if (wwInput) wwInput.value = item.watchedWith || "";
   updateStarPicker(item.rating || "");
 
   if (item.posterUrl) {
@@ -7627,6 +7635,8 @@ document.getElementById("addForm").addEventListener("submit", function (e) {
     rating: parseFloat(document.getElementById("ratingInput").value) || null,
     genre: document.getElementById("genreInput").value,
     notes: document.getElementById("notesInput").value,
+    watchedDate: document.getElementById("watchedDateInput")?.value || null,
+    watchedWith: document.getElementById("watchedWithInput")?.value.trim() || null,
     posterUrl: posterUrl,
     tmdbId: tmdbId,
     providerLogo: providerLogo,
