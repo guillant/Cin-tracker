@@ -6437,7 +6437,7 @@ function getPersonalGenreAffinity(item) {
   };
 }
 
-function matchesSuggestionFilters(item, source) {
+function matchesSuggestionFilters(item, source, { ignoreAvailability = false } = {}) {
   if (
     suggestionFilters.source !== "all" &&
     suggestionFilters.source !== source
@@ -6456,7 +6456,7 @@ function matchesSuggestionFilters(item, source) {
   ) {
     return false;
   }
-  if (suggestionFilters.availability === "mine") {
+  if (!ignoreAvailability && suggestionFilters.availability === "mine") {
     if (suggestionFilters.mode === "group") {
       if (!getGroupProviderMatchCountForItem(item)) return false;
     } else if (!isUserProviderAvailableItem(item)) {
@@ -6689,7 +6689,11 @@ async function getSmartSuggestion() {
   }
 
   if (!pool.length && suggestionFilters.source !== "discover") {
-    pool = items.filter((item) => matchesSuggestionFilters(item, "collection"));
+    pool = items
+      .filter((item) => ["towatch", "watching", "paused"].includes(item.status))
+      .filter((item) =>
+        matchesSuggestionFilters(item, "collection", { ignoreAvailability: true }),
+      );
   }
 
   return [...pool]
