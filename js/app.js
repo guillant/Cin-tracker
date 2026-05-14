@@ -4066,34 +4066,11 @@ function renderLists() {
                 </h4>
               </div>
             </div>
-            <div class="grid">
-              ${tagItems.map((item) => {
-                ensureItemProviderUpToDate(item);
-                const statusClass = normalizeStatusValue(item.status);
-                const itemTypeClass = item.type === "movie" ? "card-movie" : "card-series";
-                const itemTypeLabel = item.type === "movie" ? "Film" : "Série";
-                const statusText = (item.type === "movie" && getUpcomingMovieReleaseLabel(item, true)) || getStatusLabel(statusClass);
-                const stars = item.rating ? buildRatingStarsHTML(item.rating, { includeEmpty: true, extraClass: "card-rating-stars-inline" }) : "";
-                const ratingText = item.rating ? item.rating.toFixed(1) : "";
-                return `
-                <div class="card ${itemTypeClass}" onclick="openDetail(${inlineJsString(item.id)})">
-                  <div class="card-image">
-                    ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="card-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`}
-                    <div class="card-imagefade"></div>
-                    <div class="card-badge ${statusClass}">${escapeHtml(statusText)}</div>
-                    ${buildCardProviderHTML(item)}
-                  </div>
-                  <div class="card-content">
-                    <div class="card-kicker">${itemTypeLabel}</div>
-                    <div class="card-title">${escapeHtml(item.title)}</div>
-                    <div class="card-meta">
-                      <span>${escapeHtml(item.year) || "—"}</span>
-                      ${item.genre ? `<span>${escapeHtml(item.genre.split(",")[0].trim())}</span>` : ""}
-                    </div>
-                    ${item.rating ? `<div class="card-rating">${stars}<span>${ratingText}</span></div>` : ""}
-                  </div>
-                </div>`;
-              }).join("")}
+            <div class="lists-poster-grid">
+              ${tagItems.map((item) => `
+                <div class="lists-poster-item" onclick="openDetail(${inlineJsString(item.id)})" title="${escapeHtml(item.title)}">
+                  ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="lists-poster-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`}
+                </div>`).join("")}
             </div>
           </section>
         `;
