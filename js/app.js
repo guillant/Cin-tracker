@@ -6807,6 +6807,11 @@ function renderSuggestion(item) {
                     ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
                     : `<div class="watch-pick-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`
                 }
+                ${
+                  item.providerLogo
+                    ? `<div class="watch-pick-provider-badge"><img src="${escapeHtml(item.providerLogo)}" alt="${escapeHtml(item.providerName || "")}"></div>`
+                    : ""
+                }
               </div>
               <div class="watch-pick-main">
                 <span class="watch-pick-kicker">Notre choix</span>
