@@ -1664,16 +1664,8 @@ const movieReleaseEnrichmentInFlight = new Set();
 const orphanMovieRepairInFlight = new Set();
 const seriesUpcomingEpisodesCache = {};
 const seriesUpcomingFetchInFlight = new Set();
-const movieRowsExpanded = {
-  towatch: false,
-  upcoming: false,
-  watched: false,
-  other: false,
-  seriesWatching: false,
-  seriesTowatch: false,
-  seriesWatched: false,
-  seriesOther: false,
-};
+let collectionBrowseItems = [];
+let collectionBrowseLabel = "";
 let currentItemId = null;
 let currentTags = [];
 let currentWatchedWith = [];
@@ -3346,8 +3338,7 @@ function renderItems() {
     if (!movieList.length) return "";
 
     const PREVIEW_COUNT = 6;
-    const expanded = !!movieRowsExpanded[key];
-    const visible = expanded ? movieList : movieList.slice(0, PREVIEW_COUNT);
+    const visible = movieList.slice(0, PREVIEW_COUNT);
 
     return `
       <section class="collection-group">
@@ -3355,8 +3346,8 @@ function renderItems() {
           <h3 class="collection-group-title">${label}</h3>
           ${
             movieList.length > PREVIEW_COUNT
-              ? `<button class="collection-row-action" onclick="toggleMovieRow('${key}', event)">${expanded ? "Réduire" : "Voir tout"}</button>`
-              : ""
+              ? `<button class="collection-row-action" onclick="openCollectionBrowse(${inlineJsString(key)}, ${inlineJsString(label)})">Voir tout (${movieList.length})</button>`
+              : `<span class="collection-row-count">${movieList.length}</span>`
           }
         </div>
         <div class="grid collection-split-grid">
@@ -3470,10 +3461,91 @@ function renderItems() {
   updateCollectionControls();
 }
 
-function toggleMovieRow(key, event) {
-  event.stopPropagation();
-  if (!(key in movieRowsExpanded)) return;
-  movieRowsExpanded[key] = !movieRowsExpanded[key];
+function openCollectionBrowse(key, label) {
+  const grid = document.getElementById("contentGrid");
+  const emptyState = document.getElementById("emptyState");
+  const watchingStrip = document.getElementById("watchingStrip");
+  const controls = document.querySelector("#collectionSection .controls");
+  const typeSwitch = document.querySelector("#collectionSection .collection-type-switch");
+  const panel = document.getElementById("collectionBrowsePanel");
+  const browseGrid = document.getElementById("collectionBrowseGrid");
+  const browseTitle = document.getElementById("collectionBrowseTitle");
+  const browseCount = document.getElementById("collectionBrowseCount");
+
+  // Collect items for this key from the current filtered set
+  const renderItems_ = () => {
+    const allMovieItems = items.filter((item) => item.type === "movie");
+    const allSeriesItems = items.filter((item) => item.type === "series");
+    allMovieItems.forEach((item) => {
+      if (item.status !== "watched" && !item.releaseDate && item.tmdbId) enrichMovieReleaseDate(item);
+    });
+    const upcomingItems = allMovieItems.filter((item) => item.status !== "watched" && isUpcomingMovieItem(item));
+    const map = {
+      towatch:        allMovieItems.filter((item) => item.status === "towatch" && !isUpcomingMovieItem(item)),
+      upcoming:       upcomingItems,
+      watched:        allMovieItems.filter((item) => item.status === "watched"),
+      other:          allMovieItems.filter((item) => !["towatch","watched"].includes(item.status) && !isUpcomingMovieItem(item)),
+      seriesWatching: allSeriesItems.filter((item) => item.status === "watching"),
+      seriesTowatch:  allSeriesItems.filter((item) => item.status === "towatch"),
+      seriesWatched:  allSeriesItems.filter((item) => item.status === "watched"),
+      seriesOther:    allSeriesItems.filter((item) => !["watching","towatch","watched"].includes(item.status)),
+    };
+    return map[key] || [];
+  };
+
+  collectionBrowseItems = renderItems_();
+  collectionBrowseLabel = label;
+
+  if (grid) grid.style.display = "none";
+  if (emptyState) emptyState.style.display = "none";
+  if (watchingStrip) watchingStrip.style.display = "none";
+  if (controls) controls.style.display = "none";
+  if (typeSwitch) typeSwitch.style.display = "none";
+  panel.style.display = "block";
+
+  browseTitle.textContent = label;
+  browseCount.textContent = `${collectionBrowseItems.length} titre${collectionBrowseItems.length > 1 ? "s" : ""}`;
+  browseGrid.innerHTML = collectionBrowseItems.map((item) => {
+    ensureItemProviderUpToDate(item);
+    const statusClass = normalizeStatusValue(item.status);
+    const itemTypeClass = item.type === "movie" ? "card-movie" : "card-series";
+    const itemTypeLabel = item.type === "movie" ? "Film" : "Série";
+    const statusText = (item.type === "movie" && getUpcomingMovieReleaseLabel(item, true)) || getStatusLabel(statusClass);
+    const stars = item.rating ? buildRatingStarsHTML(item.rating, { includeEmpty: true, extraClass: "card-rating-stars-inline" }) : "";
+    const ratingText = item.rating ? item.rating.toFixed(1) : "";
+    let progressHTML = "";
+    if (item.type === "series" && item.currentSeason && item.currentEpisode) {
+      progressHTML = `<div class="card-progress"><div class="card-progress-info"><span>${escapeHtml(getNextEpisodeDisplay(item, "compact"))}</span></div></div>`;
+    }
+    return `
+      <div class="card ${itemTypeClass}" onclick="openDetail(${inlineJsString(item.id)})">
+        <div class="card-image">
+          ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="card-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`}
+          <div class="card-imagefade"></div>
+          <div class="card-badge ${statusClass}">${escapeHtml(statusText)}</div>
+          ${buildCardProviderHTML(item)}
+        </div>
+        <div class="card-content">
+          <div class="card-kicker">${itemTypeLabel}</div>
+          <div class="card-title">${escapeHtml(item.title)}</div>
+          <div class="card-meta">
+            <span>${escapeHtml(item.year) || "—"}</span>
+            ${item.genre ? `<span>${escapeHtml(item.genre.split(",")[0].trim())}</span>` : ""}
+          </div>
+          ${progressHTML}
+          ${item.rating ? `<div class="card-rating">${stars}<span>${ratingText}</span></div>` : ""}
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function closeCollectionBrowse() {
+  const panel = document.getElementById("collectionBrowsePanel");
+  const controls = document.querySelector("#collectionSection .controls");
+  const typeSwitch = document.querySelector("#collectionSection .collection-type-switch");
+  panel.style.display = "none";
+  if (controls) controls.style.display = "";
+  if (typeSwitch) typeSwitch.style.display = "";
   renderItems();
 }
 
@@ -8215,6 +8287,8 @@ window.app = {
   loadTrending,
   loadDiscover,
   openDiscoverCollection,
+  openCollectionBrowse,
+  closeCollectionBrowse,
   closeDiscoverCollection,
   loadMoreDiscoverCollection,
   showTrending,

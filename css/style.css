@@ -930,6 +930,68 @@ header {
   color: var(--accent);
 }
 
+.collection-row-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.collection-browse-panel {
+  animation: fadeIn 0.18s ease;
+}
+
+.collection-browse-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.collection-browse-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.collection-browse-back:hover {
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+}
+
+.collection-browse-back svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.collection-browse-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+.collection-browse-count {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+
 .collection-upcoming-group {
   padding: 6px 0 4px;
 }

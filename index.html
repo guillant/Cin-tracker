@@ -247,6 +247,18 @@
             Commencez par ajouter vos films et séries préférés.
           </p>
         </div>
+
+        <div id="collectionBrowsePanel" class="collection-browse-panel" style="display:none">
+          <div class="collection-browse-header">
+            <button class="btn collection-browse-back" onclick="app.closeCollectionBrowse()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+              Retour
+            </button>
+            <h3 class="collection-browse-title" id="collectionBrowseTitle"></h3>
+            <span class="collection-browse-count" id="collectionBrowseCount"></span>
+          </div>
+          <div id="collectionBrowseGrid" class="grid"></div>
+        </div>
       </div>
 
       <div id="statsSection" class="section">
