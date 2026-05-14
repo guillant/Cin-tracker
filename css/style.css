@@ -9689,7 +9689,7 @@ header {
   }
 
   [data-theme="dark"] .mobile-nav-item {
-    color: rgba(235, 235, 245, 0.92);
+    color: rgba(255, 255, 255, 0.72);
   }
 
   .mobile-nav-item.active,
