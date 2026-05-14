@@ -2019,12 +2019,13 @@ function updateSelectedTMDBUI(item) {
   submitBtn.style.opacity = "1";
 }
 
-function selectAddStatus(status) {
+function selectAddStatus(status, preset = false) {
   const statusInput = document.getElementById("statusInput");
   const watchedExtras = document.getElementById("watchedExtras");
   const towatchBtn = document.getElementById("addChoiceTowatch");
   const watchedBtn = document.getElementById("addChoiceWatched");
   const submitBtn = document.getElementById("addSubmitBtn");
+  const choiceGroup = document.getElementById("addChoiceGroup");
   if (
     !statusInput ||
     !watchedExtras ||
@@ -2038,9 +2039,15 @@ function selectAddStatus(status) {
   const normalized = status === "watched" ? "watched" : "towatch";
   statusInput.value = normalized;
 
-  towatchBtn.classList.toggle("active", normalized === "towatch");
-  watchedBtn.classList.toggle("active", normalized === "watched");
-  watchedExtras.style.display = normalized === "watched" ? "block" : "none";
+  if (preset) {
+    if (choiceGroup) choiceGroup.style.display = "none";
+    watchedExtras.style.display = "block";
+  } else {
+    towatchBtn.classList.toggle("active", normalized === "towatch");
+    watchedBtn.classList.toggle("active", normalized === "watched");
+    watchedExtras.style.display = normalized === "watched" ? "block" : "none";
+  }
+
   submitBtn.textContent =
     normalized === "watched"
       ? "Enregistrer comme vu"
@@ -2156,6 +2163,7 @@ function initStarPicker() {
         suppressMouseUntil = Date.now() + 500;
         starPicker.classList.add("touching");
         touchValue = val;
+        setStarPickerVisualState(0, "selected", "selected-half");
         setStarPickerVisualState(val, "hovered", "hovered-half");
         event.preventDefault();
       },
@@ -2169,6 +2177,7 @@ function initStarPicker() {
         if (val === null) return;
         suppressMouseUntil = Date.now() + 500;
         touchValue = val;
+        setStarPickerVisualState(0, "selected", "selected-half");
         setStarPickerVisualState(val, "hovered", "hovered-half");
         event.preventDefault();
       },
@@ -2349,12 +2358,16 @@ function renderTags() {
         (tag) => `
         <span class="tag-item">
           ${escapeHtml(tag)}
-          <button type="button" class="tag-remove" onclick="removeTag(${JSON.stringify(tag)})">×</button>
+          <button type="button" class="tag-remove" data-tag="${escapeHtml(tag)}">×</button>
         </span>
       `,
       )
       .join("") +
     '<input type="text" class="tag-input" id="tagInput" placeholder="Ajouter un tag..." style="flex: 1; border: none; background: transparent; outline: none; font-size: 14px; min-width: 120px;">';
+
+  container.querySelectorAll(".tag-remove").forEach((btn) => {
+    btn.addEventListener("click", () => removeTag(btn.dataset.tag));
+  });
 
   const newInput = container.querySelector(".tag-input");
   newInput.addEventListener("keydown", function (e) {
@@ -4053,6 +4066,8 @@ function openAddModal() {
   document.getElementById("ratingInput").value = "";
   updateStarPicker("");
   initStarPicker();
+  const tmdbSearchGroup = document.getElementById("tmdbSearchGroup");
+  if (tmdbSearchGroup) tmdbSearchGroup.style.display = "";
 }
 
 function closeAddModal() {
@@ -4970,13 +4985,17 @@ function populateAddModalFromCollectionItem(
     first_air_date: item.releaseDate || (item.year ? `${item.year}-01-01` : ""),
     posterUrl: item.posterUrl || "",
   });
-  selectAddStatus(
+  const resolvedStatus =
     preferredStatus === "watched"
       ? "watched"
       : item.status === "watched"
         ? "watched"
-        : "towatch",
-  );
+        : "towatch";
+  selectAddStatus(resolvedStatus, resolvedStatus === "watched");
+  if (resolvedStatus === "watched") {
+    const tmdbSearchGroup = document.getElementById("tmdbSearchGroup");
+    if (tmdbSearchGroup) tmdbSearchGroup.style.display = "none";
+  }
 
   toggleEpisodeTracker();
   updateEpisodeDisplay();
@@ -5013,7 +5032,9 @@ async function openWatchedFlowFromTrendingById(id, type = null) {
     ...cached.item,
     media_type: cached.type,
   });
-  selectAddStatus("watched");
+  selectAddStatus("watched", true);
+  const tmdbSearchGroup = document.getElementById("tmdbSearchGroup");
+  if (tmdbSearchGroup) tmdbSearchGroup.style.display = "none";
 }
 
 function buildDetailHTML(item, tmdb) {
