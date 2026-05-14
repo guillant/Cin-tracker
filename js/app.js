@@ -2061,6 +2061,10 @@ function formatRatingDisplayValue(value) {
     : normalized.toFixed(1);
 }
 
+function formatRatingDisplayLabel(value) {
+  return formatRatingDisplayValue(value).replace(".", ",");
+}
+
 function buildRatingStarsHTML(rating, options = {}) {
   const { max = 5, includeEmpty = true, extraClass = "" } = options;
   const normalized = normalizeHalfStepRating(rating);
@@ -2094,7 +2098,7 @@ function getPickerRatingFromPointer(starElement, event) {
 
 function setStarPickerVisualState(value, stateClass, halfClass) {
   const normalized = normalizeHalfStepRating(value);
-  document.querySelectorAll(".star-pick").forEach((star) => {
+  document.querySelectorAll("#starPicker .star-pick").forEach((star) => {
     const starValue = Number.parseInt(star.dataset.value, 10) || 0;
     const full = normalized >= starValue;
     const half = !full && normalized >= starValue - 0.5;
@@ -2106,9 +2110,10 @@ function setStarPickerVisualState(value, stateClass, halfClass) {
 function initStarPicker() {
   const starPicker = document.getElementById("starPicker");
   const ratingInput = document.getElementById("ratingInput");
+  const ratingClearBtn = document.getElementById("ratingClearBtn");
   if (!starPicker || !ratingInput) return;
 
-  const stars = document.querySelectorAll(".star-pick");
+  const stars = starPicker.querySelectorAll(".star-pick");
   let suppressMouseUntil = 0;
 
   const isMouseSuppressed = () => Date.now() < suppressMouseUntil;
@@ -2128,38 +2133,19 @@ function initStarPicker() {
     const getTouchRating = (touch) => {
       if (!touch || !stars.length) return null;
 
-      const starRects = Array.from(stars).map((star, index) => ({
-        index,
-        value: Number.parseInt(star.dataset.value, 10) || index + 1,
-        rect: star.getBoundingClientRect(),
-      }));
+      const pickerRect = starPicker.getBoundingClientRect();
+      if (!pickerRect || pickerRect.width <= 0) return null;
 
-      if (starRects.length === 0) return null;
-
-      const xMin = starRects[0].rect.left;
-      const xMax = starRects[starRects.length - 1].rect.right - 0.001;
+      const xMin = pickerRect.left;
+      const xMax = pickerRect.right - 0.001;
       const clampedX = Math.min(Math.max(touch.clientX, xMin), xMax);
-
-      let target = starRects.find(
-        ({ rect }) => clampedX >= rect.left && clampedX <= rect.right,
+      const ratio = (clampedX - xMin) / pickerRect.width;
+      const rawRating = ratio * 5;
+      const snappedHalf = Math.ceil(rawRating * 2) / 2;
+      const minInsidePicker = 0.5;
+      return normalizeHalfStepRating(
+        Math.max(minInsidePicker, Math.min(5, snappedHalf)),
       );
-
-      if (!target) {
-        target = starRects.reduce((closest, current) => {
-          const closestCenter =
-            (closest.rect.left + closest.rect.right) / 2;
-          const currentCenter =
-            (current.rect.left + current.rect.right) / 2;
-          return Math.abs(currentCenter - clampedX) <
-            Math.abs(closestCenter - clampedX)
-            ? current
-            : closest;
-        }, starRects[0]);
-      }
-
-      const midX = (target.rect.left + target.rect.right) / 2;
-      const isLeftHalf = clampedX <= midX;
-      return normalizeHalfStepRating(target.value - (isLeftHalf ? 0.5 : 0));
     };
 
     starPicker.addEventListener(
@@ -2200,9 +2186,7 @@ function initStarPicker() {
           return;
         }
 
-        const current = normalizeHalfStepRating(ratingInput.value);
-        const newVal =
-          current === val ? "" : formatRatingDisplayValue(normalizeHalfStepRating(val));
+        const newVal = formatRatingDisplayValue(normalizeHalfStepRating(val));
         ratingInput.value = newVal;
         touchValue = 0;
         updateStarPicker(newVal);
@@ -2216,6 +2200,55 @@ function initStarPicker() {
       starPicker.classList.remove("touching");
       touchValue = 0;
       updateStarPicker(ratingInput.value);
+    });
+  }
+
+  if (ratingClearBtn && ratingClearBtn.dataset.bound !== "true") {
+    ratingClearBtn.dataset.bound = "true";
+    ratingClearBtn.addEventListener("click", () => {
+      ratingInput.value = "";
+      updateStarPicker("");
+    });
+  }
+
+  if (starPicker.dataset.boundKeyboard !== "true") {
+    starPicker.dataset.boundKeyboard = "true";
+    starPicker.addEventListener("keydown", (event) => {
+      const current = normalizeHalfStepRating(ratingInput.value);
+      let next = current;
+      let handled = true;
+
+      switch (event.key) {
+      case "ArrowLeft":
+      case "ArrowDown":
+        next = Math.max(0, current - 0.5);
+        break;
+      case "ArrowRight":
+      case "ArrowUp":
+        next = Math.min(5, current + 0.5);
+        break;
+      case "Home":
+        next = 0;
+        break;
+      case "End":
+        next = 5;
+        break;
+      case "Enter":
+      case " ":
+      case "Delete":
+      case "Backspace":
+        next = 0;
+        break;
+      default:
+        handled = false;
+      }
+
+      if (!handled) return;
+      event.preventDefault();
+
+      const newVal = next > 0 ? formatRatingDisplayValue(next) : "";
+      ratingInput.value = newVal;
+      updateStarPicker(newVal);
     });
   }
 
@@ -2235,18 +2268,56 @@ function initStarPicker() {
     star.addEventListener("click", (event) => {
       if (isMouseSuppressed()) return;
       const val = getPickerRatingFromPointer(star, event);
-      const current = normalizeHalfStepRating(ratingInput.value);
-      // cliquer sur la même étoile annule la note
-      const newVal = current === val ? "" : formatRatingDisplayValue(val);
+      const newVal = formatRatingDisplayValue(val);
       ratingInput.value = newVal;
       updateStarPicker(newVal);
     });
   });
+
+  updateRatingPickerUI(ratingInput.value);
 }
 
 function updateStarPicker(value) {
   setStarPickerVisualState(0, "hovered", "hovered-half");
   setStarPickerVisualState(value, "selected", "selected-half");
+  updateRatingPickerUI(value);
+}
+
+function updateRatingPickerUI(value) {
+  const ratingPanel = document.getElementById("ratingPanel");
+  const ratingValueDisplay = document.getElementById("ratingValueDisplay");
+  const ratingHintText = document.getElementById("ratingHintText");
+  const ratingClearBtn = document.getElementById("ratingClearBtn");
+  const starPicker = document.getElementById("starPicker");
+  const normalized = normalizeHalfStepRating(value);
+  const hasValue = normalized > 0;
+
+  ratingPanel?.classList.toggle("rating-panel-has-value", hasValue);
+
+  if (ratingValueDisplay) {
+    ratingValueDisplay.textContent = hasValue
+      ? `${formatRatingDisplayLabel(normalized)}/5`
+      : "Aucune note";
+  }
+
+  if (ratingHintText) {
+    ratingHintText.textContent = hasValue
+      ? "Utilise Effacer pour retirer la note."
+      : "Glisse, clique ou touche pour noter (0,5 possible).";
+  }
+
+  if (ratingClearBtn) {
+    ratingClearBtn.disabled = !hasValue;
+    ratingClearBtn.setAttribute("aria-disabled", String(!hasValue));
+  }
+
+  if (starPicker) {
+    starPicker.setAttribute("aria-valuenow", String(normalized));
+    starPicker.setAttribute(
+      "aria-valuetext",
+      hasValue ? `${formatRatingDisplayLabel(normalized)} sur 5` : "Aucune note",
+    );
+  }
 }
 
 document.getElementById("tagInput")?.addEventListener("keydown", function (e) {

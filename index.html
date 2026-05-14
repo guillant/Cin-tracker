@@ -546,14 +546,34 @@
             <div id="watchedExtras" style="display: none">
               <div class="form-group">
                 <label class="form-label">Ma note (sur 5)</label>
-                <div class="star-picker" id="starPicker">
-                  <span class="star-pick" data-value="1">&#x2605;</span>
-                  <span class="star-pick" data-value="2">&#x2605;</span>
-                  <span class="star-pick" data-value="3">&#x2605;</span>
-                  <span class="star-pick" data-value="4">&#x2605;</span>
-                  <span class="star-pick" data-value="5">&#x2605;</span>
+                <div class="rating-panel" id="ratingPanel">
+                  <div class="rating-panel-head">
+                    <span class="rating-current-label">Note sélectionnée</span>
+                    <button type="button" class="rating-clear-btn" id="ratingClearBtn">Effacer</button>
+                  </div>
+                  <div
+                    class="star-picker"
+                    id="starPicker"
+                    tabindex="0"
+                    role="slider"
+                    aria-label="Sélecteur de note"
+                    aria-valuemin="0"
+                    aria-valuemax="5"
+                    aria-valuenow="0"
+                    aria-valuetext="Aucune note"
+                  >
+                    <span class="star-pick" data-value="1">&#x2605;</span>
+                    <span class="star-pick" data-value="2">&#x2605;</span>
+                    <span class="star-pick" data-value="3">&#x2605;</span>
+                    <span class="star-pick" data-value="4">&#x2605;</span>
+                    <span class="star-pick" data-value="5">&#x2605;</span>
+                  </div>
+                  <div class="rating-meta">
+                    <strong id="ratingValueDisplay">Aucune note</strong>
+                    <span id="ratingHintText">Glisse, clique ou touche pour noter (0,5 possible).</span>
+                  </div>
                 </div>
-                <p class="rating-help">Astuce : clique a gauche d'une etoile pour mettre 0,5.</p>
+                <p class="rating-help">Astuce : clique ou touche la gauche d'une étoile pour mettre 0,5.</p>
                 <input type="hidden" id="ratingInput" />
               </div>
 
