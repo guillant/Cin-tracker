@@ -392,35 +392,36 @@
             </div>
           </div>
 
-          <div id="discoverBrowsePanel" class="discover-browse-panel">
-            <div class="chart-card">
-              <div class="discover-browse-header">
-                <button class="btn" onclick="app.closeDiscoverCollection()">
-                  &#x2190; Retour
-                </button>
-                <div class="discover-browse-copy">
-                  <h3 class="chart-title" id="discoverBrowseTitle"></h3>
-                  <p
-                    id="discoverBrowseDescription"
-                    class="discover-browse-description"
-                  ></p>
-                </div>
+        </div>
+
+        <div id="discoverBrowsePanel" class="discover-browse-panel">
+          <div class="chart-card">
+            <div class="discover-browse-header">
+              <button class="btn" onclick="app.closeDiscoverCollection()">
+                &#x2190; Retour
+              </button>
+              <div class="discover-browse-copy">
+                <h3 class="chart-title" id="discoverBrowseTitle"></h3>
+                <p
+                  id="discoverBrowseDescription"
+                  class="discover-browse-description"
+                ></p>
               </div>
+            </div>
 
-              <div id="discoverBrowseGrid" class="grid"></div>
+            <div id="discoverBrowseGrid" class="grid"></div>
 
-              <div
-                id="discoverBrowseLoadMoreWrap"
-                class="discover-browse-footer"
+            <div
+              id="discoverBrowseLoadMoreWrap"
+              class="discover-browse-footer"
+            >
+              <button
+                id="discoverBrowseLoadMoreBtn"
+                class="btn btn-primary"
+                onclick="app.loadMoreDiscoverCollection()"
               >
-                <button
-                  id="discoverBrowseLoadMoreBtn"
-                  class="btn btn-primary"
-                  onclick="app.loadMoreDiscoverCollection()"
-                >
-                  Charger plus
-                </button>
-              </div>
+                Charger plus
+              </button>
             </div>
           </div>
         </div>
