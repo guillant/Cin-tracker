@@ -6678,8 +6678,10 @@ async function getSmartSuggestion() {
     .filter((item) => matchesSuggestionFilters(item, "collection"));
 
   let pool = [...collectionCandidates];
+
+  let externalItems = [];
   if (suggestionFilters.source !== "collection") {
-    const externalItems = await fetchExternalSuggestionItems();
+    externalItems = await fetchExternalSuggestionItems();
     pool = [
       ...pool,
       ...externalItems.filter((item) =>
@@ -6688,12 +6690,27 @@ async function getSmartSuggestion() {
     ];
   }
 
-  if (!pool.length && suggestionFilters.source !== "discover") {
-    pool = items
+  // Fallback: relax availability filter (provider data often missing)
+  if (!pool.length && suggestionFilters.availability === "mine") {
+    const collectionFallback = items
       .filter((item) => ["towatch", "watching", "paused"].includes(item.status))
       .filter((item) =>
         matchesSuggestionFilters(item, "collection", { ignoreAvailability: true }),
       );
+    const externalFallback =
+      suggestionFilters.source !== "collection"
+        ? externalItems.filter((item) =>
+            matchesSuggestionFilters(item, "discover", { ignoreAvailability: true }),
+          )
+        : [];
+    pool = [...collectionFallback, ...externalFallback];
+  }
+
+  // Last resort: anything towatch/watching/paused in collection
+  if (!pool.length && suggestionFilters.source !== "discover") {
+    pool = items.filter((item) =>
+      ["towatch", "watching", "paused"].includes(item.status),
+    );
   }
 
   return [...pool]
