@@ -417,28 +417,30 @@
       <!-- Search Section -->
       <div id="searchSection" class="section">
         <div class="search-section-shell">
-          <div class="search-section-head">
-            <h3 class="chart-title">Search</h3>
-            <p class="search-section-copy">
-              Retrouvez un film ou une série et ajoutez-le directement à votre
-              collection.
-            </p>
-          </div>
           <div class="search-section-bar">
-            <span class="search-section-icon">&#x2315;</span>
+            <span class="search-section-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </span>
             <input
               type="text"
               id="sectionSearchInput"
               class="search-section-input"
-              placeholder="Rechercher un film ou une série..."
+              placeholder="Films, séries…"
               autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
             />
+            <button
+              class="search-section-clear"
+              id="sectionSearchClear"
+              aria-label="Effacer"
+              style="display: none"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
           </div>
-          <div id="sectionSearchResults" class="search-section-results">
-            <p class="search-overlay-hint">
-              Tapez un titre de film ou de série…
-            </p>
-          </div>
+          <p class="search-section-hint" id="sectionSearchHint">Recherchez un film ou une série pour l'ajouter à votre collection.</p>
+          <div id="sectionSearchResults" class="search-section-results"></div>
         </div>
       </div>
     </div>

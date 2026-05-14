@@ -7917,10 +7917,14 @@ function closeSearch() {
 function focusSearchSection() {
   const input = document.getElementById("sectionSearchInput");
   const results = document.getElementById("sectionSearchResults");
+  const hint = document.getElementById("sectionSearchHint");
+  const clear = document.getElementById("sectionSearchClear");
   if (!input || !results) return;
 
   if (!input.value.trim()) {
-    results.innerHTML = `<p class="search-overlay-hint">Tapez un titre de film ou de sÃ©rieâ€¦</p>`;
+    results.innerHTML = "";
+    if (hint) hint.style.display = "";
+    if (clear) clear.style.display = "none";
   }
 
   requestAnimationFrame(() => input.focus());
@@ -7928,14 +7932,20 @@ function focusSearchSection() {
 
 async function runSectionSearch(query) {
   const container = document.getElementById("sectionSearchResults");
+  const hint = document.getElementById("sectionSearchHint");
+  const clear = document.getElementById("sectionSearchClear");
   if (!container) return;
 
+  if (clear) clear.style.display = query?.trim() ? "" : "none";
+
   if (!query || query.length < 2) {
-    container.innerHTML = `<p class="search-overlay-hint">Tapez un titre de film ou de sÃ©rieâ€¦</p>`;
+    container.innerHTML = "";
+    if (hint) hint.style.display = "";
     return;
   }
 
-  container.innerHTML = `<p class="search-overlay-hint">Recherche en coursâ€¦</p>`;
+  if (hint) hint.style.display = "none";
+  container.innerHTML = `<p class="search-overlay-hint">Recherche en cours…</p>`;
 
   try {
     const [movieRes, tvRes] = await Promise.all([
@@ -8103,6 +8113,15 @@ document
     clearTimeout(searchSectionTimeout);
     searchSectionTimeout = setTimeout(() => runSectionSearch(this.value), 350);
   });
+
+document.getElementById("sectionSearchClear")?.addEventListener("click", () => {
+  const input = document.getElementById("sectionSearchInput");
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+  runSectionSearch("");
+});
 
 document
   .getElementById("searchOverlay")

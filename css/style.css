@@ -7540,36 +7540,45 @@ header {
 
 .search-section-shell {
   display: grid;
-  gap: 16px;
-  max-width: 760px;
-}
-
-.search-section-head {
-  display: grid;
-  gap: 6px;
-}
-
-.search-section-copy {
-  color: var(--text-secondary);
-  font-size: 14px;
+  gap: 14px;
+  max-width: 680px;
+  padding-top: 4px;
 }
 
 .search-section-bar {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 56px;
+  min-height: 58px;
   padding: 0 18px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
   background: var(--bg-secondary);
   box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-section-bar:focus-within {
+  border-color: #0a84ff;
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.12), var(--shadow-sm);
 }
 
 .search-section-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
   color: var(--text-tertiary);
-  font-size: 20px;
-  line-height: 1;
+}
+
+.search-section-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
 }
 
 .search-section-input {
@@ -7587,10 +7596,49 @@ header {
   color: var(--text-tertiary);
 }
 
+.search-section-clear {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.search-section-clear:hover {
+  background: var(--border);
+}
+
+.search-section-clear svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  display: block;
+}
+
+.search-section-hint {
+  color: var(--text-tertiary);
+  font-size: 14px;
+  text-align: center;
+  padding: 10px 0 2px;
+}
+
 .search-section-results {
   overflow: hidden;
-  border: 1px solid var(--border);
   border-radius: 18px;
+}
+
+.search-section-results:not(:empty) {
+  border: 1px solid var(--border);
   background: var(--bg-secondary);
   box-shadow: var(--shadow-sm);
 }
