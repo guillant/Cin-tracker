@@ -87,11 +87,12 @@ if (typeof CONFIG !== "undefined") {
 - ✅ Les épisodes non sortis affichent leur date de diffusion au lieu d'un bouton d'action
 - ✅ Les saisons non encore sorties sont détectées correctement et affichent leur date de sortie
 
-### Organisation
+### Organisation & Listes
 
 - ✅ Tags personnalisés avec tags rapides prédéfinis
-- ✅ Listes par tags
+- ✅ Listes par tags avec grille de posters (sans surcharge texte)
 - ✅ Suggestion aléatoire (priorise "à voir" puis "en cours")
+- ✅ Historique de visionnage récent (30 derniers films/séries vus, 10 non notés)
 
 ### Statistiques
 
@@ -102,7 +103,9 @@ if (typeof CONFIG !== "undefined") {
 - ✅ Nombre de séries en cours
 - ✅ Ajouts du mois / de l'année
 - ✅ Graphique des genres favoris
-- ✅ Historique récent
+- ✅ Graphique mensuel des ajouts
+- ✅ Distribution des notes
+- ✅ Heatmap annuelle d'activité
 
 ### Découvrir
 
@@ -120,17 +123,27 @@ if (typeof CONFIG !== "undefined") {
 - ✅ Fiche enrichie avec casting et synopsis au clic
 - ✅ Ajout direct à la collection depuis le trending
 
+### Interface & Accessibilité
+
+- ✅ Mode sombre / clair avec thème navy-blue complet
+- ✅ Icônes SVG dans la barre supérieure et le menu mobile (plus d'emojis)
+- ✅ Barre de recherche de section redessinée (icône SVG, bouton effacement, focus ring)
+- ✅ Navigation mobile glassmorphism avec pill flottant
+
 ### Divers
 
 - ✅ Import/Export JSON (sauvegarde complète)
+- ✅ Import Letterboxd CSV (diary, watchlist, ratings avec déduplication)
 - ✅ PWA — installable comme application native
+- ✅ Build Android natif via Capacitor
 - ✅ Stockage local (localStorage, aucun compte nécessaire)
 
-## Mobile
+## Mobile & Android
 
-- Android / Chrome / Edge : ouvrez l'application puis utilisez le bouton `📲 Installer` ou le menu du navigateur pour l'ajouter à l'écran d'accueil.
-- iPhone / iPad : ouvrez l'application dans Safari puis utilisez `Partager` → `Sur l'écran d'accueil`.
-- Le shell de l'application est maintenant mis en cache, ce qui permet d'ouvrir l'interface même sans connexion. Les données TMDB distantes restent dépendantes du réseau.
+- **Android natif** : build Capacitor disponible dans `android/`. Après chaque modification, synchronisez avec `npm run mobile:prepare && npx cap sync`.
+- **PWA (Android / Chrome / Edge)** : ouvrez l'application puis utilisez le bouton `Installer` ou le menu du navigateur pour l'ajouter à l'écran d'accueil.
+- **iOS (iPhone / iPad)** : ouvrez l'application dans Safari puis utilisez `Partager` → `Sur l'écran d'accueil`.
+- Le shell de l'application est mis en cache (Service Worker), ce qui permet d'ouvrir l'interface même sans connexion. Les données TMDB distantes restent dépendantes du réseau.
 
 ## 🔧 Architecture
 
@@ -195,9 +208,9 @@ Contient toute la logique applicative :
 
 ## 🚀 Prochaines fonctionnalités envisagées
 
-- [ ] Mode sombre / clair
+- [x] Mode sombre / clair
 - [x] Recommandations personnalisées basées sur vos genres
-- [ ] Statistiques avancées (activité par mois, heatmap)
+- [x] Statistiques avancées (activité par mois, heatmap)
 - [ ] Synchronisation cloud entre appareils
 - [ ] Notifications de nouvelles saisons pour les séries en cours
 
