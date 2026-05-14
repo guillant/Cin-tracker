@@ -3627,20 +3627,28 @@ function renderStats() {
         .join("")
     : '<p class="stats-empty">Aucun genre assez représenté pour le moment.</p>';
 
-  // Historique : items avec watchedAt en priorité, puis les plus récemment ajoutés
+  renderMonthlyChart();
+  renderRatingDistribution();
+  renderHeatmap();
+}
+
+function renderHistory() {
+  const el = document.getElementById("recentActivity");
+  if (!el) return;
+
   const watchedHistory = [...items]
     .filter((i) => i.watchedAt)
     .sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt))
-    .slice(0, 15);
+    .slice(0, 30);
 
   const recentAdded = [...items]
     .filter((i) => !i.watchedAt)
     .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
-    .slice(0, 5);
+    .slice(0, 10);
 
   const historyItems = watchedHistory.length > 0 ? watchedHistory : recentAdded;
 
-  document.getElementById("recentActivity").innerHTML =
+  el.innerHTML =
     historyItems.length === 0
       ? '<p class="stats-empty">Aucun visionnage enregistré pour l\'instant.</p>'
       : historyItems
@@ -3701,10 +3709,6 @@ function renderStats() {
       `;
           })
           .join("");
-
-  renderMonthlyChart();
-  renderRatingDistribution();
-  renderHeatmap();
 }
 
 function renderMonthlyChart() {
@@ -4075,6 +4079,7 @@ function renderLists() {
     .join("");
 
   document.getElementById("taggedContent").innerHTML = taggedItemsHtml;
+  renderHistory();
 }
 
 function filterByTag(tag) {
