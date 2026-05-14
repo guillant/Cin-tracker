@@ -4762,9 +4762,11 @@ function buildCollectionQuickBar(item) {
   buttons.push(
     `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Vu + noter</button>`,
   );
-  buttons.push(
-    `<button class="detail-mini-btn detail-mini-btn-toolbar detail-mini-btn-ghost" onclick="editItem()">Modifier</button>`,
-  );
+  if (item.status === "watched") {
+    buttons.push(
+      `<button class="detail-mini-btn detail-mini-btn-toolbar detail-mini-btn-ghost" onclick="editItem()">Modifier</button>`,
+    );
+  }
 
   return `<div class="detail-action-bar">${buttons.join("")}</div>`;
 }
@@ -4992,6 +4994,15 @@ function buildDetailHTML(item, tmdb) {
         providerLogo: item.providerLogo || null,
         providerName: item.providerName || null,
       })}
+      <div class="detail-action-bar detail-action-bar-priority ${item.status === "watched" ? "" : "detail-action-bar-priority-minimal"}">
+        <button class="btn btn-primary" onclick="openWatchedFlowForCurrentItem()">Vu + noter</button>
+        ${
+          item.status === "watched"
+            ? `<button class="btn" onclick="editItem()">Modifier</button>`
+            : ""
+        }
+        <button class="btn detail-action-danger" onclick="deleteItem()">Supprimer</button>
+      </div>
       <div class="detail-stream-panel detail-stream-panel-info">
         <div class="sd-section-title">Informations</div>
         ${buildDetailInfoRow("Année", escapeHtml(item.year) || "—")}
@@ -5012,11 +5023,6 @@ function buildDetailHTML(item, tmdb) {
           ? `<div class="detail-stream-panel"><div class="sd-section-title">À regarder ensuite</div><div class="similars-grid" id="similarsContainer"><div class="similars-loading">Chargement…</div></div></div>`
           : ""
       }
-      <div class="detail-actions detail-actions-compact">
-        <button class="btn btn-primary" onclick="openWatchedFlowForCurrentItem()" style="flex:1;justify-content:center;">Vu + noter</button>
-        <button class="btn" onclick="editItem()" style="flex:1;justify-content:center;">Modifier</button>
-        <button class="btn" onclick="deleteItem()" style="justify-content:center;color:#f87171;">Supprimer</button>
-      </div>
     </div>`;
 }
 
@@ -5126,9 +5132,13 @@ function buildSeriesDetailHTML(item, tmdb) {
         }
       </div>
 
-      <div class="detail-actions detail-actions-compact" style="margin-top:20px;">
-        <button class="btn" onclick="editItem()" style="flex:1;justify-content:center;">Modifier</button>
-        <button class="btn" onclick="deleteItem()" style="justify-content:center;color:#f87171;">Supprimer</button>
+      <div class="detail-actions detail-actions-compact detail-actions-series ${item.status === "watched" ? "" : "detail-actions-series-minimal"}">
+        ${
+          item.status === "watched"
+            ? `<button class="btn detail-action-secondary" onclick="editItem()">Modifier</button>`
+            : ""
+        }
+        <button class="btn detail-action-danger" onclick="deleteItem()">Supprimer</button>
       </div>
     </div>`;
 }

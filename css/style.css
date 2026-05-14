@@ -6518,6 +6518,44 @@ header {
   color: #ef4444;
 }
 
+.detail-actions-collection {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.detail-actions-collection .btn {
+  justify-content: center;
+}
+
+.detail-actions-collection .detail-action-main {
+  grid-column: 1 / -1;
+}
+
+.detail-actions-collection .detail-action-danger {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.32);
+}
+
+.detail-actions-collection .detail-action-danger:hover {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.detail-actions-series {
+  margin-top: 20px;
+}
+
+.detail-actions-series .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+.detail-actions-series.detail-actions-series-minimal .detail-action-danger {
+  flex: 1;
+}
+
 .detail-stream-quickbar {
   display: flex;
   align-items: center;
@@ -6553,6 +6591,35 @@ header {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.detail-action-bar-priority {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 8px 20px 0;
+}
+
+.detail-action-bar-priority .btn {
+  justify-content: center;
+}
+
+.detail-action-bar-priority .btn-primary {
+  grid-column: 1 / -1;
+}
+
+.detail-action-bar-priority .detail-action-danger {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.32);
+}
+
+.detail-action-bar-priority .detail-action-danger:hover {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.detail-action-bar-priority.detail-action-bar-priority-minimal .detail-action-danger {
+  grid-column: 1 / -1;
 }
 
 .detail-hero-actions-row {
@@ -10062,6 +10129,10 @@ header {
     justify-content: stretch;
   }
 
+  .detail-action-bar-priority {
+    margin: 8px 14px 0;
+  }
+
   .detail-mini-btn {
     flex: 1 1 0;
     min-width: 0;
@@ -10144,6 +10215,30 @@ header {
   .detail-stream-dock-actions,
   .detail-stream-quickactions {
     grid-template-columns: 1fr;
+  }
+
+  .detail-action-bar-priority {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-action-bar-priority .btn-primary {
+    grid-column: auto;
+  }
+
+  .detail-action-bar-priority.detail-action-bar-priority-minimal .detail-action-danger {
+    grid-column: auto;
+  }
+
+  .detail-actions-series {
+    margin-top: 16px;
+  }
+
+  .detail-actions-collection {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-actions-collection .detail-action-main {
+    grid-column: auto;
   }
 
   .detail-stream-dock-poster-wrap {
