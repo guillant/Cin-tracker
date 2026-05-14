@@ -12208,7 +12208,43 @@ header {
 
 .watch-pick-filters {
   display: grid;
-  gap: 7px;
+  gap: 6px;
+}
+
+.watch-pick-filters-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  cursor: pointer;
+  user-select: none;
+  gap: 10px;
+}
+
+.watch-pick-filters-summary {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.watch-pick-filters-arrow {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.watch-pick-filters-body {
+  display: grid;
+  gap: 6px;
+}
+
+.watch-pick-filters-body.collapsed {
+  display: none;
 }
 
 .watch-pick-filter-row {

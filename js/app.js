@@ -1681,6 +1681,7 @@ let suggestionFilters = {
   mood: "all",
   availability: "all",
 };
+let suggestionFiltersOpen = true;
 let userProviderKeys = loadUserProviderKeys();
 let groupProfiles = loadGroupProfiles();
 let activeGroupProfileIds = loadActiveGroupProfileIds();
@@ -6144,7 +6145,14 @@ function getSuggestionFilterGroups() {
 }
 
 function buildSuggestionFiltersHTML() {
-  return getSuggestionFilterGroups()
+  const groups = getSuggestionFilterGroups();
+  const activeLabels = groups
+    .map((g) => g.options.find((o) => o.value === suggestionFilters[g.key])?.label)
+    .filter(Boolean)
+    .filter((label, i, arr) => arr.indexOf(label) === i)
+    .join(" · ");
+
+  const rows = groups
     .map(
       (group) => `
       <div class="watch-pick-filter-row">
@@ -6163,6 +6171,16 @@ function buildSuggestionFiltersHTML() {
     `,
     )
     .join("");
+
+  return `
+    <div class="watch-pick-filters-header" onclick="toggleSuggestionFilters()">
+      <span class="watch-pick-filters-summary">${escapeHtml(activeLabels)}</span>
+      <span class="watch-pick-filters-arrow">${suggestionFiltersOpen ? "▲" : "▼"}</span>
+    </div>
+    <div class="watch-pick-filters-body${suggestionFiltersOpen ? "" : " collapsed"}">
+      ${rows}
+    </div>
+  `;
 }
 
 function buildGroupPickerHTML() {
@@ -6245,6 +6263,14 @@ function setSuggestionFilter(key, value) {
   if (!(key in suggestionFilters)) return;
   suggestionFilters[key] = value;
   randomSuggestion();
+}
+
+function toggleSuggestionFilters() {
+  suggestionFiltersOpen = !suggestionFiltersOpen;
+  const body = document.querySelector(".watch-pick-filters-body");
+  const arrow = document.querySelector(".watch-pick-filters-arrow");
+  if (body) body.classList.toggle("collapsed", !suggestionFiltersOpen);
+  if (arrow) arrow.textContent = suggestionFiltersOpen ? "▲" : "▼";
 }
 
 function toggleActiveGroupProfile(profileId) {
@@ -8306,6 +8332,7 @@ window.app = {
   closeProviderSettings,
   toggleUserProvider,
   setSuggestionFilter,
+  toggleSuggestionFilters,
   toggleActiveGroupProfile,
   addGroupProfile,
   toggleGroupProfileProvider,
