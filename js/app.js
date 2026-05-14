@@ -1890,14 +1890,6 @@ function applyLaunchActionFromHash() {
   }
 }
 
-function toggleEpisodeTracker() {
-  const typeInput = document.getElementById("typeInput");
-  const container = document.getElementById("episodeTrackerContainer");
-  if (!typeInput || !container) return;
-
-  const type = typeInput.value;
-  container.style.display = type === "series" ? "block" : "none";
-}
 
 function getEpisodesInSeason(season) {
   // Lit seasonData depuis le dataset si on est dans le formulaire
@@ -2569,8 +2561,6 @@ async function selectTMDBItem(item) {
   updateStarPicker("");
   selectAddStatus("towatch");
   updateSelectedTMDBUI(item);
-
-  toggleEpisodeTracker();
 
   if (item.poster_path) {
     document.getElementById("titleInput").dataset.poster =
@@ -4122,7 +4112,6 @@ function openAddModal() {
   updateEpisodeDisplay();
   renderTags();
   renderWatchedWith();
-  toggleEpisodeTracker();
   updateSelectedTMDBUI(null);
   selectAddStatus("towatch");
   document.getElementById("ratingInput").value = "";
@@ -5115,7 +5104,6 @@ function populateAddModalFromCollectionItem(
     if (tmdbSearchGroup) tmdbSearchGroup.style.display = "none";
   }
 
-  toggleEpisodeTracker();
   updateEpisodeDisplay();
   renderTags();
 }
@@ -8200,7 +8188,6 @@ window.app = {
   switchTab,
   toggleMobileActionsMenu,
   closeMobileActionsMenu,
-  toggleEpisodeTracker,
   changeEpisode,
   resetEpisode,
   quickNextEpisode,

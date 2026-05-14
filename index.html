@@ -196,7 +196,7 @@
       <div id="collectionSection" class="section active">
         <div class="collection-type-switch">
           <button class="filter-tag active" data-filter="movie">Films</button>
-          <button class="filter-tag" data-filter="series">Series</button>
+          <button class="filter-tag" data-filter="series">Séries</button>
           <button class="filter-tag" data-filter="all">Tout</button>
         </div>
 
@@ -208,7 +208,7 @@
               onclick="app.setViewMode('grid')"
               title="Vue grille"
             >
-              &#x229E;
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
             </button>
             <button
               class="view-toggle-btn"
@@ -216,7 +216,7 @@
               onclick="app.setViewMode('list')"
               title="Vue liste"
             >
-              &#x2630;
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>
             </button>
           </div>
 
@@ -241,7 +241,7 @@
         <div id="contentGrid" class="grid"></div>
 
         <div id="emptyState" class="empty-state" style="display: none">
-          <div class="empty-icon">&#x1F4DA;</div>
+          <div class="empty-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
           <h3 class="empty-title">Aucun contenu</h3>
           <p class="empty-text">
             Commencez par ajouter vos films et séries préférés.
