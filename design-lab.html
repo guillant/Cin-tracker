@@ -1879,6 +1879,139 @@
         background: rgba(34,197,94,0.14);
       }
 
+      .watched-visual-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+
+      .watched-visual-card {
+        border: 1px solid rgba(148,163,184,0.2);
+        border-radius: 16px;
+        background: linear-gradient(180deg, rgba(15,23,42,0.85) 0%, rgba(2,6,23,0.96) 100%);
+        overflow: hidden;
+      }
+
+      .watched-visual-card-a {
+        border-color: rgba(56,189,248,0.34);
+        box-shadow: 0 12px 24px rgba(14,165,233,0.14);
+      }
+
+      .watched-visual-card-b {
+        border-color: rgba(245,158,11,0.32);
+        box-shadow: 0 12px 24px rgba(245,158,11,0.12);
+      }
+
+      .watched-visual-card-c {
+        border-color: rgba(34,197,94,0.34);
+        box-shadow: 0 12px 24px rgba(34,197,94,0.12);
+      }
+
+      .watched-visual-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(148,163,184,0.2);
+        font-size: 11px;
+        color: rgba(203,213,225,0.86);
+      }
+
+      .watched-visual-head strong {
+        color: #f8fafc;
+        font-size: 13px;
+      }
+
+      .watched-visual-body {
+        padding: 12px;
+      }
+
+      .watched-preview-shell {
+        border: 1px solid rgba(148,163,184,0.16);
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(15,23,42,0.58);
+        margin-bottom: 10px;
+      }
+
+      .watched-preview-kicker {
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(148,163,184,0.86);
+        margin-bottom: 8px;
+      }
+
+      .watched-preview-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .watched-preview-actions.single {
+        grid-template-columns: 1fr;
+      }
+
+      .watched-preview-actions .main {
+        grid-column: 1 / -1;
+      }
+
+      .watched-btn {
+        border: 1px solid rgba(148,163,184,0.24);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #e2e8f0;
+        background: rgba(30,41,59,0.85);
+        text-align: center;
+      }
+
+      .watched-btn-icon {
+        margin-right: 6px;
+        opacity: 0.95;
+      }
+
+      .watched-btn-sub {
+        display: block;
+        font-size: 10px;
+        font-weight: 500;
+        opacity: 0.9;
+        margin-top: 2px;
+      }
+
+      .watched-btn.secondary {
+        background: rgba(51,65,85,0.66);
+      }
+
+      .watched-btn.danger {
+        color: #fecaca;
+        border-color: rgba(248,113,113,0.32);
+      }
+
+      .watched-btn.primary-a {
+        background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+        border-color: transparent;
+        color: #ffffff;
+      }
+
+      .watched-btn.primary-b {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        border-color: transparent;
+        color: #f0fdf4;
+      }
+
+      .watched-btn.primary-c {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border-color: transparent;
+        color: #fff7ed;
+      }
+
+      .watched-visual-note {
+        font-size: 12px;
+        color: rgba(203,213,225,0.88);
+      }
+
       section[id] {
         scroll-margin-top: 20px;
       }
@@ -1893,6 +2026,7 @@
     <div class="mockup-quick-nav">
       <a class="mockup-quick-link" href="#mockup-icons">Icônes</a>
       <a class="mockup-quick-link" href="#mockup-logos">Logos</a>
+      <a class="mockup-quick-link" href="#mockup-watched-cta">CTA Vu + note</a>
       <a class="mockup-quick-link" href="#mockup-under-hero">Sous le hero (refait)</a>
     </div>
 
@@ -2286,6 +2420,59 @@
           </div>
         </article>
 
+      </div>
+    </section>
+
+    <section id="mockup-watched-cta">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Bouton principal</span>
+        <h3 class="mockup-subsection-title">Visuels pour "Vu + note"</h3>
+        <p class="mockup-copy">Trois directions visuelles pour le bouton prioritaire dans la fiche detail.</p>
+      </div>
+
+      <div class="watched-visual-grid">
+        <article class="watched-visual-card watched-visual-card-a">
+          <div class="watched-visual-head"><strong>Option A</strong><span>Premium bleu cine</span></div>
+          <div class="watched-visual-body">
+            <div class="watched-preview-shell">
+              <div class="watched-preview-kicker">Film dans ta collection</div>
+              <div class="watched-preview-actions single">
+                <div class="watched-btn primary-a main"><span class="watched-btn-icon">✓</span>Marquer comme vu + noter</div>
+              </div>
+            </div>
+            <p class="watched-visual-note">La version la plus proche de l'app actuelle: lisible, premium, immediate.</p>
+          </div>
+        </article>
+
+        <article class="watched-visual-card watched-visual-card-b">
+          <div class="watched-visual-head"><strong>Option B</strong><span>Dore notation</span></div>
+          <div class="watched-visual-body">
+            <div class="watched-preview-shell">
+              <div class="watched-preview-kicker">Film dans ta collection</div>
+              <div class="watched-preview-actions">
+                <div class="watched-btn primary-c main"><span class="watched-btn-icon">★</span>Marquer comme vu + noter<span class="watched-btn-sub">Action note mise en avant</span></div>
+                <div class="watched-btn secondary">Modifier</div>
+                <div class="watched-btn danger">Supprimer</div>
+              </div>
+            </div>
+            <p class="watched-visual-note">Accent visuel sur la note, ideal si tu veux lier visionnage et etoiles.</p>
+          </div>
+        </article>
+
+        <article class="watched-visual-card watched-visual-card-c">
+          <div class="watched-visual-head"><strong>Option C</strong><span>Succes editorial</span></div>
+          <div class="watched-visual-body">
+            <div class="watched-preview-shell">
+              <div class="watched-preview-kicker">Film dans ta collection</div>
+              <div class="watched-preview-actions">
+                <div class="watched-btn primary-b main"><span class="watched-btn-icon">✓</span>Confirmer visionnage + note<span class="watched-btn-sub">Etape validee, puis note</span></div>
+                <div class="watched-btn secondary">Modifier</div>
+                <div class="watched-btn danger">Supprimer</div>
+              </div>
+            </div>
+            <p class="watched-visual-note">Ressenti "action reussie" plus marque, utile pour un parcours progressif.</p>
+          </div>
+        </article>
       </div>
     </section>
 

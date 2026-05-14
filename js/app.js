@@ -4749,6 +4749,8 @@ function buildDetailQuickBarHTML({
 }
 
 function buildCollectionQuickBar(item) {
+  const watchedLabel = getWatchedRatingActionLabel(item);
+
   const buttons = [
     `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "towatch" ? "active" : ""}" onclick="setItemStatusFromDetail('towatch')">À voir</button>`,
   ];
@@ -4760,13 +4762,8 @@ function buildCollectionQuickBar(item) {
   }
 
   buttons.push(
-    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">Vu + noter</button>`,
+    `<button class="detail-mini-btn detail-mini-btn-toolbar ${item.status === "watched" ? "active" : ""}" onclick="openWatchedFlowForCurrentItem()">${watchedLabel}</button>`,
   );
-  if (item.status === "watched") {
-    buttons.push(
-      `<button class="detail-mini-btn detail-mini-btn-toolbar detail-mini-btn-ghost" onclick="editItem()">Modifier</button>`,
-    );
-  }
 
   return `<div class="detail-action-bar">${buttons.join("")}</div>`;
 }
@@ -4780,7 +4777,7 @@ function buildTrendingQuickBar(item, type, alreadyAdded) {
   }
   return `<div class="detail-action-bar">
     <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="quickAddFromTrendingById(${item.id}, 'towatch', '${type}')">+ Ajouter</button>
-    <button class="btn" style="flex:1;justify-content:center;" onclick="openWatchedFlowFromTrendingById(${item.id}, '${type}')">✓ Vu + noter</button>
+    <button class="btn" style="flex:1;justify-content:center;" onclick="openWatchedFlowFromTrendingById(${item.id}, '${type}')">✓ Marquer comme vu + noter</button>
   </div>`;
 }
 
@@ -4924,6 +4921,17 @@ function openWatchedFlowForCurrentItem() {
   populateAddModalFromCollectionItem(item, "watched");
 }
 
+function getWatchedRatingActionLabel(item) {
+  const status = normalizeStatusValue(item?.status);
+  if (status !== "watched") return "Marquer comme vu + noter";
+  return item?.rating ? "Mettre a jour ma note" : "Ajouter ma note";
+}
+
+function getWatchedRatingActionIcon(item) {
+  const status = normalizeStatusValue(item?.status);
+  return status === "watched" ? "★" : "✓";
+}
+
 async function openWatchedFlowFromTrendingById(id, type = null) {
   const cached = getTrendingCacheItem(id, type);
   if (!cached) return;
@@ -4939,6 +4947,9 @@ async function openWatchedFlowFromTrendingById(id, type = null) {
 
 function buildDetailHTML(item, tmdb) {
   if (item.type === "series") return buildSeriesDetailHTML(item, tmdb);
+
+  const watchedActionLabel = getWatchedRatingActionLabel(item);
+  const watchedActionIcon = getWatchedRatingActionIcon(item);
 
   const backdropUrl = tmdb?.backdrop_path
     ? `https://image.tmdb.org/t/p/w1280${tmdb.backdrop_path}`
@@ -4994,13 +5005,8 @@ function buildDetailHTML(item, tmdb) {
         providerLogo: item.providerLogo || null,
         providerName: item.providerName || null,
       })}
-      <div class="detail-action-bar detail-action-bar-priority ${item.status === "watched" ? "" : "detail-action-bar-priority-minimal"}">
-        <button class="btn btn-primary" onclick="openWatchedFlowForCurrentItem()">Vu + noter</button>
-        ${
-          item.status === "watched"
-            ? `<button class="btn" onclick="editItem()">Modifier</button>`
-            : ""
-        }
+      <div class="detail-action-bar detail-action-bar-priority detail-action-bar-priority-minimal">
+        <button class="btn btn-primary detail-action-primary-a" onclick="openWatchedFlowForCurrentItem()"><span class="detail-action-primary-icon">${watchedActionIcon}</span><span>${watchedActionLabel}</span></button>
         <button class="btn detail-action-danger" onclick="deleteItem()">Supprimer</button>
       </div>
       <div class="detail-stream-panel detail-stream-panel-info">
@@ -5132,12 +5138,7 @@ function buildSeriesDetailHTML(item, tmdb) {
         }
       </div>
 
-      <div class="detail-actions detail-actions-compact detail-actions-series ${item.status === "watched" ? "" : "detail-actions-series-minimal"}">
-        ${
-          item.status === "watched"
-            ? `<button class="btn detail-action-secondary" onclick="editItem()">Modifier</button>`
-            : ""
-        }
+      <div class="detail-actions detail-actions-compact detail-actions-series detail-actions-series-minimal">
         <button class="btn detail-action-danger" onclick="deleteItem()">Supprimer</button>
       </div>
     </div>`;
@@ -6466,7 +6467,7 @@ function renderSuggestion(item) {
               Ouvrir la fiche
             </button>
             <button class="btn" onclick="${secondaryAction}; closeSuggestion();">
-              ${item.isExternalSuggestion ? "Ajouter" : "Vu + noter"}
+              ${item.isExternalSuggestion ? "Ajouter" : getWatchedRatingActionLabel(item)}
             </button>
             <button class="btn" onclick="randomSuggestion()">
               Autre choix
