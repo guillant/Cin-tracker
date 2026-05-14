@@ -6099,6 +6099,7 @@ function getSuggestionFilterGroups() {
   return [
     {
       key: "mode",
+      label: "Mode",
       options: [
         { value: "solo", label: "Solo" },
         { value: "group", label: "Groupe" },
@@ -6106,6 +6107,7 @@ function getSuggestionFilterGroups() {
     },
     {
       key: "source",
+      label: "Source",
       options: [
         { value: "all", label: "Tout" },
         { value: "collection", label: "Ma liste" },
@@ -6114,25 +6116,28 @@ function getSuggestionFilterGroups() {
     },
     {
       key: "type",
+      label: "Type",
       options: [
-        { value: "all", label: "Films + séries" },
+        { value: "all", label: "Tout" },
         { value: "movie", label: "Films" },
         { value: "series", label: "Séries" },
       ],
     },
     {
       key: "mood",
+      label: "Ambiance",
       options: [
-        { value: "all", label: "Toute ambiance" },
+        { value: "all", label: "Toute" },
         { value: "light", label: "Léger" },
         { value: "intense", label: "Intense" },
       ],
     },
     {
       key: "availability",
+      label: "Dispo",
       options: [
-        { value: "all", label: "Toutes plateformes" },
-        { value: "mine", label: "Sur mes plateformes" },
+        { value: "all", label: "Tout" },
+        { value: "mine", label: "Mes plateformes" },
       ],
     },
   ];
@@ -6142,19 +6147,18 @@ function buildSuggestionFiltersHTML() {
   return getSuggestionFilterGroups()
     .map(
       (group) => `
-      <div class="watch-pick-filter-group">
-        ${group.options
-          .map(
-            (option) => `
-          <button
-            class="${suggestionFilters[group.key] === option.value ? "active" : ""}"
-            onclick="setSuggestionFilter('${group.key}', '${option.value}')"
-          >
-            ${escapeHtml(option.label)}
-          </button>
-        `,
-          )
-          .join("")}
+      <div class="watch-pick-filter-row">
+        <span class="watch-pick-filter-label">${escapeHtml(group.label)}</span>
+        <div class="watch-pick-filter-group">
+          ${group.options
+            .map(
+              (option) => `<button
+                class="${suggestionFilters[group.key] === option.value ? "active" : ""}"
+                onclick="setSuggestionFilter('${group.key}', '${option.value}')"
+              >${escapeHtml(option.label)}</button>`,
+            )
+            .join("")}
+        </div>
       </div>
     `,
     )
