@@ -6774,41 +6774,34 @@ function renderSuggestion(item) {
           ${buildGroupPickerHTML()}
 
           <div class="watch-pick-hero">
-            <div class="watch-pick-poster">
-              ${
-                item.posterUrl
-                  ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
-                  : `<div class="watch-pick-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`
-              }
-            </div>
-            <div class="watch-pick-main">
-              <span class="watch-pick-kicker">Notre choix</span>
-              <h3>${escapeHtml(item.title)}</h3>
-              <div class="watch-pick-meta">
-                <span>${item.type === "movie" ? "Film" : "Série"}</span>
-                ${year}
-                ${genre}
-                ${provider}
+            ${item.posterUrl ? `<div class="watch-pick-hero-bg" style="background-image:url('${escapeHtml(item.posterUrl)}')"></div>` : ""}
+            <div class="watch-pick-hero-inner">
+              <div class="watch-pick-poster">
+                ${
+                  item.posterUrl
+                    ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
+                    : `<div class="watch-pick-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`
+                }
               </div>
-              <div class="watch-pick-badges">
-                <span>${escapeHtml(statusText)}</span>
-                ${
-                  item.isExternalSuggestion
-                    ? `<span>Découverte TMDB</span>`
-                    : ""
-                }
-                ${
-                  rating
-                    ? `<span>${ratingLabel}: ${Number(rating).toFixed(1)}/5</span>`
-                    : ""
-                }
-                ${
-                  item.type === "series" &&
-                  item.currentSeason &&
-                  item.currentEpisode
-                    ? `<span>${escapeHtml(getNextEpisodeDisplay(item, "compact"))}</span>`
-                    : ""
-                }
+              <div class="watch-pick-main">
+                <span class="watch-pick-kicker">Notre choix</span>
+                <h3>${escapeHtml(item.title)}</h3>
+                <div class="watch-pick-meta">
+                  <span>${item.type === "movie" ? "Film" : "Série"}</span>
+                  ${year}
+                  ${genre}
+                  ${provider}
+                </div>
+                <div class="watch-pick-badges">
+                  <span>${escapeHtml(statusText)}</span>
+                  ${item.isExternalSuggestion ? `<span>Découverte TMDB</span>` : ""}
+                  ${rating ? `<span>${ratingLabel}: ${Number(rating).toFixed(1)}/5</span>` : ""}
+                  ${
+                    item.type === "series" && item.currentSeason && item.currentEpisode
+                      ? `<span>${escapeHtml(getNextEpisodeDisplay(item, "compact"))}</span>`
+                      : ""
+                  }
+                </div>
               </div>
             </div>
           </div>
@@ -6838,7 +6831,8 @@ function renderSuggestion(item) {
             <button class="btn" onclick="${secondaryAction}; closeSuggestion();">
               ${item.isExternalSuggestion ? "Ajouter" : getWatchedRatingActionLabel(item)}
             </button>
-            <button class="btn" onclick="randomSuggestion()">
+            <button class="btn btn-shuffle" onclick="randomSuggestion()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.5 2.2"/><path d="M22 18h-5.9c-1.3 0-2.5-.7-3.1-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/></svg>
               Autre choix
             </button>
           </div>
