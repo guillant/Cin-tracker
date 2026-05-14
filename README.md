@@ -196,7 +196,7 @@ Contient toute la logique applicative :
 ## 🚀 Prochaines fonctionnalités envisagées
 
 - [ ] Mode sombre / clair
-- [ ] Recommandations personnalisées basées sur vos genres
+- [x] Recommandations personnalisées basées sur vos genres
 - [ ] Statistiques avancées (activité par mois, heatmap)
 - [ ] Synchronisation cloud entre appareils
 - [ ] Notifications de nouvelles saisons pour les séries en cours

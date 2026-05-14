@@ -316,13 +316,6 @@
           <div id="recentActivity" class="timeline"></div>
         </div>
 
-        <div class="chart-card">
-          <h3 class="chart-title">Commentaires</h3>
-          <p class="stats-note stats-note-tight">
-            Vos derniers avis laissés sur films et séries
-          </p>
-          <div id="commentsFeed" class="stats-comments-feed"></div>
-        </div>
       </div>
 
       <!-- Lists Section -->
@@ -420,11 +413,35 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <button class="mobile-fab h2" onclick="app.openAddModal()" title="Ajouter">
-      +
-    </button>
+      <!-- Search Section -->
+      <div id="searchSection" class="section">
+        <div class="search-section-shell">
+          <div class="search-section-head">
+            <h3 class="chart-title">Search</h3>
+            <p class="search-section-copy">
+              Retrouvez un film ou une série et ajoutez-le directement à votre
+              collection.
+            </p>
+          </div>
+          <div class="search-section-bar">
+            <span class="search-section-icon">&#x2315;</span>
+            <input
+              type="text"
+              id="sectionSearchInput"
+              class="search-section-input"
+              placeholder="Rechercher un film ou une série..."
+              autocomplete="off"
+            />
+          </div>
+          <div id="sectionSearchResults" class="search-section-results">
+            <p class="search-overlay-hint">
+              Tapez un titre de film ou de série…
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <nav class="mobile-bottom-nav h2" aria-label="Navigation mobile">
       <button
@@ -432,7 +449,14 @@
         data-tab="collection"
         onclick="app.switchTab('collection', this)"
       >
-        <span class="mobile-nav-icon">&#x25A6;</span>
+        <span class="mobile-nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h4A1.5 1.5 0 0 1 11 5.5v4A1.5 1.5 0 0 1 9.5 11h-4A1.5 1.5 0 0 1 4 9.5v-4Z" />
+            <path d="M13 5.5A1.5 1.5 0 0 1 14.5 4h4A1.5 1.5 0 0 1 20 5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4A1.5 1.5 0 0 1 13 9.5v-4Z" />
+            <path d="M4 14.5A1.5 1.5 0 0 1 5.5 13h4a1.5 1.5 0 0 1 1.5 1.5v4A1.5 1.5 0 0 1 9.5 20h-4A1.5 1.5 0 0 1 4 18.5v-4Z" />
+            <path d="M13 14.5a1.5 1.5 0 0 1 1.5-1.5h4a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a1.5 1.5 0 0 1-1.5-1.5v-4Z" />
+          </svg>
+        </span>
         <span>Collection</span>
       </button>
       <button
@@ -440,7 +464,13 @@
         data-tab="stats"
         onclick="app.switchTab('stats', this)"
       >
-        <span class="mobile-nav-icon">&#x25CE;</span>
+        <span class="mobile-nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M5 20V10" />
+            <path d="M12 20V4" />
+            <path d="M19 20v-7" />
+          </svg>
+        </span>
         <span>Stats</span>
       </button>
       <button
@@ -448,7 +478,16 @@
         data-tab="lists"
         onclick="app.switchTab('lists', this)"
       >
-        <span class="mobile-nav-icon">&#x2261;</span>
+        <span class="mobile-nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 6h12" />
+            <path d="M8 12h12" />
+            <path d="M8 18h12" />
+            <path d="M4 6h.01" />
+            <path d="M4 12h.01" />
+            <path d="M4 18h.01" />
+          </svg>
+        </span>
         <span>Listes</span>
       </button>
       <button
@@ -456,8 +495,26 @@
         data-tab="discover"
         onclick="app.switchTab('discover', this)"
       >
-        <span class="mobile-nav-icon">&#x2315;</span>
+        <span class="mobile-nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 3.5 20.5 12 12 20.5 3.5 12 12 3.5Z" />
+            <path d="m12 8 1.35 2.65L16 12l-2.65 1.35L12 16l-1.35-2.65L8 12l2.65-1.35L12 8Z" />
+          </svg>
+        </span>
         <span>Explorer</span>
+      </button>
+      <button
+        class="mobile-nav-item mobile-nav-search"
+        data-tab="search"
+        onclick="app.switchTab('search', this)"
+      >
+        <span class="mobile-nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="m20 20-4.2-4.2" />
+            <circle cx="10.5" cy="10.5" r="5.8" />
+          </svg>
+        </span>
+        <span>Search</span>
       </button>
     </nav>
 
@@ -570,10 +627,10 @@
                   </div>
                   <div class="rating-meta">
                     <strong id="ratingValueDisplay">Aucune note</strong>
-                    <span id="ratingHintText">Glisse, clique ou touche pour noter (0,5 possible).</span>
+                    <span id="ratingHintText">Clique ou glisse pour noter.</span>
                   </div>
                 </div>
-                <p class="rating-help">Astuce : clique ou touche la gauche d'une étoile pour mettre 0,5.</p>
+                <p class="rating-help">Demi-étoiles disponibles.</p>
                 <input type="hidden" id="ratingInput" />
               </div>
 
@@ -634,12 +691,23 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label">Vu avec</label>
-                  <input
-                    type="text"
-                    class="form-input"
-                    id="watchedWithInput"
-                    placeholder="Prénom, pseudo…"
-                  />
+                  <div class="tags-input people-input" id="watchedWithContainer">
+                    <input
+                      type="text"
+                      class="tag-input"
+                      id="watchedWithInput"
+                      placeholder="Ajouter une personne..."
+                      style="
+                        flex: 1;
+                        border: none;
+                        background: transparent;
+                        outline: none;
+                        font-size: 14px;
+                        min-width: 120px;
+                        color: inherit;
+                      "
+                    />
+                  </div>
                 </div>
               </div>
             </div>

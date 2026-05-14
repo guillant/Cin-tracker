@@ -1676,6 +1676,7 @@ const movieRowsExpanded = {
 };
 let currentItemId = null;
 let currentTags = [];
+let currentWatchedWith = [];
 let currentSeason = 1;
 let currentEpisode = 1;
 let searchTimeout;
@@ -1696,6 +1697,11 @@ let suggestionExternalCache = {
   key: "",
   items: [],
   fetchedAt: 0,
+};
+let personalGenreProfileCache = {
+  signature: "",
+  scores: new Map(),
+  topGenres: [],
 };
 let discoverBrowseState = {
   key: null,
@@ -1833,6 +1839,7 @@ function switchTab(tabName, element) {
   if (tabName === "stats") renderStats();
   else if (tabName === "lists") renderLists();
   else if (tabName === "discover") loadDiscover();
+  else if (tabName === "search") focusSearchSection();
 }
 
 function toggleMobileActionsMenu() {
@@ -1879,7 +1886,7 @@ function applyLaunchActionFromHash() {
   }
 
   if (hash === "#search") {
-    openSearch();
+    switchTab("search", document.querySelector('[data-tab="search"]'));
   }
 }
 
@@ -2019,6 +2026,21 @@ function updateSelectedTMDBUI(item) {
   submitBtn.style.opacity = "1";
 }
 
+function getTodayDateInputValue() {
+  const today = new Date();
+  const localDate = new Date(
+    today.getTime() - today.getTimezoneOffset() * 60000,
+  );
+  return localDate.toISOString().slice(0, 10);
+}
+
+function setDefaultWatchedDateIfEmpty() {
+  const watchedDateInput = document.getElementById("watchedDateInput");
+  if (watchedDateInput && !watchedDateInput.value) {
+    watchedDateInput.value = getTodayDateInputValue();
+  }
+}
+
 function selectAddStatus(status, preset = false) {
   const statusInput = document.getElementById("statusInput");
   const watchedExtras = document.getElementById("watchedExtras");
@@ -2052,6 +2074,7 @@ function selectAddStatus(status, preset = false) {
     normalized === "watched"
       ? "Enregistrer comme vu"
       : "Ajouter à la collection";
+  if (normalized === "watched") setDefaultWatchedDateIfEmpty();
 }
 
 function normalizeHalfStepRating(value) {
@@ -2140,13 +2163,15 @@ function initStarPicker() {
     const getTouchRating = (touch) => {
       if (!touch || !stars.length) return null;
 
-      const pickerRect = starPicker.getBoundingClientRect();
-      if (!pickerRect || pickerRect.width <= 0) return null;
+      const firstStarRect = stars[0].getBoundingClientRect();
+      const lastStarRect = stars[stars.length - 1].getBoundingClientRect();
+      const starsWidth = lastStarRect.right - firstStarRect.left;
+      if (starsWidth <= 0) return null;
 
-      const xMin = pickerRect.left;
-      const xMax = pickerRect.right - 0.001;
+      const xMin = firstStarRect.left;
+      const xMax = lastStarRect.right - 0.001;
       const clampedX = Math.min(Math.max(touch.clientX, xMin), xMax);
-      const ratio = (clampedX - xMin) / pickerRect.width;
+      const ratio = (clampedX - xMin) / starsWidth;
       const rawRating = ratio * 5;
       const snappedHalf = Math.ceil(rawRating * 2) / 2;
       const minInsidePicker = 0.5;
@@ -2312,7 +2337,7 @@ function updateRatingPickerUI(value) {
   if (ratingHintText) {
     ratingHintText.textContent = hasValue
       ? "Utilise Effacer pour retirer la note."
-      : "Glisse, clique ou touche pour noter (0,5 possible).";
+      : "Clique ou glisse pour noter.";
   }
 
   if (ratingClearBtn) {
@@ -2386,6 +2411,56 @@ function renderTags() {
 function removeTag(tag) {
   currentTags = currentTags.filter((t) => t !== tag);
   renderTags();
+}
+
+function addWatchedWithName(name) {
+  const names = getWatchedWithNames(name);
+  let didChange = false;
+
+  names.forEach((person) => {
+    if (!currentWatchedWith.includes(person)) {
+      currentWatchedWith.push(person);
+      didChange = true;
+    }
+  });
+
+  if (didChange) renderWatchedWith();
+}
+
+function renderWatchedWith() {
+  const container = document.getElementById("watchedWithContainer");
+  if (!container) return;
+
+  container.innerHTML =
+    currentWatchedWith
+      .map(
+        (name) => `
+        <span class="tag-item person-item">
+          ${escapeHtml(name)}
+          <button type="button" class="tag-remove" data-name="${escapeHtml(name)}">&times;</button>
+        </span>
+      `,
+      )
+      .join("") +
+    '<input type="text" class="tag-input" id="watchedWithInput" placeholder="Ajouter une personne..." style="flex: 1; border: none; background: transparent; outline: none; font-size: 14px; min-width: 120px; color: inherit;">';
+
+  container.querySelectorAll(".tag-remove").forEach((btn) => {
+    btn.addEventListener("click", () => removeWatchedWithName(btn.dataset.name));
+  });
+
+  const input = container.querySelector(".tag-input");
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === "," || e.key === ";") {
+      e.preventDefault();
+      addWatchedWithName(this.value);
+      this.value = "";
+    }
+  });
+}
+
+function removeWatchedWithName(name) {
+  currentWatchedWith = currentWatchedWith.filter((person) => person !== name);
+  renderWatchedWith();
 }
 
 async function searchTMDB(query) {
@@ -3567,14 +3642,6 @@ function renderStats() {
     .slice(0, 5);
 
   const historyItems = watchedHistory.length > 0 ? watchedHistory : recentAdded;
-  const commentItems = [...items]
-    .filter((item) => item.notes && item.notes.trim())
-    .sort(
-      (left, right) =>
-        new Date(right.watchedAt || right.dateAdded) -
-        new Date(left.watchedAt || left.dateAdded),
-    )
-    .slice(0, 8);
 
   document.getElementById("recentActivity").innerHTML =
     historyItems.length === 0
@@ -3588,6 +3655,12 @@ function renderStats() {
               month: "long",
               year: "numeric",
             });
+            const watchedDateStr =
+              isWatched && item.watchedDate
+                ? formatDateInputDisplay(item.watchedDate)
+                : dateStr;
+            const watchedWithNames = getWatchedWithNames(item.watchedWith);
+            const noteExcerpt = buildHistoryNoteExcerpt(item.notes);
             const hasRating = normalizeHalfStepRating(item.rating) > 0;
             const stars = hasRating
               ? buildRatingStarsHTML(item.rating, {
@@ -3614,50 +3687,20 @@ function renderStats() {
             }
           </div>
           <div class="timeline-content">
-            <div class="timeline-date">${isWatched ? "Vu le " : "Ajouté le "}${dateStr}</div>
+            <div class="timeline-date">${isWatched ? "Vu le " : "Ajouté le "}${watchedDateStr}</div>
             <div class="timeline-text">
               <strong>${escapeHtml(item.title)}</strong>
               ${item.year ? `<span class="history-year"> · ${escapeHtml(item.year)}</span>` : ""}
             </div>
             ${stars ? `<div class="history-rating">${stars} <span class="history-rating-value">${formatRatingDisplayValue(item.rating)}/5</span></div>` : ""}
+            ${
+              watchedWithNames.length
+                ? `<div class="history-extra"><span class="history-extra-label">Vu avec</span>${buildHistoryPeopleList(watchedWithNames)}</div>`
+                : ""
+            }
+            ${noteExcerpt ? `<div class="history-note">${noteExcerpt}</div>` : ""}
           </div>
         </div>
-      `;
-          })
-          .join("");
-
-  document.getElementById("commentsFeed").innerHTML =
-    commentItems.length === 0
-      ? '<p class="stats-empty">Aucun commentaire enregistré pour l\'instant.</p>'
-      : commentItems
-          .map((item) => {
-            const date = new Date(item.watchedAt || item.dateAdded);
-            const dateStr = date.toLocaleDateString("fr-FR", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            });
-            const excerpt = escapeHtml(item.notes.trim()).replace(
-              /\n+/g,
-              "<br>",
-            );
-            const commentClasses = [
-              "stats-comment-card",
-              item.type === "series"
-                ? "stats-comment-card-series"
-                : "stats-comment-card-movie",
-            ].join(" ");
-            return `
-        <article class="${commentClasses}" onclick="openDetail(${inlineJsString(item.id)})">
-          <div class="stats-comment-head">
-            <div>
-              <div class="stats-comment-title">${escapeHtml(item.title)}</div>
-              <div class="stats-comment-meta">${item.type === "series" ? "Série" : "Film"}${item.year ? ` · ${escapeHtml(item.year)}` : ""}</div>
-            </div>
-            <div class="stats-comment-date">${dateStr}</div>
-          </div>
-          <div class="stats-comment-body">${excerpt}</div>
-        </article>
       `;
           })
           .join("");
@@ -4056,10 +4099,12 @@ function openAddModal() {
   delete titleInput.dataset.releaseDate;
   currentItemId = null;
   currentTags = [];
+  currentWatchedWith = [];
   currentSeason = 1;
   currentEpisode = 1;
   updateEpisodeDisplay();
   renderTags();
+  renderWatchedWith();
   toggleEpisodeTracker();
   updateSelectedTMDBUI(null);
   selectAddStatus("towatch");
@@ -4069,7 +4114,7 @@ function openAddModal() {
   const tmdbSearchGroup = document.getElementById("tmdbSearchGroup");
   if (tmdbSearchGroup) tmdbSearchGroup.style.display = "";
   const watchedDateInput = document.getElementById("watchedDateInput");
-  if (watchedDateInput) watchedDateInput.value = new Date().toISOString().split("T")[0];
+  if (watchedDateInput) watchedDateInput.value = "";
   const watchedWithInput = document.getElementById("watchedWithInput");
   if (watchedWithInput) watchedWithInput.value = "";
 }
@@ -4141,6 +4186,54 @@ function buildDetailInfoRow(label, valueHtml, rowClass = "") {
 function buildDetailTagList(tags) {
   if (!tags?.length) return "";
   return `<div class="detail-tag-list">${tags.map((tag) => `<span class="detail-tag-chip">${escapeHtml(tag)}</span>`).join("")}</div>`;
+}
+
+function getWatchedWithNames(value) {
+  const rawNames = Array.isArray(value)
+    ? value
+    : String(value || "")
+        .split(/[,;]+/)
+        .map((name) => name.trim());
+
+  return [...new Set(rawNames.filter(Boolean))];
+}
+
+function formatDateInputDisplay(value) {
+  const [year, month, day] = String(value || "")
+    .split("-")
+    .map((part) => Number.parseInt(part, 10));
+
+  if (!year || !month || !day) return "";
+
+  return new Date(year, month - 1, day).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatWatchedWithInput(value) {
+  return getWatchedWithNames(value).join(", ");
+}
+
+function buildWatchedWithList(value) {
+  return buildDetailTagList(getWatchedWithNames(value));
+}
+
+function buildHistoryPeopleList(names) {
+  if (!names?.length) return "";
+  return `<span class="history-people-list">${names
+    .map((name) => `<span class="history-person-chip">${escapeHtml(name)}</span>`)
+    .join("")}</span>`;
+}
+
+function buildHistoryNoteExcerpt(notes) {
+  const cleanNotes = String(notes || "").trim();
+  if (!cleanNotes) return "";
+
+  const excerpt =
+    cleanNotes.length > 120 ? `${cleanNotes.slice(0, 120).trim()}...` : cleanNotes;
+  return escapeHtml(excerpt).replace(/\n/g, "<br>");
 }
 
 function buildTmdbRatingInline(score, voteCount) {
@@ -4936,6 +5029,7 @@ function populateAddModalFromCollectionItem(
 
   currentItemId = savedId;
   currentTags = item.tags || [];
+  currentWatchedWith = getWatchedWithNames(item.watchedWith);
   currentSeason = item.currentSeason || 1;
   currentEpisode = item.currentEpisode || 1;
 
@@ -4953,8 +5047,7 @@ function populateAddModalFromCollectionItem(
   document.getElementById("notesInput").value = item.notes || "";
   const wdInput = document.getElementById("watchedDateInput");
   if (wdInput) wdInput.value = item.watchedDate || "";
-  const wwInput = document.getElementById("watchedWithInput");
-  if (wwInput) wwInput.value = item.watchedWith || "";
+  renderWatchedWith();
   updateStarPicker(item.rating || "");
 
   if (item.posterUrl) {
@@ -5115,6 +5208,7 @@ function buildDetailHTML(item, tmdb) {
         ${buildDetailInfoRow("Statut", `${statusText}${item.watchedAt ? ` <span class="watched-date">· Vu le ${new Date(item.watchedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>` : ""}`)}
         ${buildAvailabilityInfoRow(item, tmdb?.watchProviders)}
         ${item.rating ? buildDetailInfoRow("Ma note", buildUserRatingInline(item.rating), "detail-row-highlight") : ""}
+        ${buildDetailInfoRow("Vu avec", buildWatchedWithList(item.watchedWith), "detail-row-tags")}
         ${item.genre ? buildDetailInfoRow("Genre", escapeHtml(item.genre)) : ""}
         ${extraRows}
         ${item.tags?.length ? buildDetailInfoRow("Tags", buildDetailTagList(item.tags), "detail-row-tags") : ""}
@@ -5512,6 +5606,11 @@ function buildDetailsTab(item, tmdb) {
       "detail-row-highlight",
     );
   }
+  rows += buildDetailInfoRow(
+    "Vu avec",
+    buildWatchedWithList(item.watchedWith),
+    "detail-row-tags",
+  );
   if (tmdb?.next_episode_to_air) {
     const next = tmdb.next_episode_to_air;
     const dateStr = new Date(next.air_date).toLocaleDateString("fr-FR", {
@@ -6174,6 +6273,90 @@ function getItemMood(item) {
   return "all";
 }
 
+function getPersonalGenreProfile() {
+  const signature = items
+    .map(
+      (item) =>
+        `${item.id}|${item.genre || ""}|${item.status || ""}|${item.rating || ""}|${item.tmdbRating || ""}`,
+    )
+    .join("~");
+
+  if (personalGenreProfileCache.signature === signature) {
+    return personalGenreProfileCache;
+  }
+
+  const scores = new Map();
+
+  items.forEach((item) => {
+    if (item?.isExternalSuggestion || item?.status === "external") return;
+
+    const genreKeys = getItemGenreKeys(item);
+    if (!genreKeys.length) return;
+
+    let weight = 1;
+
+    if (item.status === "watched") weight += 1.6;
+    else if (item.status === "watching") weight += 1.3;
+    else if (item.status === "towatch") weight += 0.9;
+    else if (item.status === "paused") weight += 0.4;
+    else if (item.status === "dropped") weight -= 0.8;
+
+    if (item.rating) {
+      weight += Math.max(0, Number(item.rating) - 2.5) * 0.9;
+    } else if (item.tmdbRating) {
+      weight += Math.max(0, Number(item.tmdbRating) - 2.5) * 0.45;
+    }
+
+    if (!Number.isFinite(weight) || weight <= 0) return;
+
+    genreKeys.forEach((genreKey) => {
+      scores.set(genreKey, (scores.get(genreKey) || 0) + weight);
+    });
+  });
+
+  const topGenres = [...scores.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 3)
+    .map(([genreKey]) => genreKey);
+
+  personalGenreProfileCache = {
+    signature,
+    scores,
+    topGenres,
+  };
+
+  return personalGenreProfileCache;
+}
+
+function getPersonalGenreAffinity(item) {
+  const profile = getPersonalGenreProfile();
+  const genreKeys = getItemGenreKeys(item);
+  if (!genreKeys.length || !profile.scores.size) {
+    return { boost: 0, matchedGenres: [], topGenres: profile.topGenres };
+  }
+
+  const maxScore = Math.max(...profile.scores.values(), 1);
+  const matchedGenres = genreKeys.filter((genreKey) =>
+    profile.scores.has(genreKey),
+  );
+
+  if (!matchedGenres.length) {
+    return { boost: 0, matchedGenres: [], topGenres: profile.topGenres };
+  }
+
+  const affinity =
+    matchedGenres.reduce(
+      (total, genreKey) => total + (profile.scores.get(genreKey) || 0) / maxScore,
+      0,
+    ) / Math.max(1, genreKeys.length);
+
+  return {
+    boost: Math.round(Math.min(26, affinity * 26)),
+    matchedGenres,
+    topGenres: profile.topGenres,
+  };
+}
+
 function matchesSuggestionFilters(item, source) {
   if (
     suggestionFilters.source !== "all" &&
@@ -6205,6 +6388,7 @@ function matchesSuggestionFilters(item, source) {
 
 function getSuggestionScore(item, index) {
   let score = 0;
+  const genreAffinity = getPersonalGenreAffinity(item);
 
   if (item.isExternalSuggestion) score += 54;
   if (item.status === "towatch") score += 70;
@@ -6229,6 +6413,7 @@ function getSuggestionScore(item, index) {
   }
   if (item.posterUrl) score += 6;
   if (item.notes) score += 4;
+  score += genreAffinity.boost;
   if (item.id === lastSuggestedItemId) score -= 80;
 
   const addedTime = new Date(item.dateAdded || 0).getTime();
@@ -6242,6 +6427,7 @@ function getSuggestionScore(item, index) {
 
 function getSuggestionReasons(item) {
   const reasons = [];
+  const genreAffinity = getPersonalGenreAffinity(item);
 
   if (item.isExternalSuggestion) {
     reasons.push("Suggestion hors collection, trouvée via TMDB.");
@@ -6278,6 +6464,13 @@ function getSuggestionReasons(item) {
     reasons.push(`Tu lui as mis ${item.rating}/5.`);
   } else if (item.tmdbRating) {
     reasons.push(`Bon signal TMDB: ${item.tmdbRating}/5.`);
+  }
+  if (genreAffinity.matchedGenres.length) {
+    const labels = genreAffinity.matchedGenres
+      .slice(0, 2)
+      .map(getGenreOptionLabel)
+      .join(", ");
+    reasons.push(`Proche de tes genres favoris: ${labels}.`);
   }
   if (item.dateAdded) {
     const ageDays = Math.floor(
@@ -7613,6 +7806,15 @@ document.getElementById("addForm").addEventListener("submit", function (e) {
   }
 
   const isSeries = document.getElementById("typeInput").value === "series";
+  const selectedStatus = document.getElementById("statusInput").value;
+  const isWatchedStatus = selectedStatus === "watched";
+  if (isWatchedStatus) {
+    const watchedWithInput = document.getElementById("watchedWithInput");
+    if (watchedWithInput?.value.trim()) {
+      addWatchedWithName(watchedWithInput.value);
+      watchedWithInput.value = "";
+    }
+  }
   const existingItem = currentItemId
     ? items.find((i) => i.id === currentItemId)
     : null;
@@ -7631,19 +7833,25 @@ document.getElementById("addForm").addEventListener("submit", function (e) {
     type: document.getElementById("typeInput").value,
     year: document.getElementById("yearInput").value,
     releaseDate: releaseDate || existingItem?.releaseDate || null,
-    status: document.getElementById("statusInput").value,
-    rating: parseFloat(document.getElementById("ratingInput").value) || null,
+    status: selectedStatus,
+    rating: isWatchedStatus
+      ? parseFloat(document.getElementById("ratingInput").value) || null
+      : null,
     genre: document.getElementById("genreInput").value,
-    notes: document.getElementById("notesInput").value,
-    watchedDate: document.getElementById("watchedDateInput")?.value || null,
-    watchedWith: document.getElementById("watchedWithInput")?.value.trim() || null,
+    notes: isWatchedStatus ? document.getElementById("notesInput").value : "",
+    watchedDate: isWatchedStatus
+      ? document.getElementById("watchedDateInput")?.value || null
+      : null,
+    watchedWith: isWatchedStatus
+      ? formatWatchedWithInput(currentWatchedWith) || null
+      : null,
     posterUrl: posterUrl,
     tmdbId: tmdbId,
     providerLogo: providerLogo,
     providerName: providerName,
     providerAccessType: providerAccessType,
     providerPriorityVersion: WATCH_PROVIDER_PRIORITY_VERSION,
-    tags: currentTags,
+    tags: isWatchedStatus ? currentTags : [],
     currentSeason: isSeries ? currentSeason : null,
     currentEpisode: isSeries ? currentEpisode : null,
     seasonData: isSeries ? seasonData : null,
@@ -7654,8 +7862,7 @@ document.getElementById("addForm").addEventListener("submit", function (e) {
       : null,
     dateAdded: existingItem?.dateAdded || new Date().toISOString(),
     watchedAt: (() => {
-      const newStatus = document.getElementById("statusInput").value;
-      if (newStatus === "watched") {
+      if (selectedStatus === "watched") {
         // Conserver la date existante si déjà "watched", sinon mettre maintenant
         if (existingItem?.status === "watched" && existingItem?.watchedAt) {
           return existingItem.watchedAt;
@@ -7692,6 +7899,7 @@ document.getElementById("addForm").addEventListener("submit", function (e) {
 // ── SEARCH OVERLAY ──────────────────────────────────────────────────────────
 
 let searchOverlayTimeout = null;
+let searchSectionTimeout = null;
 
 function openSearch() {
   const overlay = document.getElementById("searchOverlay");
@@ -7707,6 +7915,102 @@ function closeSearch() {
   document.getElementById("searchOverlay").classList.remove("active");
   document.getElementById("searchInput").value = "";
   clearTimeout(searchOverlayTimeout);
+}
+
+function focusSearchSection() {
+  const input = document.getElementById("sectionSearchInput");
+  const results = document.getElementById("sectionSearchResults");
+  if (!input || !results) return;
+
+  if (!input.value.trim()) {
+    results.innerHTML = `<p class="search-overlay-hint">Tapez un titre de film ou de sÃ©rieâ€¦</p>`;
+  }
+
+  requestAnimationFrame(() => input.focus());
+}
+
+async function runSectionSearch(query) {
+  const container = document.getElementById("sectionSearchResults");
+  if (!container) return;
+
+  if (!query || query.length < 2) {
+    container.innerHTML = `<p class="search-overlay-hint">Tapez un titre de film ou de sÃ©rieâ€¦</p>`;
+    return;
+  }
+
+  container.innerHTML = `<p class="search-overlay-hint">Recherche en coursâ€¦</p>`;
+
+  try {
+    const [movieRes, tvRes] = await Promise.all([
+      fetch(
+        `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`,
+      ),
+      fetch(
+        `${TMDB_BASE_URL}/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`,
+      ),
+    ]);
+    const [movies, tv] = await Promise.all([movieRes.json(), tvRes.json()]);
+
+    const results = [
+      ...movies.results.slice(0, 6).map((m) => ({ ...m, media_type: "movie" })),
+      ...(tv.results || [])
+        .slice(0, 6)
+        .map((t) => ({ ...t, media_type: "tv" })),
+    ]
+      .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+      .slice(0, 10);
+
+    if (results.length === 0) {
+      container.innerHTML = `<p class="search-overlay-hint">Aucun rÃ©sultat pour Â« ${escapeHtml(query)} Â»</p>`;
+      return;
+    }
+
+    container.innerHTML = results
+      .map((r) => {
+        const title = r.title || r.name || "";
+        const year = (r.release_date || r.first_air_date || "").slice(0, 4);
+        const poster = r.poster_path
+          ? `${TMDB_IMAGE_BASE}${r.poster_path}`
+          : null;
+        const typeLabel = r.media_type === "movie" ? "Film" : "SÃ©rie";
+        const typeIcon = r.media_type === "movie" ? "ðŸŽ¬" : "ðŸ“º";
+        const rating = r.vote_average ? r.vote_average.toFixed(1) : null;
+        const inCollection = items.some((i) =>
+          isSameTmdbCollectionItem(i, r.id, r.media_type),
+        );
+
+        setTrendingCacheItem(r, r.media_type);
+
+        return `
+        <div class="search-overlay-item">
+          <div class="search-overlay-poster" onclick="showTrendingDetail(${r.id}, '${r.media_type}')" style="cursor:pointer;">
+            ${
+              poster
+                ? `<img src="${escapeHtml(poster)}" alt="">`
+                : `<div class="search-overlay-poster-ph">${typeIcon}</div>`
+            }
+          </div>
+          <div class="search-overlay-info" onclick="showTrendingDetail(${r.id}, '${r.media_type}')" style="cursor:pointer;">
+            <div class="search-overlay-title">${escapeHtml(title)}</div>
+            <div class="search-overlay-meta">
+              <span>${typeLabel}</span>
+              ${year ? `<span>${year}</span>` : ""}
+              ${rating ? `<span>â­ ${rating}</span>` : ""}
+            </div>
+          </div>
+          <div class="search-overlay-actions">
+            ${
+              inCollection
+                ? `<span class="search-overlay-owned">âœ“ Collection</span>`
+                : `<button class="search-overlay-add" onclick="addFromTrendingById(${r.id}, '${r.media_type}'); this.textContent='âœ“'; this.disabled=true;" title="Ajouter Ã  la collection">+ Ajouter</button>`
+            }
+          </div>
+        </div>`;
+      })
+      .join("");
+  } catch {
+    container.innerHTML = `<p class="search-overlay-hint">Erreur lors de la recherche.</p>`;
+  }
 }
 
 async function runOverlaySearch(query) {
@@ -7795,6 +8099,13 @@ document.getElementById("searchInput").addEventListener("input", function () {
   clearTimeout(searchOverlayTimeout);
   searchOverlayTimeout = setTimeout(() => runOverlaySearch(this.value), 350);
 });
+
+document
+  .getElementById("sectionSearchInput")
+  ?.addEventListener("input", function () {
+    clearTimeout(searchSectionTimeout);
+    searchSectionTimeout = setTimeout(() => runSectionSearch(this.value), 350);
+  });
 
 document
   .getElementById("searchOverlay")

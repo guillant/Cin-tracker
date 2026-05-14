@@ -1397,6 +1397,781 @@
         box-shadow: 0 0 0 1px rgba(14,165,233,0.28) inset;
       }
 
+      .bb-current-note {
+        margin: 0 0 18px;
+        padding: 12px 14px;
+        border: 1px solid rgba(148,163,184,0.18);
+        border-radius: 14px;
+        background: rgba(15,23,42,0.56);
+        color: rgba(226,232,240,0.78);
+        font-size: 13px;
+      }
+
+      .bb-nav.cinetrack {
+        padding: 0 12px 14px;
+      }
+
+      .bb-nav.cinetrack .bb-nav-inner {
+        border-radius: 28px;
+        padding: 9px;
+        background: rgba(4,8,18,0.88);
+        border: 1px solid rgba(148,163,184,0.2);
+        box-shadow: 0 22px 44px rgba(2,6,23,0.52), inset 0 1px 0 rgba(255,255,255,0.08);
+        backdrop-filter: blur(22px);
+      }
+
+      .bb-nav.cinetrack .bb-item {
+        min-height: 50px;
+        border-radius: 20px;
+        justify-content: center;
+      }
+
+      .bb-nav.cinetrack .bb-icon {
+        border: 0;
+        background: transparent;
+        color: rgba(203,213,225,0.76);
+      }
+
+      .bb-nav.cinetrack .bb-item.active {
+        background: linear-gradient(180deg, rgba(37,99,235,0.28), rgba(14,165,233,0.12));
+        color: #ffffff;
+      }
+
+      .bb-nav.cinetrack .bb-item.active .bb-icon {
+        background: rgba(255,255,255,0.12);
+        color: #ffffff;
+      }
+
+      .bb-nav.spotlight {
+        padding: 0 10px 14px;
+      }
+
+      .bb-nav.spotlight .bb-nav-inner {
+        grid-template-columns: 1fr 1fr 74px 1fr 1fr;
+        border-radius: 26px;
+        padding: 8px;
+        background: rgba(7,9,15,0.95);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 20px 42px rgba(0,0,0,0.5);
+      }
+
+      .bb-nav.spotlight .bb-item.add {
+        margin-top: -34px;
+        color: #fff;
+      }
+
+      .bb-nav.spotlight .bb-item.add .bb-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 22px;
+        border-color: rgba(125,211,252,0.55);
+        background: linear-gradient(145deg, #0ea5e9, #2563eb 52%, #111827);
+        font-size: 24px;
+        box-shadow: 0 18px 34px rgba(37,99,235,0.42), inset 0 1px 0 rgba(255,255,255,0.22);
+      }
+
+      .bb-nav.softlight {
+        padding: 0 12px 14px;
+      }
+
+      .bb-nav.softlight .bb-nav-inner {
+        border-radius: 999px;
+        padding: 8px 10px;
+        background: rgba(241,245,249,0.9);
+        border: 1px solid rgba(15,23,42,0.1);
+        box-shadow: 0 18px 36px rgba(15,23,42,0.2);
+      }
+
+      .bb-nav.softlight .bb-item {
+        color: rgba(51,65,85,0.68);
+        font-weight: 700;
+      }
+
+      .bb-nav.softlight .bb-icon {
+        border: 0;
+        background: transparent;
+        color: rgba(51,65,85,0.72);
+      }
+
+      .bb-nav.softlight .bb-item.active {
+        color: #0f172a;
+      }
+
+      .bb-nav.softlight .bb-item.active .bb-icon {
+        background: rgba(37,99,235,0.12);
+        color: #1d4ed8;
+      }
+
+      .bb-nav.editorial {
+        padding: 0 12px 14px;
+      }
+
+      .bb-nav.editorial .bb-nav-inner {
+        grid-template-columns: repeat(4, 1fr);
+        border-radius: 18px;
+        padding: 7px;
+        background: #05070d;
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .bb-nav.editorial .bb-item {
+        align-items: flex-start;
+        padding: 8px 9px;
+        border-radius: 14px;
+        gap: 2px;
+      }
+
+      .bb-nav.editorial .bb-icon {
+        width: 22px;
+        height: 22px;
+        border: 0;
+        background: transparent;
+        justify-content: flex-start;
+      }
+
+      .bb-nav.editorial .bb-item.active {
+        background: rgba(245,158,11,0.12);
+        color: #fde68a;
+      }
+
+      .bb-command-stack {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 14px;
+        display: grid;
+        gap: 9px;
+      }
+
+      .bb-command-pill {
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border-radius: 18px;
+        border: 1px solid rgba(148,163,184,0.2);
+        background: rgba(5,7,13,0.88);
+        box-shadow: 0 18px 34px rgba(2,6,23,0.44), inset 0 1px 0 rgba(255,255,255,0.08);
+        backdrop-filter: blur(20px);
+      }
+
+      .bb-command-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(145deg, rgba(37,99,235,0.32), rgba(14,165,233,0.16));
+        color: #dbeafe;
+        font-size: 17px;
+      }
+
+      .bb-command-title {
+        color: #f8fafc;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+
+      .bb-command-meta {
+        color: rgba(148,163,184,0.86);
+        font-size: 10px;
+      }
+
+      .bb-command-action {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        color: #0f172a;
+        font-weight: 900;
+      }
+
+      .bb-nav.commandmini {
+        position: static;
+        padding: 0;
+      }
+
+      .bb-nav.commandmini .bb-nav-inner {
+        border-radius: 999px;
+        padding: 7px 8px;
+        background: rgba(15,23,42,0.78);
+        border: 1px solid rgba(148,163,184,0.16);
+      }
+
+      .bb-nav.commandmini .bb-icon {
+        border: 0;
+        background: transparent;
+      }
+
+      .bb-nav.commandmini .bb-item.active .bb-icon {
+        background: rgba(96,165,250,0.18);
+      }
+
+      .bb-rail-nav {
+        position: absolute;
+        right: 12px;
+        top: 86px;
+        bottom: 18px;
+        width: 58px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 7px;
+        border: 1px solid rgba(148,163,184,0.18);
+        border-radius: 26px;
+        background: rgba(5,7,13,0.86);
+        box-shadow: 0 20px 42px rgba(2,6,23,0.5), inset 0 1px 0 rgba(255,255,255,0.07);
+        backdrop-filter: blur(20px);
+      }
+
+      .bb-rail-item {
+        width: 42px;
+        min-height: 42px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(203,213,225,0.78);
+        font-size: 15px;
+      }
+
+      .bb-rail-item.active {
+        background: rgba(37,99,235,0.22);
+        color: #ffffff;
+        box-shadow: 0 0 0 1px rgba(96,165,250,0.24) inset;
+      }
+
+      .bb-rail-spacer {
+        flex: 1;
+      }
+
+      .bb-rail-add {
+        background: linear-gradient(145deg, #0ea5e9, #2563eb);
+        color: #ffffff;
+        font-size: 24px;
+        box-shadow: 0 12px 24px rgba(37,99,235,0.38);
+      }
+
+      .navnext-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 18px;
+        margin-top: 22px;
+      }
+
+      .navnext-card {
+        border: 1px solid rgba(148,163,184,0.18);
+        border-radius: 18px;
+        background: rgba(255,255,255,0.03);
+        padding: 14px;
+      }
+
+      .navnext-phone {
+        position: relative;
+        height: 390px;
+        border-radius: 30px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.16);
+        background:
+          radial-gradient(circle at 34% 14%, rgba(37,99,235,0.24), transparent 34%),
+          linear-gradient(165deg, #111827 0%, #05070d 76%);
+      }
+
+      .navnext-content {
+        padding: 18px 16px;
+      }
+
+      .navnext-poster-row {
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr);
+        gap: 12px;
+        align-items: end;
+        margin-top: 18px;
+      }
+
+      .navnext-poster {
+        height: 138px;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #2563eb, #0f172a 60%, #f59e0b);
+        box-shadow: 0 24px 42px rgba(2,6,23,0.38);
+      }
+
+      .navnext-line {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.08);
+        margin-bottom: 9px;
+      }
+
+      .navnext-line.short {
+        width: 54%;
+      }
+
+      .navnext-line.mid {
+        width: 74%;
+      }
+
+      .liquid-island {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 10px 10px 14px;
+        border-radius: 26px;
+        background: rgba(248,250,252,0.08);
+        border: 1px solid rgba(255,255,255,0.18);
+        box-shadow: 0 24px 48px rgba(2,6,23,0.56), inset 0 1px 0 rgba(255,255,255,0.14);
+        backdrop-filter: blur(26px) saturate(1.25);
+      }
+
+      .liquid-island strong {
+        display: block;
+        color: #ffffff;
+        font-size: 13px;
+        line-height: 1.15;
+      }
+
+      .liquid-island span {
+        color: rgba(226,232,240,0.68);
+        font-size: 10px;
+      }
+
+      .liquid-actions {
+        display: flex;
+        gap: 7px;
+      }
+
+      .liquid-action {
+        width: 38px;
+        height: 38px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #e2e8f0;
+        background: rgba(255,255,255,0.1);
+      }
+
+      .liquid-action.primary {
+        color: #0f172a;
+        background: #f8fafc;
+        font-size: 22px;
+        font-weight: 800;
+      }
+
+      .orbit-nav {
+        position: absolute;
+        left: 50%;
+        bottom: 18px;
+        width: 232px;
+        height: 72px;
+        transform: translateX(-50%);
+      }
+
+      .orbit-core {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 58px;
+        height: 58px;
+        border-radius: 22px;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 26px;
+        background: linear-gradient(145deg, #2563eb, #0ea5e9);
+        box-shadow: 0 18px 34px rgba(37,99,235,0.46);
+      }
+
+      .orbit-item {
+        position: absolute;
+        top: 50%;
+        width: 42px;
+        height: 42px;
+        border-radius: 16px;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15,23,42,0.82);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: rgba(226,232,240,0.88);
+        backdrop-filter: blur(18px);
+      }
+
+      .orbit-item.a { left: 0; }
+      .orbit-item.b { left: 50px; }
+      .orbit-item.c { right: 50px; }
+      .orbit-item.d { right: 0; }
+
+      .side-peek {
+        position: absolute;
+        right: 12px;
+        top: 78px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .side-peek-item {
+        width: 46px;
+        height: 46px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(248,250,252,0.08);
+        border: 1px solid rgba(255,255,255,0.14);
+        color: rgba(226,232,240,0.82);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 14px 26px rgba(2,6,23,0.28);
+      }
+
+      .side-peek-item.active {
+        width: 104px;
+        justify-content: flex-start;
+        gap: 7px;
+        padding: 0 11px;
+        color: #fff;
+        background: rgba(37,99,235,0.28);
+      }
+
+      .side-peek-item.active small {
+        display: inline;
+      }
+
+      .side-peek-item small {
+        display: none;
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .scroll-tabs {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 15px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .scroll-tabs-main {
+        display: flex;
+        gap: 8px;
+        padding: 7px;
+        border-radius: 999px;
+        background: rgba(248,250,252,0.08);
+        border: 1px solid rgba(255,255,255,0.14);
+        backdrop-filter: blur(24px);
+      }
+
+      .scroll-tab {
+        flex: 1;
+        min-width: 0;
+        padding: 9px 8px;
+        border-radius: 999px;
+        color: rgba(226,232,240,0.72);
+        text-align: center;
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .scroll-tab.active {
+        background: #f8fafc;
+        color: #0f172a;
+      }
+
+      .scroll-mini {
+        justify-self: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(15,23,42,0.72);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(203,213,225,0.86);
+        font-size: 10px;
+      }
+
+      .hybrid-nav {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 15px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .hybrid-command {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 10px 9px 13px;
+        border-radius: 22px;
+        border: 1px solid rgba(255,255,255,0.16);
+        background: rgba(248,250,252,0.08);
+        box-shadow: 0 20px 42px rgba(2,6,23,0.48), inset 0 1px 0 rgba(255,255,255,0.12);
+        backdrop-filter: blur(24px) saturate(1.22);
+      }
+
+      .hybrid-command-title {
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 850;
+        line-height: 1.1;
+      }
+
+      .hybrid-command-sub {
+        color: rgba(203,213,225,0.72);
+        font-size: 10px;
+      }
+
+      .hybrid-mini-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.1);
+        color: rgba(226,232,240,0.9);
+      }
+
+      .hybrid-mini-btn.primary {
+        background: #f8fafc;
+        color: #0f172a;
+        font-size: 20px;
+        font-weight: 900;
+      }
+
+      .hybrid-tabs {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+        padding: 7px;
+        border-radius: 999px;
+        background: rgba(5,7,13,0.78);
+        border: 1px solid rgba(148,163,184,0.14);
+        backdrop-filter: blur(22px);
+      }
+
+      .hybrid-tab {
+        padding: 9px 6px;
+        border-radius: 999px;
+        text-align: center;
+        color: rgba(203,213,225,0.75);
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .hybrid-tab.active {
+        background: rgba(255,255,255,0.12);
+        color: #ffffff;
+      }
+
+      .hybrid-nav.compact {
+        grid-template-columns: 1fr auto;
+        align-items: end;
+      }
+
+      .hybrid-nav.compact .hybrid-command {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .hybrid-nav.compact .hybrid-tabs {
+        grid-template-columns: repeat(4, 38px);
+        border-radius: 24px;
+      }
+
+      .hybrid-nav.compact .hybrid-tab {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+      }
+
+      .hybrid-nav.split-command {
+        grid-template-columns: 1fr;
+      }
+
+      .hybrid-actions-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .hybrid-action-wide {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 11px 12px;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(248,250,252,0.08);
+        color: #f8fafc;
+        font-size: 12px;
+        font-weight: 850;
+        backdrop-filter: blur(22px);
+      }
+
+      .hybrid-action-wide.primary {
+        background: linear-gradient(145deg, #f8fafc, #dbeafe);
+        color: #0f172a;
+      }
+
+      .hybrid-tabs.flat {
+        background: transparent;
+        border-color: transparent;
+        backdrop-filter: none;
+        padding: 0;
+      }
+
+      .hybrid-tabs.flat .hybrid-tab {
+        background: rgba(15,23,42,0.62);
+        border: 1px solid rgba(148,163,184,0.12);
+      }
+
+      .hybrid-tabs.flat .hybrid-tab.active {
+        background: rgba(37,99,235,0.2);
+        border-color: rgba(96,165,250,0.24);
+      }
+
+      .apple-hig-wrap {
+        display: grid;
+        grid-template-columns: minmax(300px, 420px) minmax(260px, 1fr);
+        gap: 18px;
+        align-items: stretch;
+        margin-top: 22px;
+      }
+
+      @media (max-width: 760px) {
+        .apple-hig-wrap {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .apple-hig-notes {
+        border: 1px solid rgba(148,163,184,0.18);
+        border-radius: 18px;
+        padding: 16px;
+        background: rgba(15,23,42,0.58);
+        color: rgba(226,232,240,0.8);
+        font-size: 13px;
+      }
+
+      .apple-hig-notes strong {
+        color: #f8fafc;
+      }
+
+      .apple-hig-notes ul {
+        margin: 10px 0 0 18px;
+      }
+
+      .apple-hig-notes li {
+        margin-bottom: 8px;
+      }
+
+      .apple-tabbar {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 3px;
+        min-height: 66px;
+        padding: 8px 8px 10px;
+        border-radius: 26px;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08));
+        box-shadow: 0 24px 50px rgba(2,6,23,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+        backdrop-filter: blur(28px) saturate(1.35);
+      }
+
+      .apple-tab {
+        position: relative;
+        display: grid;
+        place-items: center;
+        gap: 3px;
+        min-width: 0;
+        border-radius: 18px;
+        color: rgba(226,232,240,0.72);
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .apple-tab-symbol {
+        width: 27px;
+        height: 27px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+      }
+
+      .apple-tab.active {
+        color: #ffffff;
+      }
+
+      .apple-tab.active .apple-tab-symbol {
+        background: rgba(255,255,255,0.16);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16);
+      }
+
+      .apple-tab.search {
+        color: rgba(191,219,254,0.96);
+      }
+
+      .apple-tab-badge {
+        position: absolute;
+        top: 5px;
+        right: 16px;
+        min-width: 15px;
+        height: 15px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: #ff3b30;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 900;
+        line-height: 15px;
+        text-align: center;
+      }
+
+      .apple-add-accessory {
+        position: absolute;
+        right: 18px;
+        bottom: 88px;
+        width: 50px;
+        height: 50px;
+        border-radius: 19px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.16);
+        color: #ffffff;
+        font-size: 26px;
+        box-shadow: 0 18px 34px rgba(2,6,23,0.42), inset 0 1px 0 rgba(255,255,255,0.2);
+        backdrop-filter: blur(24px) saturate(1.28);
+      }
+
       .fi-layout-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -1879,6 +2654,267 @@
         background: rgba(34,197,94,0.14);
       }
 
+      .history-mockup-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 18px;
+      }
+
+      .history-mockup-card {
+        border: 1px solid rgba(148,163,184,0.18);
+        border-radius: 18px;
+        background:
+          linear-gradient(180deg, rgba(15,23,42,0.9) 0%, rgba(2,6,23,0.96) 100%);
+        overflow: hidden;
+        box-shadow: 0 18px 42px rgba(2,6,23,0.34);
+      }
+
+      .history-mockup-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 14px;
+        border-bottom: 1px solid rgba(148,163,184,0.16);
+      }
+
+      .history-mockup-head strong {
+        color: #f8fafc;
+        font-size: 14px;
+      }
+
+      .history-mockup-head span {
+        color: rgba(203,213,225,0.7);
+        font-size: 11px;
+      }
+
+      .history-mockup-body {
+        padding: 14px;
+      }
+
+      .hm-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .hm-entry {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid rgba(148,163,184,0.14);
+        border-radius: 14px;
+        background: rgba(15,23,42,0.58);
+      }
+
+      .hm-poster {
+        width: 44px;
+        aspect-ratio: 2 / 3;
+        border-radius: 8px;
+        background:
+          linear-gradient(160deg, rgba(96,165,250,0.85), rgba(15,23,42,0.92));
+        box-shadow: 0 10px 18px rgba(2,6,23,0.32);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .hm-poster::after {
+        content: "";
+        position: absolute;
+        inset: auto 7px 7px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(248,250,252,0.72);
+      }
+
+      .hm-poster.alt {
+        background: linear-gradient(160deg, rgba(245,158,11,0.88), rgba(69,26,3,0.94));
+      }
+
+      .hm-poster.green {
+        background: linear-gradient(160deg, rgba(20,184,166,0.86), rgba(6,78,59,0.92));
+      }
+
+      .hm-info {
+        min-width: 0;
+      }
+
+      .hm-date {
+        color: rgba(148,163,184,0.9);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+      }
+
+      .hm-title {
+        color: #f8fafc;
+        font-size: 13px;
+        font-weight: 750;
+        line-height: 1.25;
+      }
+
+      .hm-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+        color: rgba(203,213,225,0.72);
+        font-size: 11px;
+      }
+
+      .hm-stars {
+        color: #f59e0b;
+        letter-spacing: 0.04em;
+      }
+
+      .hm-people {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+
+      .hm-person {
+        padding: 2px 7px;
+        border-radius: 999px;
+        border: 1px solid rgba(96,165,250,0.24);
+        background: rgba(37,99,235,0.13);
+        color: rgba(219,234,254,0.94);
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .hm-group {
+        display: grid;
+        gap: 9px;
+      }
+
+      .hm-day {
+        display: grid;
+        gap: 8px;
+      }
+
+      .hm-day-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: rgba(226,232,240,0.92);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .hm-day-label span {
+        color: rgba(148,163,184,0.8);
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .hm-line-entry {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 10px 11px;
+        border-left: 2px solid rgba(96,165,250,0.45);
+        border-radius: 0 12px 12px 0;
+        background: rgba(30,41,59,0.52);
+      }
+
+      .hm-line-entry.gold {
+        border-left-color: rgba(245,158,11,0.7);
+      }
+
+      .hm-line-title {
+        color: #f8fafc;
+        font-size: 13px;
+        font-weight: 750;
+      }
+
+      .hm-score-pill {
+        align-self: start;
+        padding: 4px 7px;
+        border-radius: 999px;
+        background: rgba(245,158,11,0.14);
+        color: #fde68a;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .hm-featured {
+        display: grid;
+        gap: 12px;
+      }
+
+      .hm-featured-main {
+        min-height: 174px;
+        border-radius: 16px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        background:
+          linear-gradient(180deg, rgba(2,6,23,0.12), rgba(2,6,23,0.9)),
+          linear-gradient(135deg, #2563eb 0%, #0f172a 52%, #f59e0b 100%);
+        border: 1px solid rgba(148,163,184,0.16);
+      }
+
+      .hm-featured-kicker {
+        color: rgba(219,234,254,0.86);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .hm-featured-title {
+        color: #ffffff;
+        font-size: 21px;
+        font-weight: 800;
+        line-height: 1.05;
+        margin-top: 4px;
+      }
+
+      .hm-featured-info {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+        color: rgba(226,232,240,0.88);
+        font-size: 11px;
+      }
+
+      .hm-mini-row {
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 9px;
+        padding: 8px;
+        border-radius: 12px;
+        background: rgba(15,23,42,0.62);
+        border: 1px solid rgba(148,163,184,0.12);
+      }
+
+      .hm-mini-poster {
+        width: 36px;
+        aspect-ratio: 2 / 3;
+        border-radius: 7px;
+        background: linear-gradient(145deg, #14b8a6, #0f172a);
+      }
+
+      .hm-mini-title {
+        color: #f8fafc;
+        font-size: 12px;
+        font-weight: 750;
+      }
+
+      .hm-mini-date {
+        color: rgba(148,163,184,0.82);
+        font-size: 10px;
+      }
+
       .watched-visual-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -2026,6 +3062,11 @@
     <div class="mockup-quick-nav">
       <a class="mockup-quick-link" href="#mockup-icons">Icônes</a>
       <a class="mockup-quick-link" href="#mockup-logos">Logos</a>
+      <a class="mockup-quick-link" href="#mockup-mobile-nav">Nav mobile</a>
+      <a class="mockup-quick-link" href="#mockup-mobile-nav-next">Nav V2</a>
+      <a class="mockup-quick-link" href="#mockup-mobile-nav-hybrids">Nav V3</a>
+      <a class="mockup-quick-link" href="#mockup-apple-hig-tabbar">Apple HIG</a>
+      <a class="mockup-quick-link" href="#mockup-history">Historique</a>
       <a class="mockup-quick-link" href="#mockup-watched-cta">CTA Vu + note</a>
       <a class="mockup-quick-link" href="#mockup-under-hero">Sous le hero (refait)</a>
     </div>
@@ -2420,6 +3461,581 @@
           </div>
         </article>
 
+      </div>
+    </section>
+
+    <section id="mockup-mobile-nav">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Navigation mobile</span>
+        <h3 class="mockup-subsection-title">6 propositions pour moderniser la navigation</h3>
+        <p class="mockup-copy">Bottom bars, bouton central, commande flottante et rail au pouce: six pistes pour trouver une direction vraiment 2026.</p>
+      </div>
+
+      <p class="bb-current-note">
+        Mon choix naturel pour CineTracker: <strong>Option A</strong> ou <strong>Option E</strong>. A garde une navigation classique modernisee; E donne un vrai twist 2026 avec une commande contextuelle.
+      </p>
+
+      <div class="bottombar-mockup-grid">
+        <article class="bottombar-mockup-card">
+          <div class="bottombar-phone">
+            <div class="bottombar-content">
+              <div class="bottombar-line short"></div>
+              <div class="bottombar-line mid"></div>
+              <div class="bottombar-line"></div>
+            </div>
+            <div class="bb-nav cinetrack">
+              <div class="bb-nav-inner">
+                <div class="bb-item active"><span class="bb-icon">▦</span><span>Collection</span></div>
+                <div class="bb-item"><span class="bb-icon">◎</span><span>Stats</span></div>
+                <div class="bb-item"><span class="bb-icon">☰</span><span>Listes</span></div>
+                <div class="bb-item"><span class="bb-icon">⌕</span><span>Decouvrir</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">Option A — Dock CineTracker</div>
+          <p class="bb-copy">Une capsule sombre, active bleu cinema, proche de l'app actuelle mais plus finie.</p>
+        </article>
+
+        <article class="bottombar-mockup-card">
+          <div class="bottombar-phone">
+            <div class="bottombar-content">
+              <div class="bottombar-line"></div>
+              <div class="bottombar-line mid"></div>
+              <div class="bottombar-line short"></div>
+            </div>
+            <div class="bb-nav spotlight">
+              <div class="bb-nav-inner">
+                <div class="bb-item active"><span class="bb-icon">▦</span><span>Collec.</span></div>
+                <div class="bb-item"><span class="bb-icon">◎</span><span>Stats</span></div>
+                <div class="bb-item add"><span class="bb-icon">+</span><span>Ajouter</span></div>
+                <div class="bb-item"><span class="bb-icon">☰</span><span>Listes</span></div>
+                <div class="bb-item"><span class="bb-icon">⌕</span><span>Explore</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">Option B — Action centrale</div>
+          <p class="bb-copy">Met Ajouter au centre, tres mobile-app. Plus visible, mais un peu plus present visuellement.</p>
+        </article>
+
+        <article class="bottombar-mockup-card">
+          <div class="bottombar-phone" style="background:linear-gradient(165deg,#e2e8f0,#cbd5e1);">
+            <div class="bottombar-content">
+              <div class="bottombar-line" style="background:rgba(15,23,42,0.12)"></div>
+              <div class="bottombar-line mid" style="background:rgba(15,23,42,0.1)"></div>
+              <div class="bottombar-line short" style="background:rgba(15,23,42,0.08)"></div>
+            </div>
+            <div class="bb-nav softlight">
+              <div class="bb-nav-inner">
+                <div class="bb-item active"><span class="bb-icon">▦</span><span>Collection</span></div>
+                <div class="bb-item"><span class="bb-icon">◎</span><span>Stats</span></div>
+                <div class="bb-item"><span class="bb-icon">☰</span><span>Listes</span></div>
+                <div class="bb-item"><span class="bb-icon">⌕</span><span>Decouvrir</span></div>
+              </div>
+            </div>
+            <div class="bb-home-indicator dark"></div>
+          </div>
+          <div class="bb-title">Option C — Soft glass clair</div>
+          <p class="bb-copy">Plus iOS, plus lumineux. Interessant si tu veux adoucir l'interface mobile.</p>
+        </article>
+
+        <article class="bottombar-mockup-card">
+          <div class="bottombar-phone">
+            <div class="bottombar-content">
+              <div class="bottombar-line mid"></div>
+              <div class="bottombar-line"></div>
+              <div class="bottombar-line short"></div>
+            </div>
+            <div class="bb-plus-fab h2">+</div>
+            <div class="bb-nav editorial">
+              <div class="bb-nav-inner">
+                <div class="bb-item active"><span class="bb-icon">▦</span><span>Collection</span></div>
+                <div class="bb-item"><span class="bb-icon">◎</span><span>Stats</span></div>
+                <div class="bb-item"><span class="bb-icon">☰</span><span>Listes</span></div>
+                <div class="bb-item"><span class="bb-icon">⌕</span><span>Explore</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">Option D — Editorial compact</div>
+          <p class="bb-copy">Plus dense, labels alignes a gauche, avec le bouton Ajouter flottant separe.</p>
+        </article>
+
+        <article class="bottombar-mockup-card">
+          <div class="bottombar-phone">
+            <div class="bottombar-content">
+              <div class="bottombar-line short"></div>
+              <div class="bottombar-line"></div>
+              <div class="bottombar-line mid"></div>
+            </div>
+            <div class="bb-command-stack">
+              <div class="bb-command-pill">
+                <div class="bb-command-icon">⌕</div>
+                <div>
+                  <div class="bb-command-title">Que veux-tu regarder ?</div>
+                  <div class="bb-command-meta">Recherche, suggestion, ajout rapide</div>
+                </div>
+                <div class="bb-command-action">+</div>
+              </div>
+              <div class="bb-nav commandmini">
+                <div class="bb-nav-inner">
+                  <div class="bb-item active"><span class="bb-icon">▦</span><span>Collec.</span></div>
+                  <div class="bb-item"><span class="bb-icon">◎</span><span>Stats</span></div>
+                  <div class="bb-item"><span class="bb-icon">☰</span><span>Listes</span></div>
+                  <div class="bb-item"><span class="bb-icon">⌕</span><span>Explore</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">Option E — Command bar</div>
+          <p class="bb-copy">Une barre d'action intelligente au-dessus des tabs. Moderne, utile, tres orientee usage.</p>
+        </article>
+
+        <article class="bottombar-mockup-card">
+          <div class="bottombar-phone">
+            <div class="bottombar-content" style="padding-right:86px;">
+              <div class="bottombar-line"></div>
+              <div class="bottombar-line mid"></div>
+              <div class="bottombar-line short"></div>
+            </div>
+            <div class="bb-rail-nav">
+              <div class="bb-rail-item active">▦</div>
+              <div class="bb-rail-item">◎</div>
+              <div class="bb-rail-item">☰</div>
+              <div class="bb-rail-item">⌕</div>
+              <div class="bb-rail-spacer"></div>
+              <div class="bb-rail-item bb-rail-add">+</div>
+            </div>
+          </div>
+          <div class="bb-title">Option F — Thumb rail</div>
+          <p class="bb-copy">Pas une bottom bar: une navigation verticale au pouce. Plus audacieux, bon pour grands ecrans.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="mockup-mobile-nav-next">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Navigation mobile V2</span>
+        <h3 class="mockup-subsection-title">4 pistes plus modernes et moins tab bar</h3>
+        <p class="mockup-copy">Ces propositions assument davantage les usages 2026: commande flottante, action orbitale, rail discret et tabs qui s'effacent.</p>
+      </div>
+
+      <div class="navnext-grid">
+        <article class="navnext-card">
+          <div class="navnext-phone">
+            <div class="navnext-content">
+              <div class="navnext-line short"></div>
+              <div class="navnext-poster-row">
+                <div class="navnext-poster"></div>
+                <div>
+                  <div class="navnext-line"></div>
+                  <div class="navnext-line mid"></div>
+                  <div class="navnext-line short"></div>
+                </div>
+              </div>
+            </div>
+            <div class="liquid-island">
+              <div>
+                <strong>Collection</strong>
+                <span>24 films · 8 series</span>
+              </div>
+              <div class="liquid-actions">
+                <div class="liquid-action">◎</div>
+                <div class="liquid-action">⌕</div>
+                <div class="liquid-action primary">+</div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">V2 A — Liquid command</div>
+          <p class="bb-copy">Une seule ile flottante: section active + actions rapides. Tres moderne, tres propre.</p>
+        </article>
+
+        <article class="navnext-card">
+          <div class="navnext-phone">
+            <div class="navnext-content">
+              <div class="navnext-line"></div>
+              <div class="navnext-line mid"></div>
+              <div class="navnext-poster"></div>
+            </div>
+            <div class="orbit-nav">
+              <div class="orbit-item a">▦</div>
+              <div class="orbit-item b">◎</div>
+              <div class="orbit-core">+</div>
+              <div class="orbit-item c">☰</div>
+              <div class="orbit-item d">⌕</div>
+            </div>
+          </div>
+          <div class="bb-title">V2 B — Orbit action</div>
+          <p class="bb-copy">Ajouter devient le centre naturel; les destinations gravitent autour. Plus audacieux.</p>
+        </article>
+
+        <article class="navnext-card">
+          <div class="navnext-phone">
+            <div class="navnext-content" style="padding-right:92px;">
+              <div class="navnext-line mid"></div>
+              <div class="navnext-line"></div>
+              <div class="navnext-poster"></div>
+            </div>
+            <div class="side-peek">
+              <div class="side-peek-item active">▦ <small>Collection</small></div>
+              <div class="side-peek-item">◎</div>
+              <div class="side-peek-item">☰</div>
+              <div class="side-peek-item">⌕</div>
+              <div class="side-peek-item">+</div>
+            </div>
+          </div>
+          <div class="bb-title">V2 C — Side peek</div>
+          <p class="bb-copy">La piste cote, mais plus douce: seul l'actif s'ouvre, le reste reste discret.</p>
+        </article>
+
+        <article class="navnext-card">
+          <div class="navnext-phone">
+            <div class="navnext-content">
+              <div class="navnext-line short"></div>
+              <div class="navnext-line"></div>
+              <div class="navnext-line mid"></div>
+              <div class="navnext-poster-row">
+                <div class="navnext-poster"></div>
+                <div>
+                  <div class="navnext-line"></div>
+                  <div class="navnext-line short"></div>
+                </div>
+              </div>
+            </div>
+            <div class="scroll-tabs">
+              <div class="scroll-mini">+ Ajouter · Rechercher</div>
+              <div class="scroll-tabs-main">
+                <div class="scroll-tab active">Collection</div>
+                <div class="scroll-tab">Stats</div>
+                <div class="scroll-tab">Listes</div>
+                <div class="scroll-tab">Explore</div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">V2 D — Adaptive tabs</div>
+          <p class="bb-copy">Tabs simples, mais avec une mini commande contextuelle qui peut disparaitre au scroll.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="mockup-mobile-nav-hybrids">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Navigation mobile V3</span>
+        <h3 class="mockup-subsection-title">Variantes basees sur V2 A + V2 D</h3>
+        <p class="mockup-copy">Quatre versions hybrides: commande flottante lisible, tabs sobres, et actions principales toujours accessibles.</p>
+      </div>
+
+      <div class="navnext-grid">
+        <article class="navnext-card">
+          <div class="navnext-phone">
+            <div class="navnext-content">
+              <div class="navnext-line short"></div>
+              <div class="navnext-poster-row">
+                <div class="navnext-poster"></div>
+                <div>
+                  <div class="navnext-line"></div>
+                  <div class="navnext-line mid"></div>
+                  <div class="navnext-line short"></div>
+                </div>
+              </div>
+            </div>
+            <div class="hybrid-nav">
+              <div class="hybrid-command">
+                <div>
+                  <div class="hybrid-command-title">Collection</div>
+                  <div class="hybrid-command-sub">Ajouter ou rechercher un titre</div>
+                </div>
+                <div class="hybrid-mini-btn">⌕</div>
+                <div class="hybrid-mini-btn primary">+</div>
+              </div>
+              <div class="hybrid-tabs">
+                <div class="hybrid-tab active">Collection</div>
+                <div class="hybrid-tab">Stats</div>
+                <div class="hybrid-tab">Listes</div>
+                <div class="hybrid-tab">Explore</div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">V3 A — Command + tabs</div>
+          <p class="bb-copy">Le plus equilibre: commande claire au-dessus, navigation simple en dessous.</p>
+        </article>
+
+        <article class="navnext-card">
+          <div class="navnext-phone">
+            <div class="navnext-content">
+              <div class="navnext-line"></div>
+              <div class="navnext-line mid"></div>
+              <div class="navnext-poster"></div>
+            </div>
+            <div class="hybrid-nav compact">
+              <div class="hybrid-command">
+                <div>
+                  <div class="hybrid-command-title">Ajouter</div>
+                  <div class="hybrid-command-sub">Film, serie, avis</div>
+                </div>
+                <div class="hybrid-mini-btn primary">+</div>
+              </div>
+              <div class="hybrid-tabs">
+                <div class="hybrid-tab active">▦</div>
+                <div class="hybrid-tab">◎</div>
+                <div class="hybrid-tab">☰</div>
+                <div class="hybrid-tab">⌕</div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">V3 B — Compact actions</div>
+          <p class="bb-copy">Plus minimal: les tabs deviennent icones, l'action principale prend la place utile.</p>
+        </article>
+
+        <article class="navnext-card">
+          <div class="navnext-phone">
+            <div class="navnext-content">
+              <div class="navnext-line mid"></div>
+              <div class="navnext-poster-row">
+                <div class="navnext-poster"></div>
+                <div>
+                  <div class="navnext-line"></div>
+                  <div class="navnext-line short"></div>
+                </div>
+              </div>
+            </div>
+            <div class="hybrid-nav split-command">
+              <div class="hybrid-actions-row">
+                <div class="hybrid-action-wide primary"><span>+</span><span>Ajouter</span></div>
+                <div class="hybrid-action-wide"><span>⌕</span><span>Rechercher</span></div>
+              </div>
+              <div class="hybrid-tabs flat">
+                <div class="hybrid-tab active">Collection</div>
+                <div class="hybrid-tab">Stats</div>
+                <div class="hybrid-tab">Listes</div>
+                <div class="hybrid-tab">Explore</div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">V3 C — Dual action</div>
+          <p class="bb-copy">Assume deux actions principales. Tres clair si Ajouter et Rechercher sont vraiment prioritaires.</p>
+        </article>
+
+        <article class="navnext-card">
+          <div class="navnext-phone">
+            <div class="navnext-content">
+              <div class="navnext-line short"></div>
+              <div class="navnext-line"></div>
+              <div class="navnext-poster"></div>
+            </div>
+            <div class="hybrid-nav">
+              <div class="hybrid-tabs">
+                <div class="hybrid-tab active">Collection</div>
+                <div class="hybrid-tab">Stats</div>
+                <div class="hybrid-tab">Listes</div>
+                <div class="hybrid-tab">Explore</div>
+              </div>
+              <div class="hybrid-command">
+                <div>
+                  <div class="hybrid-command-title">Suggestion du soir</div>
+                  <div class="hybrid-command-sub">Trouver quoi regarder maintenant</div>
+                </div>
+                <div class="hybrid-mini-btn">🎲</div>
+                <div class="hybrid-mini-btn primary">⌕</div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">V3 D — Context first</div>
+          <p class="bb-copy">La commande change selon l'ecran. Plus ambitieux, mais potentiellement tres utile.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="mockup-apple-hig-tabbar">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Apple HIG</span>
+        <h3 class="mockup-subsection-title">Tab bar conforme aux guidelines Apple</h3>
+        <p class="mockup-copy">Une proposition plus systeme: navigation seulement, cinq items maximum, labels courts, Search separe, action Ajouter hors tab bar.</p>
+      </div>
+
+      <div class="apple-hig-wrap">
+        <article class="navnext-card">
+          <div class="navnext-phone">
+            <div class="navnext-content">
+              <div class="navnext-line short"></div>
+              <div class="navnext-poster-row">
+                <div class="navnext-poster"></div>
+                <div>
+                  <div class="navnext-line"></div>
+                  <div class="navnext-line mid"></div>
+                  <div class="navnext-line short"></div>
+                </div>
+              </div>
+            </div>
+            <div class="apple-add-accessory">+</div>
+            <div class="apple-tabbar">
+              <div class="apple-tab active">
+                <span class="apple-tab-symbol">▦</span>
+                <span>Collection</span>
+              </div>
+              <div class="apple-tab">
+                <span class="apple-tab-symbol">◎</span>
+                <span>Stats</span>
+              </div>
+              <div class="apple-tab">
+                <span class="apple-tab-symbol">☰</span>
+                <span>Listes</span>
+              </div>
+              <div class="apple-tab">
+                <span class="apple-tab-symbol">◇</span>
+                <span>Explorer</span>
+                <span class="apple-tab-badge">2</span>
+              </div>
+              <div class="apple-tab search">
+                <span class="apple-tab-symbol">⌕</span>
+                <span>Search</span>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">Apple HIG — Liquid tab bar</div>
+          <p class="bb-copy">La version la plus proche des conventions iOS 2026: stable, lisible, familiere.</p>
+        </article>
+
+        <div class="apple-hig-notes">
+          <strong>Principes suivis</strong>
+          <ul>
+            <li>La tab bar sert a naviguer entre les sections principales, pas a declencher des actions.</li>
+            <li>Chaque tab a un symbole et un label court.</li>
+            <li>Cinq items maximum: Collection, Stats, Listes, Explorer, Search.</li>
+            <li>Search est un item distinct en bout de barre, comme Apple le permet.</li>
+            <li>Ajouter reste une action separee, sous forme d'accessory flottant.</li>
+            <li>Le badge est reserve a une information vraiment importante.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="mockup-history">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Stats</span>
+        <h3 class="mockup-subsection-title">Historique de visionnage — 3 directions</h3>
+        <p class="mockup-copy">Maquettes pour mieux faire remonter la date, la note et les personnes avec qui le contenu a ete vu.</p>
+      </div>
+
+      <div class="history-mockup-grid">
+        <article class="history-mockup-card">
+          <div class="history-mockup-head">
+            <strong>Option A</strong>
+            <span>Liste compacte</span>
+          </div>
+          <div class="history-mockup-body">
+            <div class="hm-list">
+              <div class="hm-entry">
+                <div class="hm-poster"></div>
+                <div class="hm-info">
+                  <div class="hm-date">Vu le 14 mai 2026</div>
+                  <div class="hm-title">Dune: Deuxieme Partie</div>
+                  <div class="hm-meta">
+                    <span class="hm-stars">★★★★½</span>
+                    <span>2024</span>
+                    <span class="hm-people"><span class="hm-person">Alex</span><span class="hm-person">Nora</span></span>
+                  </div>
+                </div>
+              </div>
+              <div class="hm-entry">
+                <div class="hm-poster alt"></div>
+                <div class="hm-info">
+                  <div class="hm-date">Vu le 12 mai 2026</div>
+                  <div class="hm-title">The Bear</div>
+                  <div class="hm-meta">
+                    <span class="hm-stars">★★★★</span>
+                    <span>Saison 2</span>
+                    <span class="hm-people"><span class="hm-person">Sam</span></span>
+                  </div>
+                </div>
+              </div>
+              <div class="hm-entry">
+                <div class="hm-poster green"></div>
+                <div class="hm-info">
+                  <div class="hm-date">Vu le 8 mai 2026</div>
+                  <div class="hm-title">Past Lives</div>
+                  <div class="hm-meta">
+                    <span class="hm-stars">★★★★★</span>
+                    <span>2023</span>
+                    <span class="hm-people"><span class="hm-person">Maya</span><span class="hm-person">Leo</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="history-mockup-card">
+          <div class="history-mockup-head">
+            <strong>Option B</strong>
+            <span>Groupes par date</span>
+          </div>
+          <div class="history-mockup-body">
+            <div class="hm-group">
+              <div class="hm-day">
+                <div class="hm-day-label">Aujourd'hui <span>2 visionnages</span></div>
+                <div class="hm-line-entry">
+                  <div>
+                    <div class="hm-line-title">Dune: Deuxieme Partie</div>
+                    <div class="hm-meta"><span>Vu avec Alex, Nora</span></div>
+                  </div>
+                  <div class="hm-score-pill">4.5</div>
+                </div>
+                <div class="hm-line-entry gold">
+                  <div>
+                    <div class="hm-line-title">Furiosa</div>
+                    <div class="hm-meta"><span>Solo</span></div>
+                  </div>
+                  <div class="hm-score-pill">4</div>
+                </div>
+              </div>
+              <div class="hm-day">
+                <div class="hm-day-label">12 mai <span>1 visionnage</span></div>
+                <div class="hm-line-entry">
+                  <div>
+                    <div class="hm-line-title">The Bear</div>
+                    <div class="hm-meta"><span>Serie · Sam</span></div>
+                  </div>
+                  <div class="hm-score-pill">4</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="history-mockup-card">
+          <div class="history-mockup-head">
+            <strong>Option C</strong>
+            <span>Carte vedette</span>
+          </div>
+          <div class="history-mockup-body">
+            <div class="hm-featured">
+              <div class="hm-featured-main">
+                <div class="hm-featured-kicker">Dernier visionnage</div>
+                <div class="hm-featured-title">Dune: Deuxieme Partie</div>
+                <div class="hm-featured-info">
+                  <span class="hm-stars">★★★★½</span>
+                  <span>14 mai 2026</span>
+                  <span class="hm-people"><span class="hm-person">Alex</span><span class="hm-person">Nora</span></span>
+                </div>
+              </div>
+              <div class="hm-mini-row">
+                <div class="hm-mini-poster"></div>
+                <div>
+                  <div class="hm-mini-title">Past Lives</div>
+                  <div class="hm-mini-date">8 mai · Maya, Leo</div>
+                </div>
+                <div class="hm-score-pill">5</div>
+              </div>
+              <div class="hm-mini-row">
+                <div class="hm-mini-poster"></div>
+                <div>
+                  <div class="hm-mini-title">The Bear</div>
+                  <div class="hm-mini-date">12 mai · Sam</div>
+                </div>
+                <div class="hm-score-pill">4</div>
+              </div>
+            </div>
+          </div>
+        </article>
       </div>
     </section>
 
