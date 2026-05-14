@@ -2363,7 +2363,7 @@ function renderTags() {
       `,
       )
       .join("") +
-    '<input type="text" class="tag-input" id="tagInput" placeholder="Ajouter un tag..." style="flex: 1; border: none; background: transparent; outline: none; font-size: 14px; min-width: 120px;">';
+    '<input type="text" class="tag-input" id="tagInput" placeholder="Ajouter un tag..." style="flex: 1; border: none; background: transparent; outline: none; font-size: 14px; min-width: 120px; color: inherit;">';
 
   container.querySelectorAll(".tag-remove").forEach((btn) => {
     btn.addEventListener("click", () => removeTag(btn.dataset.tag));
