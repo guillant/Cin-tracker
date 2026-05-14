@@ -1842,6 +1842,7 @@ header {
   display: flex;
   gap: 4px;
   padding: 8px 0;
+  touch-action: none;
 }
 
 .star-pick {
@@ -1875,6 +1876,11 @@ header {
 
 .star-pick.selected {
   transform: scale(1.05);
+}
+
+.star-picker.touching .star-pick {
+  transition: none;
+  transform: none !important;
 }
 
 .rating-help {

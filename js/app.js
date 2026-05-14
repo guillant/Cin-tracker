@@ -2109,6 +2109,9 @@ function initStarPicker() {
   if (!starPicker || !ratingInput) return;
 
   const stars = document.querySelectorAll(".star-pick");
+  let suppressMouseUntil = 0;
+
+  const isMouseSuppressed = () => Date.now() < suppressMouseUntil;
 
   if (starPicker.dataset.boundLeave !== "true") {
     starPicker.dataset.boundLeave = "true";
@@ -2118,18 +2121,119 @@ function initStarPicker() {
     });
   }
 
+  if (starPicker.dataset.boundTouch !== "true") {
+    starPicker.dataset.boundTouch = "true";
+    let touchValue = 0;
+
+    const getTouchRating = (touch) => {
+      if (!touch || !stars.length) return null;
+
+      const starRects = Array.from(stars).map((star, index) => ({
+        index,
+        value: Number.parseInt(star.dataset.value, 10) || index + 1,
+        rect: star.getBoundingClientRect(),
+      }));
+
+      if (starRects.length === 0) return null;
+
+      const xMin = starRects[0].rect.left;
+      const xMax = starRects[starRects.length - 1].rect.right - 0.001;
+      const clampedX = Math.min(Math.max(touch.clientX, xMin), xMax);
+
+      let target = starRects.find(
+        ({ rect }) => clampedX >= rect.left && clampedX <= rect.right,
+      );
+
+      if (!target) {
+        target = starRects.reduce((closest, current) => {
+          const closestCenter =
+            (closest.rect.left + closest.rect.right) / 2;
+          const currentCenter =
+            (current.rect.left + current.rect.right) / 2;
+          return Math.abs(currentCenter - clampedX) <
+            Math.abs(closestCenter - clampedX)
+            ? current
+            : closest;
+        }, starRects[0]);
+      }
+
+      const midX = (target.rect.left + target.rect.right) / 2;
+      const isLeftHalf = clampedX <= midX;
+      return normalizeHalfStepRating(target.value - (isLeftHalf ? 0.5 : 0));
+    };
+
+    starPicker.addEventListener(
+      "touchstart",
+      (event) => {
+        const val = getTouchRating(event.touches[0]);
+        if (val === null) return;
+        suppressMouseUntil = Date.now() + 500;
+        starPicker.classList.add("touching");
+        touchValue = val;
+        setStarPickerVisualState(val, "hovered", "hovered-half");
+        event.preventDefault();
+      },
+      { passive: false },
+    );
+
+    starPicker.addEventListener(
+      "touchmove",
+      (event) => {
+        const val = getTouchRating(event.touches[0]);
+        if (val === null) return;
+        suppressMouseUntil = Date.now() + 500;
+        touchValue = val;
+        setStarPickerVisualState(val, "hovered", "hovered-half");
+        event.preventDefault();
+      },
+      { passive: false },
+    );
+
+    starPicker.addEventListener(
+      "touchend",
+      (event) => {
+        const val = getTouchRating(event.changedTouches[0]) ?? touchValue;
+        suppressMouseUntil = Date.now() + 500;
+        starPicker.classList.remove("touching");
+        if (!val) {
+          updateStarPicker(ratingInput.value);
+          return;
+        }
+
+        const current = normalizeHalfStepRating(ratingInput.value);
+        const newVal =
+          current === val ? "" : formatRatingDisplayValue(normalizeHalfStepRating(val));
+        ratingInput.value = newVal;
+        touchValue = 0;
+        updateStarPicker(newVal);
+        event.preventDefault();
+      },
+      { passive: false },
+    );
+
+    starPicker.addEventListener("touchcancel", () => {
+      suppressMouseUntil = Date.now() + 500;
+      starPicker.classList.remove("touching");
+      touchValue = 0;
+      updateStarPicker(ratingInput.value);
+    });
+  }
+
   stars.forEach((star) => {
     if (star.dataset.bound === "true") return;
     star.dataset.bound = "true";
     star.addEventListener("mouseenter", (event) => {
+      if (isMouseSuppressed()) return;
       const val = getPickerRatingFromPointer(star, event);
       setStarPickerVisualState(val, "hovered", "hovered-half");
     });
     star.addEventListener("mousemove", (event) => {
+      if (isMouseSuppressed()) return;
       const val = getPickerRatingFromPointer(star, event);
       setStarPickerVisualState(val, "hovered", "hovered-half");
     });
     star.addEventListener("click", (event) => {
+      if (isMouseSuppressed()) return;
       const val = getPickerRatingFromPointer(star, event);
       const current = normalizeHalfStepRating(ratingInput.value);
       // cliquer sur la même étoile annule la note
