@@ -4841,7 +4841,7 @@ function refreshOpenSeasonProgressInPlace(itemId, season, viewState = {}) {
       button.removeAttribute("disabled");
       button.setAttribute(
         "onclick",
-        `toggleEpisodeSeen(${inlineJsString(itemId)}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event)`,
+        `toggleEpisodeSeen(${JSON.stringify(String(itemId ?? ""))}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event)`,
       );
     }
   });
