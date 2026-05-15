@@ -6054,10 +6054,26 @@ async function openDetail(id) {
           }
         }
 
-        document.getElementById("detailContent").innerHTML = buildDetailHTML(
-          item,
-          tmdb,
-        );
+        const detailContentEl = document.getElementById("detailContent");
+        const openSeasonBlock = detailContentEl?.querySelector(".sd-season-block.sd-open");
+        const openSeasonId = openSeasonBlock?.id || null;
+        const openSeasonNum = openSeasonId
+          ? parseInt(openSeasonId.split("_").pop(), 10)
+          : NaN;
+        const savedScrollTop = detailContentEl?.scrollTop || 0;
+
+        detailContentEl.innerHTML = buildDetailHTML(item, tmdb);
+
+        if (!isNaN(openSeasonNum)) {
+          setTimeout(async () => {
+            const block = document.getElementById(`sdSeasonBlock_${id}_${openSeasonNum}`);
+            if (block && !block.classList.contains("sd-open")) {
+              await toggleSeasonEpisodes(id, openSeasonNum, { stopPropagation() {} });
+            }
+            const dc = document.getElementById("detailContent");
+            if (dc) dc.scrollTop = savedScrollTop;
+          }, 50);
+        }
 
         // Charger les similaires en arrière-plan
         const endpoint = item.type === "movie" ? "movie" : "tv";
