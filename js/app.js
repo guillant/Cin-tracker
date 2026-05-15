@@ -8674,9 +8674,12 @@ async function loadMoreDiscoverCollection() {
 
     // Deduplicate and boost French films in genre browsing - ONLY on first page
     if (nextPage === 1) {
+      const beforeDedup = results.length;
       results = deduplicateResults(results);
+      console.log(`[Browse] Page 1: ${beforeDedup} results → ${results.length} after dedup`);
       if (discoverBrowseState.inlineConfig && discoverBrowseState.key?.includes("genre")) {
         results = boostFrenchFilmsInGrid(results);
+        console.log(`[Browse] French boost applied`);
       }
     }
 
