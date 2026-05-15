@@ -5220,8 +5220,10 @@ function buildAvailabilityInline(names, variant = "") {
 }
 
 function buildAvailabilityInfoRow(item, watchProviders, tmdb = null) {
+  // For series: prioritize watchProviders, fallback to network
+  // For movies: only watchProviders
   const networkProvider =
-    item.type === "series"
+    item.type === "series" && !watchProviders
       ? getPrimaryStreamingNetworkProvider(tmdb) ||
         (item.providerName
           ? {
