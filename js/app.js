@@ -4676,7 +4676,7 @@ function markSeasonDone(itemId, season, event) {
   }
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
-  openDetail(itemId);
+  reopenDetailAtSeason(itemId, season);
 }
 
 function unmarkSeasonDone(itemId, season, event) {
@@ -4694,7 +4694,7 @@ function unmarkSeasonDone(itemId, season, event) {
   };
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
-  openDetail(itemId);
+  reopenDetailAtSeason(itemId, season);
   showToast(`Saison ${season} remise à zéro`);
 }
 
@@ -4760,7 +4760,7 @@ function markEpisodeSeen(itemId, season, episode, event) {
   items[idx] = updated;
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
-  openDetail(itemId);
+  reopenDetailAtSeason(itemId, season);
 }
 
 function unmarkEpisodeSeen(itemId, season, episode, event) {
@@ -4778,7 +4778,7 @@ function unmarkEpisodeSeen(itemId, season, episode, event) {
   };
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
-  openDetail(itemId);
+  reopenDetailAtSeason(itemId, season);
   showToast(`S${season} E${episode} remis en non vu`);
 }
 
@@ -4788,6 +4788,15 @@ function toggleEpisodeSeen(itemId, season, episode, isDone, event) {
   } else {
     markEpisodeSeen(itemId, season, episode, event);
   }
+}
+
+function reopenDetailAtSeason(itemId, season) {
+  openDetail(itemId);
+  setTimeout(() => {
+    const block = document.getElementById(`sdSeasonBlock_${itemId}_${season}`);
+    if (!block || block.classList.contains("sd-open")) return;
+    toggleSeasonEpisodes(itemId, season, { stopPropagation() {} });
+  }, 80);
 }
 
 function buildWatchProvidersHTML(watchProviders) {
