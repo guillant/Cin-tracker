@@ -1680,6 +1680,7 @@ const seriesUpcomingFetchInFlight = new Set();
 let collectionBrowseItems = [];
 let collectionBrowseLabel = "";
 let currentItemId = null;
+let currentDetailTmdb = null;
 let currentTags = [];
 let currentWatchedWith = [];
 let currentSeason = 1;
@@ -4804,12 +4805,21 @@ function getSeriesProgressViewState(itemId, season) {
 }
 
 function reopenDetailAtSeason(itemId, season, viewState = {}) {
-  openDetail(itemId);
-  setTimeout(() => {
+  const item = items.find((entry) => entry.id === itemId);
+  const detailContent = document.getElementById("detailContent");
+  if (!item || !detailContent) {
+    openDetail(itemId);
+    return;
+  }
+
+  document.getElementById("detailTitle").textContent = item.title;
+  detailContent.innerHTML = buildDetailHTML(item, currentDetailTmdb);
+
+  setTimeout(async () => {
     if (viewState.keepSeasonOpen) {
       const block = document.getElementById(`sdSeasonBlock_${itemId}_${season}`);
       if (block && !block.classList.contains("sd-open")) {
-        toggleSeasonEpisodes(itemId, season, { stopPropagation() {} });
+        await toggleSeasonEpisodes(itemId, season, { stopPropagation() {} });
       }
     }
     const detailBody = document.getElementById("detailContent");
@@ -5903,6 +5913,7 @@ async function openDetail(id) {
   if (!item) return;
 
   currentItemId = id;
+  currentDetailTmdb = null;
   document.getElementById("detailTitle").textContent = item.title;
   document.getElementById("detailContent").innerHTML = buildDetailHTML(
     item,
@@ -5922,6 +5933,7 @@ async function openDetail(id) {
       if (res.ok) {
         const tmdb = await res.json();
         tmdb.watchProviders = watchProviders;
+        currentDetailTmdb = tmdb;
         const provider =
           getPrimaryWatchProvider(watchProviders, {
             includedOnly: true,
