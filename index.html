@@ -347,6 +347,19 @@
       <!-- Discover Section -->
       <div id="discoverSection" class="section">
         <div id="discoverRows">
+
+          <!-- Genres -->
+          <div class="discover-row-wrap" id="discoverGenreRow">
+            <div class="discover-row-header">
+              <h3 class="discover-row-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6h20M2 12h20M2 18h20"/></svg> Parcourir par genre</h3>
+              <div class="discover-genre-toggle">
+                <button class="discover-genre-tab active" id="genreTabMovie" onclick="app.switchGenreTab('movie')">Films</button>
+                <button class="discover-genre-tab" id="genreTabTv" onclick="app.switchGenreTab('tv')">Séries</button>
+              </div>
+            </div>
+            <div class="discover-scroll" id="discoverGenreChips"></div>
+          </div>
+
           <div class="discover-row-wrap" id="discoverTrendingMovies">
             <div class="discover-row-header">
               <h3 class="discover-row-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 10 5-3v10l-5-3V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-3"/></svg> Films tendances</h3>
@@ -388,6 +401,25 @@
               <h3 class="discover-row-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12a10 10 0 1 0 20 0 10 10 0 0 0-20 0"/><path d="M12 8v4l3 3"/></svg> Actuellement au cinéma</h3>
             </div>
             <div class="discover-scroll" id="discoverNowPlayingGrid">
+              <div class="discover-loading">Chargement...</div>
+            </div>
+          </div>
+
+          <!-- Top-rated -->
+          <div class="discover-row-wrap" id="discoverTopMovies">
+            <div class="discover-row-header">
+              <h3 class="discover-row-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg> Meilleurs films de tous les temps</h3>
+            </div>
+            <div class="discover-scroll" id="discoverTopMoviesGrid">
+              <div class="discover-loading">Chargement...</div>
+            </div>
+          </div>
+
+          <div class="discover-row-wrap" id="discoverTopSeries">
+            <div class="discover-row-header">
+              <h3 class="discover-row-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg> Meilleures séries de tous les temps</h3>
+            </div>
+            <div class="discover-scroll" id="discoverTopSeriesGrid">
               <div class="discover-loading">Chargement...</div>
             </div>
           </div>

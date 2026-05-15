@@ -1725,7 +1725,25 @@ let currentStatus = null;
 let currentSort = "date-desc";
 let currentViewMode = localStorage.getItem("viewMode") || "grid";
 let collectionTagFilter = "";
-const trendingCache = {}; // stocke les items TMDB par type et id
+const trendingCache = {};
+const TMDB_MOVIE_GENRES = [
+  { id: 28, name: "Action" }, { id: 12, name: "Aventure" },
+  { id: 16, name: "Animation" }, { id: 35, name: "Comédie" },
+  { id: 80, name: "Crime" }, { id: 99, name: "Documentaire" },
+  { id: 18, name: "Drame" }, { id: 14, name: "Fantastique" },
+  { id: 27, name: "Horreur" }, { id: 9648, name: "Mystère" },
+  { id: 10749, name: "Romance" }, { id: 878, name: "Science-Fiction" },
+  { id: 53, name: "Thriller" }, { id: 10752, name: "Guerre" },
+  { id: 37, name: "Western" },
+];
+const TMDB_TV_GENRES = [
+  { id: 10759, name: "Action & Aventure" }, { id: 16, name: "Animation" },
+  { id: 35, name: "Comédie" }, { id: 80, name: "Crime" },
+  { id: 99, name: "Documentaire" }, { id: 18, name: "Drame" },
+  { id: 10751, name: "Famille" }, { id: 9648, name: "Mystère" },
+  { id: 10765, name: "Science-Fiction & Fantastique" },
+  { id: 10768, name: "Guerre & Politique" }, { id: 37, name: "Western" },
+];
 const seasonEpisodesCache = {};
 const movieReleaseEnrichmentInFlight = new Set();
 const orphanMovieRepairInFlight = new Set();
@@ -1774,6 +1792,7 @@ let personalGenreProfileCache = {
 };
 let discoverBrowseState = {
   key: null,
+  inlineConfig: null,
   page: 0,
   totalPages: 0,
   loading: false,
@@ -7906,6 +7925,24 @@ function getDiscoverRowsConfig() {
       type: "movie",
       showDate: false,
     },
+    {
+      key: "top-movies",
+      title: "Meilleurs films de tous les temps",
+      description: "Les films les mieux notés sur TMDB.",
+      gridId: "discoverTopMoviesGrid",
+      url: `${TMDB_BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      type: "movie",
+      showDate: false,
+    },
+    {
+      key: "top-series",
+      title: "Meilleures séries de tous les temps",
+      description: "Les séries les mieux notées sur TMDB.",
+      gridId: "discoverTopSeriesGrid",
+      url: `${TMDB_BASE_URL}/tv/top_rated?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      type: "tv",
+      showDate: false,
+    },
   ];
 }
 
@@ -8017,10 +8054,102 @@ async function loadTrending(type, buttonElement) {
   openDiscoverCollection(fallbackKey);
 }
 
+function renderGenreChips(type = "movie") {
+  const container = document.getElementById("discoverGenreChips");
+  if (!container) return;
+  const genres = type === "movie" ? TMDB_MOVIE_GENRES : TMDB_TV_GENRES;
+  const typeLabel = type === "movie" ? "Films" : "Séries";
+  container.innerHTML = genres
+    .map(
+      (g) =>
+        `<button class="discover-genre-chip" onclick="app.openDiscoverByGenre(${g.id}, '${type}', ${JSON.stringify(g.name)})">${escapeHtml(g.name)}</button>`,
+    )
+    .join("");
+  document
+    .getElementById("genreTabMovie")
+    ?.classList.toggle("active", type === "movie");
+  document
+    .getElementById("genreTabTv")
+    ?.classList.toggle("active", type === "tv");
+}
+
+function switchGenreTab(type) {
+  renderGenreChips(type);
+}
+
+function openDiscoverByGenre(genreId, type, genreName) {
+  const endpoint = type === "movie" ? "movie" : "tv";
+  const typeLabel = type === "movie" ? "Films" : "Séries";
+  openDiscoverWithConfig({
+    key: `genre-${type}-${genreId}`,
+    title: `${typeLabel} · ${genreName}`,
+    description: `Les meilleurs ${typeLabel.toLowerCase()} du genre ${genreName}, par popularité.`,
+    url: `${TMDB_BASE_URL}/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=fr-FR&with_genres=${genreId}&sort_by=popularity.desc&watch_region=FR`,
+    type,
+    showDate: false,
+  });
+}
+
+async function loadPersonalizedRows() {
+  if (TMDB_API_KEY === "VOTRE_CLE_API_ICI") return;
+  const rowsContainer = document.getElementById("discoverRows");
+  if (!rowsContainer) return;
+
+  const topRated = items
+    .filter((i) => i.tmdbId && (i.rating || 0) >= 4 && i.status === "watched")
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+    .slice(0, 3);
+
+  for (const item of topRated) {
+    const endpoint = item.type === "movie" ? "movie" : "tv";
+    const gridId = `discoverPersonalizedGrid_${item.id}`;
+    const rowEl = document.createElement("div");
+    rowEl.className = "discover-row-wrap";
+    rowEl.innerHTML = `
+      <div class="discover-row-header">
+        <h3 class="discover-row-title">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.94c1.5 0 2.75-.55 3.65-1.35L18 22l1-1-2.38-2.38C17.5 17.6 18 16.35 18 15c0-3.31-2.69-6-6-6s-6 2.69-6 6 2.69 6 6 6Z" opacity=".2"/><path d="M9 2 7.17 6H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.17L15 2H9Z"/></svg>
+          Parce que tu as aimé <span class="discover-perso-title">${escapeHtml(item.title)}</span>
+        </h3>
+      </div>
+      <div class="discover-scroll" id="${gridId}">
+        <div class="discover-loading">Chargement…</div>
+      </div>`;
+    rowsContainer.appendChild(rowEl);
+
+    try {
+      const res = await fetch(
+        `${TMDB_BASE_URL}/${endpoint}/${item.tmdbId}/similar?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      );
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const results = (data.results || [])
+        .filter((r) => !items.some((i) => isSameTmdbCollectionItem(i, r.id, endpoint === "movie" ? "movie" : "tv")))
+        .slice(0, 11);
+
+      const gridEl = document.getElementById(gridId);
+      if (!gridEl) continue;
+
+      if (results.length === 0) {
+        rowEl.remove();
+        continue;
+      }
+      results.forEach((r) => setTrendingCacheItem(r, endpoint));
+      gridEl.innerHTML =
+        results.map((r) => buildDiscoverRowCardHTML(r, endpoint)).join("") +
+        buildDiscoverMoreCardHTML(`similar-${endpoint}-${item.tmdbId}`);
+    } catch {
+      rowEl.remove();
+    }
+  }
+}
+
 async function loadDiscover() {
   getDiscoverRowsConfig().forEach((config) => {
     loadDiscoverRow(config);
   });
+  renderGenreChips("movie");
+  loadPersonalizedRows();
 }
 
 async function loadDiscoverRow({ gridId, url, type, showDate, key }) {
@@ -8066,10 +8195,36 @@ function closeDiscoverCollection() {
   rows.style.display = "block";
   discoverBrowseState = {
     key: null,
+    inlineConfig: null,
     page: 0,
     totalPages: 0,
     loading: false,
   };
+}
+
+async function openDiscoverWithConfig(config) {
+  const rows = document.getElementById("discoverRows");
+  const panel = document.getElementById("discoverBrowsePanel");
+  const title = document.getElementById("discoverBrowseTitle");
+  const description = document.getElementById("discoverBrowseDescription");
+  const grid = document.getElementById("discoverBrowseGrid");
+  if (!rows || !panel || !title || !description || !grid) return;
+
+  rows.style.display = "none";
+  panel.classList.add("active");
+  title.textContent = config.title;
+  description.textContent = config.description || "";
+  grid.innerHTML = `<p class="discover-loading">Chargement…</p>`;
+
+  discoverBrowseState = {
+    key: config.key,
+    inlineConfig: config,
+    page: 0,
+    totalPages: 0,
+    loading: false,
+  };
+
+  await loadMoreDiscoverCollection();
 }
 
 async function openDiscoverCollection(key) {
@@ -8101,7 +8256,9 @@ async function openDiscoverCollection(key) {
 async function loadMoreDiscoverCollection() {
   if (discoverBrowseState.loading || !discoverBrowseState.key) return;
 
-  const config = getDiscoverConfigByKey(discoverBrowseState.key);
+  const config =
+    discoverBrowseState.inlineConfig ||
+    getDiscoverConfigByKey(discoverBrowseState.key);
   const grid = document.getElementById("discoverBrowseGrid");
   const loadMoreWrap = document.getElementById("discoverBrowseLoadMoreWrap");
   const loadMoreBtn = document.getElementById("discoverBrowseLoadMoreBtn");
@@ -9028,6 +9185,9 @@ window.app = {
   loadTrending,
   loadDiscover,
   openDiscoverCollection,
+  openDiscoverWithConfig,
+  openDiscoverByGenre,
+  switchGenreTab,
   openCollectionBrowse,
   closeCollectionBrowse,
   closeDiscoverCollection,
