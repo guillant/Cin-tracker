@@ -4639,7 +4639,7 @@ function jumpToSeason(itemId, season, seasonAirDate, event) {
 }
 
 function markSeasonDone(itemId, season, event) {
-  event.stopPropagation();
+  event?.stopPropagation();
   const viewState = getSeriesProgressViewState(itemId, season);
   const idx = items.findIndex((i) => i.id === itemId);
   if (idx === -1) return;
@@ -4709,7 +4709,7 @@ function quickNextEpisodeInDetail(itemId, event) {
 }
 
 function markEpisodeSeen(itemId, season, episode, event) {
-  event.stopPropagation();
+  event?.stopPropagation();
   const viewState = getSeriesProgressViewState(itemId, season);
 
   const idx = items.findIndex((i) => i.id === itemId);
@@ -4837,6 +4837,8 @@ function refreshOpenSeasonProgressInPlace(itemId, season, viewState = {}) {
       button.classList.toggle("sd-ep-mark-done", isDone);
       button.classList.toggle("sd-ep-mark-current", isCurrent);
       button.textContent = isDone ? "✓ Vu" : "Pas vu";
+      button.disabled = false;
+      button.removeAttribute("disabled");
       button.setAttribute(
         "onclick",
         `toggleEpisodeSeen(${inlineJsString(itemId)}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event)`,
@@ -5721,6 +5723,7 @@ function buildProgressTab(item, tmdb) {
             <span class="sd-season-chevron">▸</span>
           </div>
           <button class="sd-mark-btn ${isDone ? "sd-mark-done" : ""} ${isUnreleased ? "sd-mark-disabled" : ""}"
+            type="button"
             ${isUnreleased ? "disabled" : ""}
             onclick="markSeasonDone(${inlineJsString(item.id)}, ${sNum}, event)">
             ${isDone ? "✓ Terminée" : isUnreleased ? "Pas sortie" : "Marquer terminée"}
@@ -5738,7 +5741,7 @@ function buildProgressTab(item, tmdb) {
         ${
           !isCurrent && !isDone && !isUnreleased
             ? `
-          <button class="btn season-btn" style="margin-top:8px;" onclick="jumpToSeason(${inlineJsString(item.id)}, ${sNum}, ${inlineJsString(s.air_date || "")}, event)">
+          <button class="btn season-btn" type="button" style="margin-top:8px;" onclick="jumpToSeason(${inlineJsString(item.id)}, ${sNum}, ${inlineJsString(s.air_date || "")}, event)">
             Reprendre cette saison
           </button>`
             : ""
@@ -5879,6 +5882,7 @@ async function toggleSeasonEpisodes(itemId, season, event) {
               isUpcoming
                 ? `<span class="sd-ep-airdate">${escapeHtml(airDateLabel)}</span>`
                 : `<button
+                  type="button"
                   class="sd-ep-mark ${isDone ? "sd-ep-mark-done" : ""} ${isCurrent ? "sd-ep-mark-current" : ""}"
                   onclick="toggleEpisodeSeen(${inlineJsString(itemId)}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event)">
                   ${isDone ? "✓ Vu" : "Pas vu"}
