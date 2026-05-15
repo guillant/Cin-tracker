@@ -4639,6 +4639,7 @@ function jumpToSeason(itemId, season, seasonAirDate, event) {
 
 function markSeasonDone(itemId, season, event) {
   event.stopPropagation();
+  const viewState = getSeriesProgressViewState(itemId, season);
   const idx = items.findIndex((i) => i.id === itemId);
   if (idx === -1) return;
   const item = items[idx];
@@ -4676,11 +4677,12 @@ function markSeasonDone(itemId, season, event) {
   }
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
-  reopenDetailAtSeason(itemId, season);
+  reopenDetailAtSeason(itemId, season, viewState);
 }
 
 function unmarkSeasonDone(itemId, season, event) {
   event?.stopPropagation();
+  const viewState = getSeriesProgressViewState(itemId, season);
   const idx = items.findIndex((i) => i.id === itemId);
   if (idx === -1) return;
 
@@ -4694,7 +4696,7 @@ function unmarkSeasonDone(itemId, season, event) {
   };
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
-  reopenDetailAtSeason(itemId, season);
+  reopenDetailAtSeason(itemId, season, viewState);
   showToast(`Saison ${season} remise à zéro`);
 }
 
@@ -4707,6 +4709,7 @@ function quickNextEpisodeInDetail(itemId, event) {
 
 function markEpisodeSeen(itemId, season, episode, event) {
   event.stopPropagation();
+  const viewState = getSeriesProgressViewState(itemId, season);
 
   const idx = items.findIndex((i) => i.id === itemId);
   if (idx === -1) return;
@@ -4760,11 +4763,12 @@ function markEpisodeSeen(itemId, season, episode, event) {
   items[idx] = updated;
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
-  reopenDetailAtSeason(itemId, season);
+  reopenDetailAtSeason(itemId, season, { ...viewState, keepSeasonOpen: true });
 }
 
 function unmarkEpisodeSeen(itemId, season, episode, event) {
   event?.stopPropagation();
+  const viewState = getSeriesProgressViewState(itemId, season);
   const idx = items.findIndex((i) => i.id === itemId);
   if (idx === -1) return;
 
@@ -4778,7 +4782,7 @@ function unmarkEpisodeSeen(itemId, season, episode, event) {
   };
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
-  reopenDetailAtSeason(itemId, season);
+  reopenDetailAtSeason(itemId, season, { ...viewState, keepSeasonOpen: true });
   showToast(`S${season} E${episode} remis en non vu`);
 }
 
@@ -4790,12 +4794,26 @@ function toggleEpisodeSeen(itemId, season, episode, isDone, event) {
   }
 }
 
-function reopenDetailAtSeason(itemId, season) {
+function getSeriesProgressViewState(itemId, season) {
+  const detailBody = document.getElementById("detailContent");
+  const block = document.getElementById(`sdSeasonBlock_${itemId}_${season}`);
+  return {
+    scrollTop: detailBody?.scrollTop || 0,
+    keepSeasonOpen: Boolean(block?.classList.contains("sd-open")),
+  };
+}
+
+function reopenDetailAtSeason(itemId, season, viewState = {}) {
   openDetail(itemId);
   setTimeout(() => {
-    const block = document.getElementById(`sdSeasonBlock_${itemId}_${season}`);
-    if (!block || block.classList.contains("sd-open")) return;
-    toggleSeasonEpisodes(itemId, season, { stopPropagation() {} });
+    if (viewState.keepSeasonOpen) {
+      const block = document.getElementById(`sdSeasonBlock_${itemId}_${season}`);
+      if (block && !block.classList.contains("sd-open")) {
+        toggleSeasonEpisodes(itemId, season, { stopPropagation() {} });
+      }
+    }
+    const detailBody = document.getElementById("detailContent");
+    if (detailBody) detailBody.scrollTop = viewState.scrollTop || 0;
   }, 80);
 }
 
