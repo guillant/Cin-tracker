@@ -9051,6 +9051,94 @@ window.app = {
   openWatchedFlowFromTrendingById,
 };
 
+async function checkSeriesForNewSeason(item) {
+  try {
+    const res = await fetch(
+      `${TMDB_BASE_URL}/tv/${item.tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+    );
+    if (!res.ok) return;
+    const tmdb = await res.json();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const currentMaxSeason = Math.max(
+      0,
+      ...Object.keys(item.seasonData).map(Number),
+    );
+
+    const newSeason = (tmdb.seasons || [])
+      .filter((s) => s.season_number > currentMaxSeason && s.episode_count > 0)
+      .filter((s) => {
+        if (!s.air_date) return false;
+        const d = new Date(s.air_date);
+        d.setHours(0, 0, 0, 0);
+        return d <= today;
+      })
+      .sort((a, b) => a.season_number - b.season_number)[0];
+
+    const idx = items.findIndex((i) => i.id === item.id);
+    if (idx === -1) return;
+
+    const now = new Date().toISOString();
+
+    if (newSeason) {
+      const seasonData = {};
+      const seasonAirDates = {};
+      (tmdb.seasons || [])
+        .filter((s) => s.season_number > 0)
+        .forEach((s) => {
+          seasonData[String(s.season_number)] = s.episode_count;
+          if (s.air_date) seasonAirDates[String(s.season_number)] = s.air_date;
+        });
+
+      items[idx] = {
+        ...items[idx],
+        status: "watching",
+        currentSeason: newSeason.season_number,
+        currentEpisode: 1,
+        seasonData,
+        seasonAirDates,
+        watchedAt: null,
+        seasonCheckedAt: now,
+        totalEpisodes: tmdb.number_of_episodes || items[idx].totalEpisodes,
+      };
+      localStorage.setItem("watchlist", JSON.stringify(items));
+      renderItems();
+      showToast(`${item.title} · Saison ${newSeason.season_number} disponible !`);
+    } else {
+      items[idx] = { ...items[idx], seasonCheckedAt: now };
+      localStorage.setItem("watchlist", JSON.stringify(items));
+    }
+  } catch (e) {
+    console.error("Erreur vérification nouvelle saison:", item.title, e);
+  }
+}
+
+async function checkWatchedSeriesForNewSeasons() {
+  if (TMDB_API_KEY === "VOTRE_CLE_API_ICI") return;
+
+  const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  const toCheck = items
+    .filter(
+      (i) =>
+        i.type === "series" &&
+        i.status === "watched" &&
+        i.tmdbId &&
+        i.seasonData &&
+        (!i.seasonCheckedAt ||
+          now - new Date(i.seasonCheckedAt).getTime() > CHECK_INTERVAL_MS),
+    )
+    .slice(0, 5);
+
+  for (const item of toCheck) {
+    await checkSeriesForNewSeason(item);
+    await new Promise((r) => setTimeout(r, 600));
+  }
+}
+
 sanitizeImportedSystemTags();
 renderItems();
 applyLaunchActionFromHash();
@@ -9060,4 +9148,5 @@ window.addEventListener("load", () => {
     letterboxdRepairAttempted = false;
     repairExistingLetterboxdImports();
   }, 1200);
+  setTimeout(checkWatchedSeriesForNewSeasons, 3000);
 });
