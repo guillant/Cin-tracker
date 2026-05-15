@@ -37,6 +37,9 @@ const STREAMING_PROVIDER_PRIORITY = [
 const USER_PROVIDERS_STORAGE_KEY = "cinetrackerUserProviders";
 const GROUP_PROFILES_STORAGE_KEY = "cinetrackerGroupProfiles";
 const GROUP_ACTIVE_PROFILES_STORAGE_KEY = "cinetrackerGroupActiveProfiles";
+const SUGGESTION_RECENT_HISTORY_STORAGE_KEY = "cinetrackerSuggestionRecentHistory";
+const SUGGESTION_RECENT_HISTORY_LIMIT = 8;
+const SUGGESTION_PROVIDER_CACHE_VERSION = 3;
 const USER_PROVIDER_OPTIONS = [
   { key: "netflix", label: "Netflix", tmdbId: 8 },
   { key: "prime-video", label: "Prime Video", tmdbId: 119 },
@@ -1217,7 +1220,11 @@ function hasIncludedWatchProvider(item) {
 }
 
 function isUserProviderAvailableItem(item) {
-  return hasIncludedWatchProvider(item) && isUserProvider(item.providerName);
+  return Boolean(
+    item?.onUserPlatforms ||
+      (isUserProvider(item?.providerName) &&
+        (!item?.providerAccessType || hasIncludedWatchProvider(item))),
+  );
 }
 
 function getGroupProviderMatchCountForItem(item) {
@@ -1681,12 +1688,14 @@ let searchTimeout;
 let deferredPrompt;
 let lastSuggestedItemId = null;
 let currentSuggestionCandidates = [];
+let recentSuggestionHistory = loadRecentSuggestionHistory();
 let suggestionFilters = {
   mode: "solo",
   source: "all",
   type: "all",
   mood: "all",
   availability: "all",
+  time: "all",
 };
 let suggestionFiltersOpen = true;
 let userProviderKeys = loadUserProviderKeys();
@@ -4412,6 +4421,66 @@ function getPrimaryWatchProvider(watchProviders, options = {}) {
   };
 }
 
+function getUserMatchingWatchProvider(watchProviders) {
+  if (!userProviderKeys.length || !Array.isArray(watchProviders?.groups)) {
+    return null;
+  }
+
+  for (const group of watchProviders.groups) {
+    if (!WATCH_PROVIDER_INCLUDED_GROUPS.has(group?.key || "")) continue;
+    const provider = (group.providers || []).find((candidate) =>
+      userProviderKeys.includes(getProviderPriorityKey(candidate.provider_name)),
+    );
+    if (provider) {
+      return {
+        providerName: provider.provider_name || "",
+        providerLogo: provider.logo_path
+          ? `https://image.tmdb.org/t/p/w92${provider.logo_path}`
+          : null,
+        providerAccessType: group.key || null,
+      };
+    }
+  }
+
+  return null;
+}
+
+function getUserMatchingNetworkProvider(tmdbDetails) {
+  if (!userProviderKeys.length || !Array.isArray(tmdbDetails?.networks)) {
+    return null;
+  }
+
+  const network = tmdbDetails.networks.find((candidate) =>
+    userProviderKeys.includes(getProviderPriorityKey(candidate.name)),
+  );
+  if (!network) return null;
+
+  return {
+    providerName: network.name || "",
+    providerLogo: network.logo_path
+      ? `https://image.tmdb.org/t/p/w92${network.logo_path}`
+      : null,
+    providerAccessType: "flatrate",
+  };
+}
+
+function getPrimaryStreamingNetworkProvider(tmdbDetails) {
+  if (!Array.isArray(tmdbDetails?.networks)) return null;
+
+  const network = tmdbDetails.networks.find((candidate) =>
+    STREAMING_PROVIDER_PRIORITY.includes(getProviderPriorityKey(candidate.name)),
+  );
+  if (!network) return null;
+
+  return {
+    providerName: network.name || "",
+    providerLogo: network.logo_path
+      ? `https://image.tmdb.org/t/p/w92${network.logo_path}`
+      : null,
+    providerAccessType: "flatrate",
+  };
+}
+
 function setProviderDataset(input, watchProviders) {
   const provider = getPrimaryWatchProvider(watchProviders, {
     includedOnly: true,
@@ -4579,6 +4648,11 @@ function markSeasonDone(itemId, season, event) {
     item.seasonData?.[season] ||
     item.seasonData?.[String(season)] ||
     CONSTANTS.DEFAULT_EPISODES_PER_SEASON;
+  const seasonState = getSeasonProgressState(item, season, epCount);
+  if (seasonState.isDone) {
+    unmarkSeasonDone(itemId, season, event);
+    return;
+  }
   const nextSeason = season + 1;
   const hasNextSeason = item.seasonData ? !!item.seasonData[nextSeason] : false;
 
@@ -4603,6 +4677,25 @@ function markSeasonDone(itemId, season, event) {
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
   openDetail(itemId);
+}
+
+function unmarkSeasonDone(itemId, season, event) {
+  event?.stopPropagation();
+  const idx = items.findIndex((i) => i.id === itemId);
+  if (idx === -1) return;
+
+  items[idx] = {
+    ...items[idx],
+    currentSeason: season,
+    currentEpisode: 1,
+    status: "watching",
+    watchedAt: null,
+    lastWatchedAt: new Date().toISOString(),
+  };
+  localStorage.setItem("watchlist", JSON.stringify(items));
+  renderItems();
+  openDetail(itemId);
+  showToast(`Saison ${season} remise à zéro`);
 }
 
 function quickNextEpisodeInDetail(itemId, event) {
@@ -4668,6 +4761,33 @@ function markEpisodeSeen(itemId, season, episode, event) {
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
   openDetail(itemId);
+}
+
+function unmarkEpisodeSeen(itemId, season, episode, event) {
+  event?.stopPropagation();
+  const idx = items.findIndex((i) => i.id === itemId);
+  if (idx === -1) return;
+
+  items[idx] = {
+    ...items[idx],
+    currentSeason: season,
+    currentEpisode: episode,
+    status: "watching",
+    watchedAt: null,
+    lastWatchedAt: new Date().toISOString(),
+  };
+  localStorage.setItem("watchlist", JSON.stringify(items));
+  renderItems();
+  openDetail(itemId);
+  showToast(`S${season} E${episode} remis en non vu`);
+}
+
+function toggleEpisodeSeen(itemId, season, episode, isDone, event) {
+  if (isDone) {
+    unmarkEpisodeSeen(itemId, season, episode, event);
+  } else {
+    markEpisodeSeen(itemId, season, episode, event);
+  }
 }
 
 function buildWatchProvidersHTML(watchProviders) {
@@ -4741,8 +4861,20 @@ function buildAvailabilityInline(names, variant = "") {
   `;
 }
 
-function buildAvailabilityInfoRow(item, watchProviders) {
-  if (!watchProviders && !hasIncludedWatchProvider(item)) {
+function buildAvailabilityInfoRow(item, watchProviders, tmdb = null) {
+  const networkProvider =
+    item.type === "series"
+      ? getPrimaryStreamingNetworkProvider(tmdb) ||
+        (item.providerName
+          ? {
+              providerName: item.providerName,
+              providerLogo: item.providerLogo || null,
+              providerAccessType: item.providerAccessType || null,
+            }
+          : null)
+      : null;
+
+  if (!watchProviders && !hasIncludedWatchProvider(item) && !networkProvider) {
     return buildDetailInfoRow(
       "Disponibilite",
       `<span class="detail-availability-note">Verification des plateformes en cours...</span>`,
@@ -4768,6 +4900,14 @@ function buildAvailabilityInfoRow(item, watchProviders) {
     return buildDetailInfoRow(
       "Disponibilite",
       `<strong>Inclus en streaming</strong>${buildAvailabilityInline([item.providerName])}`,
+      "detail-row-availability",
+    );
+  }
+
+  if (networkProvider?.providerName) {
+    return buildDetailInfoRow(
+      "Plateforme",
+      `<strong>${escapeHtml(getCompactProviderLabel(networkProvider.providerName))}</strong><span class="detail-availability-note">Diffuseur TMDB</span>`,
       "detail-row-availability",
     );
   }
@@ -5295,7 +5435,7 @@ function buildDetailHTML(item, tmdb) {
         <div class="sd-section-title">Informations</div>
         ${buildDetailInfoRow("Année", escapeHtml(item.year) || "—")}
         ${buildDetailInfoRow("Statut", `${statusText}${item.watchedAt ? ` <span class="watched-date">· Vu le ${new Date(item.watchedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>` : ""}`)}
-        ${buildAvailabilityInfoRow(item, tmdb?.watchProviders)}
+        ${buildAvailabilityInfoRow(item, tmdb?.watchProviders, tmdb)}
         ${item.rating ? buildDetailInfoRow("Ma note", buildUserRatingInline(item.rating), "detail-row-highlight") : ""}
         ${buildDetailInfoRow("Vu avec", buildWatchedWithList(item.watchedWith), "detail-row-tags")}
         ${item.genre ? buildDetailInfoRow("Genre", escapeHtml(item.genre)) : ""}
@@ -5649,8 +5789,7 @@ async function toggleSeasonEpisodes(itemId, season, event) {
                 ? `<span class="sd-ep-airdate">${escapeHtml(airDateLabel)}</span>`
                 : `<button
                   class="sd-ep-mark ${isDone ? "sd-ep-mark-done" : ""} ${isCurrent ? "sd-ep-mark-current" : ""}"
-                  ${isDone ? "disabled" : ""}
-                  onclick="markEpisodeSeen(${inlineJsString(itemId)}, ${season}, ${epNum}, event)">
+                  onclick="toggleEpisodeSeen(${inlineJsString(itemId)}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event)">
                   ${isDone ? "✓ Vu" : "Pas vu"}
                 </button>`
             }
@@ -5676,7 +5815,7 @@ function buildDetailsTab(item, tmdb) {
       "Terminée le",
       `<span class="watched-date-full">${new Date(item.watchedAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>`,
     );
-  rows += buildAvailabilityInfoRow(item, tmdb?.watchProviders);
+  rows += buildAvailabilityInfoRow(item, tmdb?.watchProviders, tmdb);
   if (item.genre) rows += buildDetailInfoRow("Genre", escapeHtml(item.genre));
   if (creators) rows += buildDetailInfoRow("Créateur", creators);
   const tmdbScore =
@@ -5756,9 +5895,14 @@ async function openDetail(id) {
       if (res.ok) {
         const tmdb = await res.json();
         tmdb.watchProviders = watchProviders;
-        const provider = getPrimaryWatchProvider(watchProviders, {
-          includedOnly: true,
-        });
+        const provider =
+          getPrimaryWatchProvider(watchProviders, {
+            includedOnly: true,
+          }) ||
+          (item.type === "series"
+            ? getUserMatchingNetworkProvider(tmdb) ||
+              getPrimaryStreamingNetworkProvider(tmdb)
+            : null);
         const canonicalReleaseDate =
           item.type === "movie" ? tmdb.release_date : tmdb.first_air_date;
 
@@ -5794,12 +5938,12 @@ async function openDetail(id) {
             item = items[idx];
             localStorage.setItem("watchlist", JSON.stringify(items));
           }
-        } else if (provider?.providerLogo) {
+        } else if (provider?.providerName) {
           const idx = items.findIndex((i) => i.id === item.id);
           if (idx !== -1) {
             items[idx] = {
               ...items[idx],
-              providerLogo: provider.providerLogo,
+              providerLogo: provider.providerLogo || null,
               providerName: provider.providerName,
               providerAccessType: provider.providerAccessType || null,
               providerPriorityVersion: WATCH_PROVIDER_PRIORITY_VERSION,
@@ -6108,6 +6252,76 @@ function deleteItem() {
   showToast("Contenu supprimé");
 }
 
+function hasConfiguredTmdbApiKey() {
+  return Boolean(TMDB_API_KEY && TMDB_API_KEY !== "VOTRE_CLE_API_ICI");
+}
+
+function loadRecentSuggestionHistory() {
+  try {
+    const stored = JSON.parse(
+      localStorage.getItem(SUGGESTION_RECENT_HISTORY_STORAGE_KEY) || "[]",
+    );
+    return Array.isArray(stored)
+      ? stored.filter(Boolean).slice(0, SUGGESTION_RECENT_HISTORY_LIMIT)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberSuggestion(item) {
+  if (!item?.id) return;
+  recentSuggestionHistory = [
+    item.id,
+    ...recentSuggestionHistory.filter((id) => id !== item.id),
+  ].slice(0, SUGGESTION_RECENT_HISTORY_LIMIT);
+  localStorage.setItem(
+    SUGGESTION_RECENT_HISTORY_STORAGE_KEY,
+    JSON.stringify(recentSuggestionHistory),
+  );
+}
+
+function getEstimatedWatchMinutes(item) {
+  if (!item) return null;
+  if (item.type === "series") return CONSTANTS.EPISODE_AVERAGE_DURATION;
+
+  const duration =
+    item.runtime ||
+    item.duration ||
+    item.runtimeMinutes ||
+    item.durationMinutes ||
+    CONSTANTS.MOVIE_AVERAGE_DURATION;
+  const minutes = Number(duration);
+  return Number.isFinite(minutes) && minutes > 0
+    ? minutes
+    : CONSTANTS.MOVIE_AVERAGE_DURATION;
+}
+
+function matchesSuggestionTimeFilter(item) {
+  const value = suggestionFilters.time;
+  if (!value || value === "all") return true;
+
+  const minutes = getEstimatedWatchMinutes(item);
+  if (!minutes) return true;
+
+  const maxByFilter = {
+    "30": 30,
+    "60": 60,
+    "120": 120,
+    evening: 180,
+  };
+  const maxMinutes = maxByFilter[value];
+  return !maxMinutes || minutes <= maxMinutes;
+}
+
+function formatWatchMinutes(minutes) {
+  if (!minutes) return "";
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours}h${String(rest).padStart(2, "0")}` : `${hours}h`;
+}
+
 function getSuggestionFilterGroups() {
   return [
     {
@@ -6151,6 +6365,17 @@ function getSuggestionFilterGroups() {
       options: [
         { value: "all", label: "Tout" },
         { value: "mine", label: "Mes plateformes" },
+      ],
+    },
+    {
+      key: "time",
+      label: "Temps",
+      options: [
+        { value: "all", label: "Tout" },
+        { value: "30", label: "30 min" },
+        { value: "60", label: "1h" },
+        { value: "120", label: "2h" },
+        { value: "evening", label: "Soiree" },
       ],
     },
   ];
@@ -6494,6 +6719,9 @@ function matchesSuggestionFilters(item, source, { ignoreAvailability = false } =
   ) {
     return false;
   }
+  if (!matchesSuggestionTimeFilter(item)) {
+    return false;
+  }
   if (!ignoreAvailability && suggestionFilters.availability === "mine") {
     if (suggestionFilters.mode === "group") {
       if (!getGroupProviderMatchCountForItem(item)) return false;
@@ -6546,6 +6774,16 @@ function getSuggestionScore(item, index) {
 function getSuggestionReasons(item) {
   const reasons = [];
   const genreAffinity = getPersonalGenreAffinity(item);
+  const estimatedMinutes = getEstimatedWatchMinutes(item);
+
+  if (suggestionFilters.time !== "all" && estimatedMinutes) {
+    const label = item.type === "series" ? "Un episode" : "Ce film";
+    const providerLabel =
+      item.providerName || getUserProviderLabelList().join(" ou ");
+    reasons.push(
+      `${label} tient dans ton temps disponible (${formatWatchMinutes(estimatedMinutes)}).`,
+    );
+  }
 
   if (item.isExternalSuggestion) {
     reasons.push("Suggestion hors collection, trouvée via TMDB.");
@@ -6559,7 +6797,7 @@ function getSuggestionReasons(item) {
         : 0;
     reasons.push(
       suggestionFilters.mode === "group" && groupMatchCount > 0
-        ? `Disponible pour ${groupMatchCount}/${getActiveGroupProfiles().length} participant${getActiveGroupProfiles().length > 1 ? "s" : ""} via ${item.providerName}.`
+        ? `Disponible pour ${groupMatchCount}/${getActiveGroupProfiles().length} participant${getActiveGroupProfiles().length > 1 ? "s" : ""} via ${providerLabel}.`
         : isUserProvider(item.providerName)
           ? `Disponible sur ${item.providerName}, une de tes plateformes.`
           : `Plateforme détectée: ${item.providerName}.`,
@@ -6610,7 +6848,16 @@ function getSuggestionReasons(item) {
       ];
 }
 
-function normalizeExternalSuggestionItem(tmdbItem, mediaType, { onUserPlatforms = false } = {}) {
+function normalizeExternalSuggestionItem(
+  tmdbItem,
+  mediaType,
+  {
+    onUserPlatforms = false,
+    providerName = null,
+    providerLogo = null,
+    providerAccessType = null,
+  } = {},
+) {
   const type = getCollectionTypeFromTmdbType(mediaType);
   const genreMap = type === "movie" ? GENRE_MAP.movie : GENRE_MAP.tv;
   const genre = Array.isArray(tmdbItem.genre_ids)
@@ -6636,9 +6883,9 @@ function normalizeExternalSuggestionItem(tmdbItem, mediaType, { onUserPlatforms 
       ? `${TMDB_IMAGE_BASE}${tmdbItem.poster_path}`
       : "",
     tmdbId: tmdbItem.id,
-    providerLogo: null,
-    providerName: null,
-    providerAccessType: null,
+    providerLogo,
+    providerName,
+    providerAccessType,
     providerPriorityVersion: WATCH_PROVIDER_PRIORITY_VERSION,
     tags: [],
     currentSeason: null,
@@ -6656,7 +6903,7 @@ function normalizeExternalSuggestionItem(tmdbItem, mediaType, { onUserPlatforms 
 }
 
 async function fetchExternalSuggestionItems() {
-  if (TMDB_API_KEY === "VOTRE_CLE_API_ICI") return [];
+  if (!hasConfiguredTmdbApiKey()) return [];
 
   const cacheKey = `${suggestionFilters.type}:${suggestionFilters.mood}`;
   const cacheIsFresh =
@@ -6711,18 +6958,19 @@ async function fetchExternalSuggestionItems() {
 }
 
 async function fetchExternalProviderItems() {
-  if (TMDB_API_KEY === "VOTRE_CLE_API_ICI") return [];
+  if (!hasConfiguredTmdbApiKey()) return [];
 
   const providerTmdbIds = getUserProviderTmdbIds();
   if (!providerTmdbIds.length) return [];
 
-  const cacheKey = `${suggestionFilters.type}:providers:${[...userProviderKeys].sort().join(",")}`;
+  const cacheKey = `${SUGGESTION_PROVIDER_CACHE_VERSION}:${suggestionFilters.type}:providers:${[...userProviderKeys].sort().join(",")}`;
   const cacheIsFresh =
     suggestionProviderCache.key === cacheKey &&
     Date.now() - suggestionProviderCache.fetchedAt < 10 * 60 * 1000;
   if (cacheIsFresh) return suggestionProviderCache.items;
 
   const providerParam = providerTmdbIds.join("%7C");
+  const selectedProviderLabel = getUserProviderLabelList().join(" ou ");
   const endpoints = [];
   if (suggestionFilters.type === "all" || suggestionFilters.type === "movie") {
     endpoints.push({
@@ -6743,19 +6991,36 @@ async function fetchExternalProviderItems() {
         const response = await fetch(endpoint.url);
         if (!response.ok) return [];
         const data = await response.json();
-        return (data.results || [])
+        const candidates = (data.results || [])
           .filter(
             (tmdbItem) =>
               !items.some((item) =>
                 isSameTmdbCollectionItem(item, tmdbItem.id, endpoint.mediaType),
               ),
           )
-          .slice(0, 14)
-          .map((tmdbItem) =>
-            normalizeExternalSuggestionItem(tmdbItem, endpoint.mediaType, {
+          .slice(0, 14);
+
+        return Promise.all(
+          candidates.map(async (tmdbItem) => {
+            const watchProviders = await fetchWatchProviders(
+              endpoint.mediaType,
+              tmdbItem.id,
+            );
+            const provider =
+              getUserMatchingWatchProvider(watchProviders) ||
+              getPrimaryWatchProvider(watchProviders, { includedOnly: true });
+
+            return normalizeExternalSuggestionItem(tmdbItem, endpoint.mediaType, {
               onUserPlatforms: true,
-            }),
-          );
+              providerName:
+                provider?.providerName ||
+                selectedProviderLabel ||
+                "Tes plateformes",
+              providerLogo: provider?.providerLogo || null,
+              providerAccessType: provider?.providerAccessType || "flatrate",
+            });
+          }),
+        );
       }),
     );
     const providerItems = payloads.flat();
@@ -6771,13 +7036,55 @@ async function fetchExternalProviderItems() {
   }
 }
 
+async function fetchExternalNetworkProviderItems(trendingItems) {
+  if (
+    suggestionFilters.availability !== "mine" ||
+    !hasConfiguredTmdbApiKey() ||
+    !userProviderKeys.length
+  ) {
+    return [];
+  }
+
+  const seriesItems = trendingItems
+    .filter((item) => item.type === "series" && item.tmdbId)
+    .slice(0, 12);
+  if (!seriesItems.length) return [];
+
+  try {
+    const enriched = await Promise.all(
+      seriesItems.map(async (item) => {
+        const response = await fetch(
+          `${TMDB_BASE_URL}/tv/${item.tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+        );
+        if (!response.ok) return null;
+        const tmdbDetails = await response.json();
+        const provider = getUserMatchingNetworkProvider(tmdbDetails);
+        if (!provider) return null;
+
+        return {
+          ...item,
+          onUserPlatforms: true,
+          providerName: provider.providerName,
+          providerLogo: provider.providerLogo,
+          providerAccessType: provider.providerAccessType,
+        };
+      }),
+    );
+    return enriched.filter(Boolean);
+  } catch (error) {
+    console.error("Erreur suggestion reseaux plateformes:", error);
+    return [];
+  }
+}
+
 async function getSuggestionCandidatePool() {
   await refreshSuggestionProviderAvailability();
 
   const wantsExternal = suggestionFilters.source !== "collection";
   const wantsCollection = suggestionFilters.source !== "discover";
+  const providerTmdbIds = getUserProviderTmdbIds();
   const wantsPlatforms =
-    suggestionFilters.availability === "mine" && getUserProviderTmdbIds().length > 0;
+    suggestionFilters.availability === "mine" && providerTmdbIds.length > 0;
 
   const releasedFilter = (item) => !isUpcomingMovieItem(item);
   const watchableStatuses = ["towatch", "watching", "paused"];
@@ -6786,11 +7093,16 @@ async function getSuggestionCandidatePool() {
   // Both are cached so parallel fetch is cheap on repeat calls.
   let trendingItems = [];
   let providerItems = [];
+  let networkProviderItems = [];
   if (wantsExternal) {
     [trendingItems, providerItems] = await Promise.all([
       fetchExternalSuggestionItems(),
       wantsPlatforms ? fetchExternalProviderItems() : Promise.resolve([]),
     ]);
+    if (wantsPlatforms) {
+      networkProviderItems =
+        await fetchExternalNetworkProviderItems(trendingItems);
+    }
   }
 
   // Main pool: items that strictly match all active filters.
@@ -6801,36 +7113,44 @@ async function getSuggestionCandidatePool() {
         .filter((item) => matchesSuggestionFilters(item, "collection"))
     : [];
 
+  const externalSourceItems = wantsPlatforms
+    ? [
+        ...providerItems,
+        ...networkProviderItems.filter(
+          (item) =>
+            !providerItems.some((providerItem) => providerItem.id === item.id),
+        ),
+      ]
+    : trendingItems;
+
   const externalCandidates = wantsExternal
-    ? (wantsPlatforms ? providerItems : trendingItems)
+    ? externalSourceItems
         .filter(releasedFilter)
         .filter((item) => matchesSuggestionFilters(item, "discover"))
     : [];
 
   let pool = [...collectionCandidates, ...externalCandidates];
 
-  // Fallback 1: provider items didn't match -> try trending (ignoring availability).
-  if (!pool.length && wantsPlatforms && wantsExternal) {
-    pool = trendingItems
-      .filter(releasedFilter)
-      .filter((item) => matchesSuggestionFilters(item, "discover", { ignoreAvailability: true }));
-  }
-
-  // Fallback 2: relax provider filter for collection items (provider data may be missing).
+  // Fallback: relax provider filter for collection items (provider data may be missing).
   if (!pool.length && suggestionFilters.availability === "mine" && wantsCollection) {
-    pool = items
+    const collectionFallback = items
       .filter((item) => watchableStatuses.includes(item.status))
       .filter(releasedFilter)
       .filter((item) =>
         matchesSuggestionFilters(item, "collection", { ignoreAvailability: true }),
       );
+    pool = collectionFallback;
   }
 
-  // Last resort: any watchable collection items regardless of filters.
+  // Last resort: collection items that still respect hard filters.
   if (!pool.length && wantsCollection) {
-    pool = items.filter(
-      (item) => watchableStatuses.includes(item.status) && releasedFilter(item),
-    );
+    pool = items
+      .filter((item) => watchableStatuses.includes(item.status))
+      .filter(releasedFilter)
+      .filter((item) =>
+        suggestionFilters.type === "all" || item.type === suggestionFilters.type,
+      )
+      .filter(matchesSuggestionTimeFilter);
   }
 
   return pool;
@@ -6840,7 +7160,9 @@ async function getSmartSuggestion({ excludeIds = [] } = {}) {
   const pool = await getSuggestionCandidatePool();
   currentSuggestionCandidates = pool;
 
-  const excludedIds = new Set(excludeIds.filter(Boolean));
+  const excludedIds = new Set(
+    [...recentSuggestionHistory, ...excludeIds].filter(Boolean),
+  );
   const filteredPool = pool.filter((item) => !excludedIds.has(item.id));
   const scoredPool = filteredPool.length ? filteredPool : pool;
 
@@ -6878,13 +7200,29 @@ async function randomSuggestion() {
     excludeIds: [lastSuggestedItemId],
   });
   if (!suggestedItem) {
+    const tmdbUnavailable =
+      !hasConfiguredTmdbApiKey() && suggestionFilters.source !== "collection";
+    const providerUnavailable =
+      !tmdbUnavailable &&
+      suggestionFilters.availability === "mine" &&
+      suggestionFilters.source === "discover";
+    const emptyTitle = tmdbUnavailable
+      ? "Découvrir nécessite une clé TMDB."
+      : providerUnavailable
+      ? "Aucun titre trouve sur tes plateformes."
+      : "Aucune suggestion avec ces filtres.";
+    const emptyText = tmdbUnavailable
+      ? "Ajoute une clé dans js/config.local.js, ou repasse sur Ma liste."
+      : providerUnavailable
+      ? "Essaie Tout dans Source, ou ajoute d'autres plateformes."
+      : "Essaie Tout, ou repasse sur Ma liste.";
     document.getElementById("suggestionContent").innerHTML = `
       <div class="watch-pick">
         <div class="watch-pick-filters">${buildSuggestionFiltersHTML()}</div>
         ${buildGroupPickerHTML()}
         <div class="watch-pick-empty">
-          <strong>Aucune suggestion avec ces filtres.</strong>
-          <p>Essaie "Tout", ou repasse sur "Ma liste".</p>
+          <strong>${escapeHtml(emptyTitle)}</strong>
+          <p>${escapeHtml(emptyText)}</p>
         </div>
       </div>
     `;
@@ -6892,6 +7230,7 @@ async function randomSuggestion() {
   }
 
   lastSuggestedItemId = suggestedItem.id;
+  rememberSuggestion(suggestedItem);
   renderSuggestion(suggestedItem);
 }
 
@@ -6903,14 +7242,21 @@ function renderSuggestion(item) {
   const genre = item.genre
     ? `<span>${escapeHtml(item.genre.split(",")[0].trim())}</span>`
     : "";
+  const platformLabel =
+    item.providerName ||
+    (item.onUserPlatforms ? getUserProviderLabelList().join(" ou ") : "");
   const platformRow =
-    item.providerLogo && item.providerName
-      ? `<div class="watch-pick-platform"><img src="${escapeHtml(item.providerLogo)}" alt="${escapeHtml(item.providerName)}"><span>${escapeHtml(item.providerName)}</span></div>`
-      : item.onUserPlatforms
-      ? `<div class="watch-pick-platform"><span>Sur tes plateformes</span></div>`
+    platformLabel
+      ? `<div class="watch-pick-platform">${item.providerLogo ? `<img src="${escapeHtml(item.providerLogo)}" alt="${escapeHtml(platformLabel)}">` : ""}<span>${escapeHtml(platformLabel)}</span></div>`
       : "";
   const rating = item.rating || item.tmdbRating || null;
   const ratingLabel = item.rating ? "Ta note" : "TMDB";
+  const watchMinutes = getEstimatedWatchMinutes(item);
+  const watchTimeLabel = watchMinutes
+    ? item.type === "series"
+      ? `Episode ~${formatWatchMinutes(watchMinutes)}`
+      : `~${formatWatchMinutes(watchMinutes)}`
+    : "";
   const reasons = getSuggestionReasons(item);
   const primaryAction = item.isExternalSuggestion
     ? `showTrendingDetail(${Number(item.tmdbId)}, '${item.mediaType}')`
@@ -6954,6 +7300,7 @@ function renderSuggestion(item) {
                   <span>${escapeHtml(statusText)}</span>
                   ${item.isExternalSuggestion ? `<span>Découverte TMDB</span>` : ""}
                   ${rating ? `<span>${ratingLabel}: ${Number(rating).toFixed(1)}/5</span>` : ""}
+                  ${watchTimeLabel ? `<span>${escapeHtml(watchTimeLabel)}</span>` : ""}
                   ${
                     item.type === "series" && item.currentSeason && item.currentEpisode
                       ? `<span>${escapeHtml(getNextEpisodeDisplay(item, "compact"))}</span>`
@@ -7030,6 +7377,7 @@ function showSuggestionById(itemId) {
     items.find((entry) => entry.id === itemId);
   if (!item) return;
   lastSuggestedItemId = item.id;
+  rememberSuggestion(item);
   renderSuggestion(item);
 }
 
@@ -7684,11 +8032,9 @@ function buildTrendingDetailHTML(item, type, tmdb) {
     );
   }
   const castHTML = buildCastHTML(tmdb);
-  const firstProvider = tmdb?.watchProviders?.groups?.[0]?.providers?.[0];
-  const discoverProviderLogo = firstProvider?.logo_path
-    ? `https://image.tmdb.org/t/p/w92${firstProvider.logo_path}`
-    : null;
-  const discoverProviderName = firstProvider?.provider_name || null;
+  const discoverProvider =
+    getPrimaryWatchProvider(tmdb?.watchProviders, { includedOnly: true }) ||
+    (type === "tv" ? getPrimaryStreamingNetworkProvider(tmdb) : null);
 
   return `
     <div class="detail-stream-shell detail-layout-d detail-layout-d-discover">
@@ -7703,8 +8049,8 @@ function buildTrendingDetailHTML(item, type, tmdb) {
         posterUrl: posterPath,
         actionHtml: heroActions.join(""),
         score: tmdbRating || null,
-        providerLogo: discoverProviderLogo,
-        providerName: discoverProviderName,
+        providerLogo: discoverProvider?.providerLogo || null,
+        providerName: discoverProvider?.providerName || null,
       })}
       ${buildTrendingQuickBar(item, type, alreadyAdded)}
       <div class="detail-stream-panel">
@@ -7717,6 +8063,15 @@ function buildTrendingDetailHTML(item, type, tmdb) {
             : ""
         }
         ${extraRows}
+        ${
+          type === "tv" && discoverProvider?.providerName
+            ? buildDetailInfoRow(
+                "Plateforme",
+                `<strong>${escapeHtml(getCompactProviderLabel(discoverProvider.providerName))}</strong><span class="detail-availability-note">${tmdb?.watchProviders ? "Inclus en streaming" : "Diffuseur TMDB"}</span>`,
+                "detail-row-availability",
+              )
+            : ""
+        }
       </div>
       ${tmdb?.watchProviders ? `<div class="detail-stream-panel">${buildWatchProvidersHTML(tmdb.watchProviders)}</div>` : ""}
       ${overview ? `<div class="detail-stream-panel" id="detailSynopsisAnchor"><div class="sd-section-title">Synopsis</div><div class="detail-synopsis sd-inline-block"><p>${escapeHtml(overview)}</p></div></div>` : ""}
@@ -7786,6 +8141,24 @@ async function showTrendingDetail(id, mediaType = null) {
   }
 }
 
+async function fetchTrendingNetworkProvider(tmdbId) {
+  if (!hasConfiguredTmdbApiKey() || !tmdbId) return null;
+  try {
+    const response = await fetch(
+      `${TMDB_BASE_URL}/tv/${tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+    );
+    if (!response.ok) return null;
+    const tmdb = await response.json();
+    return (
+      getUserMatchingNetworkProvider(tmdb) ||
+      getPrimaryStreamingNetworkProvider(tmdb)
+    );
+  } catch (error) {
+    console.error("Erreur reseau serie:", error);
+    return null;
+  }
+}
+
 function addFromTrendingById(id, type = null) {
   const cached = getTrendingCacheItem(id, type);
   if (!cached) return;
@@ -7813,7 +8186,7 @@ async function addFromTrending(
   );
   const provider = getPrimaryWatchProvider(watchProviders, {
     includedOnly: true,
-  });
+  }) || (type === "tv" ? await fetchTrendingNetworkProvider(item.id) : null);
   const newItem = buildCollectionItemFromTrending(item, type, provider, status);
 
   items.unshift(newItem);
@@ -8418,9 +8791,12 @@ window.app = {
   quickNextEpisode,
   quickNextEpisodeInDetail,
   markEpisodeSeen,
+  toggleEpisodeSeen,
+  unmarkEpisodeSeen,
   toggleSeasonEpisodes,
   jumpToSeason,
   markSeasonDone,
+  unmarkSeasonDone,
   addQuickTag,
   selectAddStatus,
   removeTag,
