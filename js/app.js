@@ -9,6 +9,12 @@
 const TMDB_API_KEY = CONFIG.TMDB_API_KEY;
 const TMDB_BASE_URL = CONFIG.TMDB_BASE_URL;
 const TMDB_IMAGE_BASE = CONFIG.TMDB_IMAGE_BASE;
+const AVAILABILITY_SOURCE = String(CONFIG.AVAILABILITY_SOURCE || "tmdb").toLowerCase();
+const FRESH_AVAILABILITY_URL_TEMPLATE =
+  CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE || "";
+const FRESH_AVAILABILITY_API_KEY = CONFIG.FRESH_AVAILABILITY_API_KEY || "";
+const FRESH_AVAILABILITY_API_KEY_HEADER =
+  CONFIG.FRESH_AVAILABILITY_API_KEY_HEADER || "x-api-key";
 const TMDB_WATCH_REGION = "FR";
 const TMDB_IMAGE_LANGUAGE_PREFERENCE = "fr,null,en";
 const TMDB_MOVIE_LOCALIZATION_VERSION = 1;
@@ -1744,14 +1750,32 @@ const TMDB_TV_GENRES = [
   { id: 10765, name: "Science-Fiction & Fantastique" },
   { id: 10768, name: "Guerre & Politique" }, { id: 37, name: "Western" },
 ];
-const BROWSE_PROVIDERS = [
-  { id: 8, name: "Netflix" },
-  { id: 119, name: "Prime Video" },
-  { id: 337, name: "Disney+" },
-  { id: 350, name: "Apple TV+" },
-  { id: 190, name: "Canal+" },
-  { id: 1870, name: "Max" },
+const BROWSE_PROVIDER_KEYS = [
+  "netflix",
+  "prime-video",
+  "disney+",
+  "apple-tv+",
+  "canal+",
+  "max",
 ];
+const BROWSE_PROVIDER_ALIASES = {
+  // TMDB repartit parfois le catalogue Canal entre plusieurs IDs.
+  "canal+": [190],
+  // Apple TV+ et iTunes/Apple TV cohabitent selon les fiches TMDB.
+  "apple-tv+": [2],
+};
+const BROWSE_PROVIDERS = BROWSE_PROVIDER_KEYS
+  .map((providerKey) => {
+    const provider = USER_PROVIDER_OPTIONS.find((p) => p.key === providerKey);
+    if (!provider) return null;
+    return {
+      key: provider.key,
+      id: provider.tmdbId,
+      name: provider.label,
+      ids: [provider.tmdbId, ...(BROWSE_PROVIDER_ALIASES[provider.key] || [])],
+    };
+  })
+  .filter(Boolean);
 const seasonEpisodesCache = {};
 const movieReleaseEnrichmentInFlight = new Set();
 const orphanMovieRepairInFlight = new Set();
@@ -4447,6 +4471,13 @@ function loadTrailer(container, key) {
   `;
 }
 
+function resolveProviderLogoUrl(logoPath) {
+  const raw = String(logoPath || "").trim();
+  if (!raw) return null;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `https://image.tmdb.org/t/p/w92${raw}`;
+}
+
 function normalizeWatchProviders(payload, region = TMDB_WATCH_REGION) {
   const regionData = payload?.results?.[region];
   if (!regionData) return null;
@@ -4476,8 +4507,142 @@ function normalizeWatchProviders(payload, region = TMDB_WATCH_REGION) {
   return {
     region,
     link: regionData.link || "",
+    sourceLabel: "TMDB",
     groups,
   };
+}
+
+function getAvailabilityMode() {
+  return ["tmdb", "hybrid", "fresh"].includes(AVAILABILITY_SOURCE)
+    ? AVAILABILITY_SOURCE
+    : "tmdb";
+}
+
+function buildFreshAvailabilityUrl(endpoint, tmdbId, region = TMDB_WATCH_REGION) {
+  if (!FRESH_AVAILABILITY_URL_TEMPLATE) return "";
+  const mediaType = endpoint === "movie" ? "movie" : "tv";
+  const countryCode = String(region || "").toLowerCase();
+  return FRESH_AVAILABILITY_URL_TEMPLATE.replace(/\{mediaType\}/g, mediaType)
+    .replace(/\{tmdbId\}/g, encodeURIComponent(String(tmdbId)))
+    .replace(/\{country\}/g, encodeURIComponent(countryCode));
+}
+
+function normalizeFreshProviderType(rawType) {
+  const value = String(rawType || "").toLowerCase();
+  if (["subscription", "sub", "flatrate", "stream", "streaming"].includes(value)) return "flatrate";
+  if (["free", "free_with_ads"].includes(value)) return "free";
+  if (["ads", "ad", "ad_supported"].includes(value)) return "ads";
+  if (value === "rent" || value === "rental") return "rent";
+  if (["buy", "purchase"].includes(value)) return "buy";
+  return null;
+}
+
+function normalizeFreshWatchProviders(payload, region = TMDB_WATCH_REGION) {
+  if (!payload) return null;
+
+  // Accept already-normalized payload from a custom proxy.
+  if (Array.isArray(payload.groups) && payload.groups.length > 0) {
+    return {
+      region,
+      link: payload.link || "",
+      sourceLabel: payload.sourceLabel || "Source externe",
+      groups: payload.groups,
+    };
+  }
+
+  // Accept TMDB-shaped payload if proxy forwards TMDB compatibility format.
+  if (payload?.results?.[region]) {
+    const normalized = normalizeWatchProviders(payload, region);
+    if (!normalized) return null;
+    return {
+      ...normalized,
+      sourceLabel: payload.sourceLabel || "Source externe",
+    };
+  }
+
+  // Streaming-availability style shape: payload.streamingOptions[countryCode].
+  const countryKey = String(region || "").toLowerCase();
+  const optionsByCountry = payload.streamingOptions || payload?.result?.streamingOptions;
+  const entries = Array.isArray(optionsByCountry?.[countryKey])
+    ? optionsByCountry[countryKey]
+    : Array.isArray(optionsByCountry?.[region])
+      ? optionsByCountry[region]
+      : [];
+
+  if (!entries.length) return null;
+
+  const groupsMap = new Map(
+    WATCH_PROVIDER_GROUP_ORDER.map((groupKey) => [groupKey, new Map()]),
+  );
+
+  entries.forEach((entry) => {
+    const groupKey = normalizeFreshProviderType(entry?.type);
+    if (!groupKey || !groupsMap.has(groupKey)) return;
+
+    const service = entry?.service || {};
+    const providerId = service.id || service.providerId || service.name || "unknown";
+    const providerName = service.name || entry?.provider_name || "Plateforme";
+    const logoPath =
+      service?.imageSet?.lightThemeImage ||
+      service?.imageSet?.darkThemeImage ||
+      service?.logo_path ||
+      "";
+
+    groupsMap.get(groupKey).set(String(providerId), {
+      provider_id: providerId,
+      provider_name: providerName,
+      logo_path: logoPath,
+    });
+  });
+
+  const groupLabels = {
+    flatrate: "Streaming",
+    free: "Gratuit",
+    ads: "Avec pub",
+    rent: "Location",
+    buy: "Achat",
+  };
+
+  const groups = WATCH_PROVIDER_GROUP_ORDER.map((groupKey) => ({
+    key: groupKey,
+    label: groupLabels[groupKey] || groupKey,
+    providers: [...(groupsMap.get(groupKey)?.values() || [])]
+      .sort(compareProvidersByPriority)
+      .slice(0, 8),
+  })).filter((group) => group.providers.length > 0);
+
+  if (!groups.length) return null;
+
+  return {
+    region,
+    link: payload.link || payload.moreInfoUrl || "",
+    sourceLabel: payload.sourceLabel || "Source externe",
+    groups,
+  };
+}
+
+async function fetchFreshWatchProviders(endpoint, tmdbId) {
+  const url = buildFreshAvailabilityUrl(endpoint, tmdbId);
+  if (!url) return null;
+
+  try {
+    const headers = {};
+    if (FRESH_AVAILABILITY_API_KEY) {
+      headers[FRESH_AVAILABILITY_API_KEY_HEADER] = FRESH_AVAILABILITY_API_KEY;
+    }
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+    if (!res.ok) return null;
+
+    const payload = await res.json();
+    return normalizeFreshWatchProviders(payload, TMDB_WATCH_REGION);
+  } catch (error) {
+    console.error("Erreur availability source externe:", error);
+    return null;
+  }
 }
 
 function getPrimaryWatchProvider(watchProviders, options = {}) {
@@ -4501,9 +4666,7 @@ function getPrimaryWatchProvider(watchProviders, options = {}) {
 
   return {
     providerName: provider.provider_name || "",
-    providerLogo: provider.logo_path
-      ? `https://image.tmdb.org/t/p/w92${provider.logo_path}`
-      : null,
+    providerLogo: resolveProviderLogoUrl(provider.logo_path),
     providerAccessType: group?.key || null,
   };
 }
@@ -4998,7 +5161,7 @@ function buildWatchProvidersHTML(watchProviders) {
               .map(
                 (provider) => `
                 <span class="provider-chip" title="${escapeHtml(provider.provider_name)}">
-                  ${provider.logo_path ? `<img src="https://image.tmdb.org/t/p/w92${provider.logo_path}" alt="${escapeHtml(provider.provider_name)}" class="provider-logo">` : ""}
+                  ${provider.logo_path ? `<img src="${escapeHtml(resolveProviderLogoUrl(provider.logo_path) || "")}" alt="${escapeHtml(provider.provider_name)}" class="provider-logo">` : ""}
                   <span class="provider-name">${escapeHtml(provider.provider_name)}</span>
                 </span>
               `,
@@ -5014,7 +5177,7 @@ function buildWatchProvidersHTML(watchProviders) {
     <div class="detail-providers">
       <div class="providers-header">
         <span class="providers-title">Disponibilité (${watchProviders.region})</span>
-        ${watchProviders.link ? `<a href="${escapeHtml(watchProviders.link)}" target="_blank" rel="noopener noreferrer" class="providers-link">Voir sur TMDB</a>` : ""}
+        ${watchProviders.link ? `<a href="${escapeHtml(watchProviders.link)}" target="_blank" rel="noopener noreferrer" class="providers-link">Voir sur ${escapeHtml(watchProviders.sourceLabel || "la source")}</a>` : ""}
       </div>
       ${groupsHTML}
     </div>
@@ -5127,16 +5290,43 @@ function buildAvailabilityInfoRow(item, watchProviders, tmdb = null) {
 }
 
 async function fetchWatchProviders(endpoint, tmdbId) {
+  const mode = getAvailabilityMode();
+
+  if (mode === "fresh") {
+    const fresh = await fetchFreshWatchProviders(endpoint, tmdbId);
+    if (fresh) return fresh;
+  }
+
   try {
     const res = await fetch(
       `${TMDB_BASE_URL}/${endpoint}/${tmdbId}/watch/providers?api_key=${TMDB_API_KEY}`,
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (mode === "hybrid") {
+        return await fetchFreshWatchProviders(endpoint, tmdbId);
+      }
+      return null;
+    }
 
     const payload = await res.json();
-    return normalizeWatchProviders(payload);
+    const tmdbProviders = normalizeWatchProviders(payload);
+    if (mode === "hybrid") {
+      const hasIncludedProviders = WATCH_PROVIDER_INCLUDED_GROUPS.size
+        ? WATCH_PROVIDER_GROUP_ORDER
+            .filter((groupKey) => WATCH_PROVIDER_INCLUDED_GROUPS.has(groupKey))
+            .some((groupKey) => (getWatchProviderGroup(tmdbProviders, groupKey)?.providers || []).length > 0)
+        : false;
+      if (!hasIncludedProviders) {
+        const fresh = await fetchFreshWatchProviders(endpoint, tmdbId);
+        if (fresh) return fresh;
+      }
+    }
+    return tmdbProviders;
   } catch (error) {
     console.error("Erreur watch providers:", error);
+    if (mode === "hybrid") {
+      return await fetchFreshWatchProviders(endpoint, tmdbId);
+    }
     return null;
   }
 }
@@ -7964,6 +8154,14 @@ function buildPagedUrl(url, page) {
   return `${url}${url.includes("?") ? "&" : "?"}page=${page}`;
 }
 
+function upsertQueryParam(url, key, value) {
+  const pattern = new RegExp(`([?&])${key}=[^&]*`, "i");
+  if (pattern.test(url)) {
+    return url.replace(pattern, `$1${key}=${value}`);
+  }
+  return `${url}${url.includes("?") ? "&" : "?"}${key}=${value}`;
+}
+
 function buildDiscoverRowCardHTML(item, type, showDate = false) {
   const title = item.title || item.name || "";
   const dateRaw = item.release_date || item.first_air_date || "";
@@ -8015,7 +8213,12 @@ function buildDiscoverMoreCardHTML(key) {
     </button>`;
 }
 
-function buildDiscoverGridCardHTML(item, type, showDate = false) {
+function buildDiscoverGridCardHTML(
+  item,
+  type,
+  showDate = false,
+  showTypeBadge = true,
+) {
   const title = item.title || item.name;
   const itemType = item._type || type;
   const dateRaw = item.release_date || item.first_air_date || "";
@@ -8047,7 +8250,11 @@ function buildDiscoverGridCardHTML(item, type, showDate = false) {
             ? `<img src="${posterPath}" alt="${escapeHtml(title)}">`
             : `<div class="card-placeholder">${itemType === "movie" ? "🎬" : "📺"}</div>`
         }
-        <div class="card-badge" style="background: rgba(59, 130, 246, 0.95); color: white;">${itemType === "movie" ? "Film" : "Série"}</div>
+        ${
+          showTypeBadge
+            ? `<div class="card-badge" style="background: rgba(59, 130, 246, 0.95); color: white;">${itemType === "movie" ? "Film" : "Série"}</div>`
+            : ""
+        }
       </div>
       <div class="card-content">
         <div class="card-title">${escapeHtml(title)}</div>
@@ -8101,19 +8308,44 @@ function openDiscoverByGenre(genreId, type, genreName) {
   });
 }
 
-function buildFilteredUrl() {
+function buildFilteredUrl(options = {}) {
   const base = discoverBrowseState.baseUrl;
   if (!base) return null;
+  const { ignoreYear = false } = options;
   let url = base;
   const { providers, year } = discoverBrowseState.activeFilters;
   if (providers.length > 0) {
-    url += `&with_watch_providers=${providers.join("|")}&watch_monetization_types=flatrate`;
+    const resolvedProviderIds = [
+      ...new Set(
+        providers.flatMap(
+          (providerId) =>
+            BROWSE_PROVIDERS.find((provider) => provider.id === providerId)
+              ?.ids || [providerId],
+        ),
+      ),
+    ];
+    if (!/[?&]watch_region=/i.test(url)) {
+      url += `&watch_region=${TMDB_WATCH_REGION}`;
+    }
+    url += `&with_watch_providers=${resolvedProviderIds.join("|")}&with_watch_monetization_types=flatrate`;
   }
-  if (year) {
+  if (year && !ignoreYear) {
     const isMovie = discoverBrowseState.inlineConfig?.mediaType === "movie";
     url += isMovie ? `&primary_release_year=${year}` : `&first_air_date_year=${year}`;
+    url = upsertQueryParam(
+      url,
+      "sort_by",
+      isMovie ? "primary_release_date.desc" : "first_air_date.desc",
+    );
   }
   return url;
+}
+
+function buildDiscoverFilterFallbackNoticeHTML(year) {
+  return `
+    <div style="grid-column: 1/-1; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.35); background: rgba(59, 130, 246, 0.1); color: var(--text-secondary); font-size: 13px;">
+      Aucun resultat pour ${escapeHtml(String(year))} avec ces plateformes. Affichage des resultats toutes annees pour eviter une liste vide.
+    </div>`;
 }
 
 function renderBrowseFilters(mediaType) {
@@ -8356,8 +8588,28 @@ async function loadMoreDiscoverCollection() {
     const res = await fetch(buildPagedUrl(fetchUrl, nextPage));
     if (!res.ok) throw new Error("Erreur API");
 
-    const data = await res.json();
-    const results = data.results || [];
+    let data = await res.json();
+    let results = data.results || [];
+    let fallbackNoticeHTML = "";
+
+    const activeYear = discoverBrowseState.activeFilters.year;
+    if (nextPage === 1 && results.length === 0 && activeYear) {
+      const relaxedUrl = discoverBrowseState.baseUrl
+        ? buildFilteredUrl({ ignoreYear: true })
+        : null;
+      if (relaxedUrl && relaxedUrl !== fetchUrl) {
+        const relaxedRes = await fetch(buildPagedUrl(relaxedUrl, 1));
+        if (relaxedRes.ok) {
+          const relaxedData = await relaxedRes.json();
+          const relaxedResults = relaxedData.results || [];
+          if (relaxedResults.length > 0) {
+            data = relaxedData;
+            results = relaxedResults;
+            fallbackNoticeHTML = buildDiscoverFilterFallbackNoticeHTML(activeYear);
+          }
+        }
+      }
+    }
 
     results.forEach((item) => {
       setTrendingCacheItem(item, config.type);
@@ -8370,17 +8622,29 @@ async function loadMoreDiscoverCollection() {
     }
 
     if (nextPage === 1) {
-      grid.innerHTML = results
-        .map((item) =>
-          buildDiscoverGridCardHTML(item, config.type, config.showDate),
-        )
-        .join("");
+      grid.innerHTML =
+        fallbackNoticeHTML +
+        results
+          .map((item) =>
+            buildDiscoverGridCardHTML(
+              item,
+              config.type,
+              config.showDate,
+              false,
+            ),
+          )
+          .join("");
     } else {
       grid.insertAdjacentHTML(
         "beforeend",
         results
           .map((item) =>
-            buildDiscoverGridCardHTML(item, config.type, config.showDate),
+            buildDiscoverGridCardHTML(
+              item,
+              config.type,
+              config.showDate,
+              false,
+            ),
           )
           .join(""),
       );

@@ -42,8 +42,17 @@ Extensions recommandées :
 ```js
 if (typeof CONFIG !== "undefined") {
   CONFIG.TMDB_API_KEY = "votre_vraie_cle_ici";
+
+  // Optionnel: source plus fraiche pour les disponibilites plateformes.
+  // "tmdb" (defaut) | "hybrid" (TMDB + fallback externe) | "fresh" (externe prioritaire)
+  // CONFIG.AVAILABILITY_SOURCE = "hybrid";
+  // CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE = "https://votre-proxy.example.com/availability/{mediaType}/{tmdbId}?country={country}";
+  // CONFIG.FRESH_AVAILABILITY_API_KEY = "votre_cle_api";
+  // CONFIG.FRESH_AVAILABILITY_API_KEY_HEADER = "x-api-key";
 }
 ```
+
+`FRESH_AVAILABILITY_URL_TEMPLATE` accepte les placeholders `{mediaType}`, `{tmdbId}` et `{country}`.
 
 ## 🎯 Lancer l'application
 

@@ -33,6 +33,12 @@ VS Code va vous proposer d'installer des extensions recommandées :
    ```javascript
    if (typeof CONFIG !== "undefined") {
      CONFIG.TMDB_API_KEY = "votre_vraie_clé_ici";
+
+         // Optionnel: source plus fraiche pour les dispos plateformes
+         // CONFIG.AVAILABILITY_SOURCE = "hybrid"; // "tmdb" | "hybrid" | "fresh"
+         // CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE = "https://votre-proxy.example.com/availability/{mediaType}/{tmdbId}?country={country}";
+         // CONFIG.FRESH_AVAILABILITY_API_KEY = "votre_cle_api";
+         // CONFIG.FRESH_AVAILABILITY_API_KEY_HEADER = "x-api-key";
    }
    ```
 3. Sauvegardez (Ctrl+S ou Cmd+S). Ce fichier est ignoré par Git.

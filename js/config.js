@@ -11,6 +11,15 @@ const CONFIG = {
   TMDB_API_KEY: "f689f7bb5b4da2e7f86f3437a8f5745f",
   TMDB_BASE_URL: "https://api.themoviedb.org/3",
   TMDB_IMAGE_BASE: "https://image.tmdb.org/t/p/w500",
+  // Availability source: "tmdb" | "hybrid" | "fresh"
+  AVAILABILITY_SOURCE: "tmdb",
+  // Optional endpoint template for fresher availability provider.
+  // Supported placeholders: {mediaType}, {tmdbId}, {country}
+  // Example: "https://your-proxy.example.com/availability/{mediaType}/{tmdbId}?country={country}"
+  FRESH_AVAILABILITY_URL_TEMPLATE: "",
+  // Optional API key/header for the fresher provider.
+  FRESH_AVAILABILITY_API_KEY: "",
+  FRESH_AVAILABILITY_API_KEY_HEADER: "x-api-key",
 };
 
 // ===========================================
