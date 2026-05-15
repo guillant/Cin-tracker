@@ -8662,8 +8662,8 @@ async function loadMoreDiscoverCollection() {
       return;
     }
 
-    // Boost French films in genre browsing (but not in other Discover modes)
-    if (discoverBrowseState.inlineConfig && discoverBrowseState.key?.includes("genre")) {
+    // Boost French films in genre browsing - ONLY on first page to avoid duplicates
+    if (nextPage === 1 && discoverBrowseState.inlineConfig && discoverBrowseState.key?.includes("genre")) {
       results = boostFrenchFilmsInGrid(results);
     }
 
