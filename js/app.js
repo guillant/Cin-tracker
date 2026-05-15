@@ -1096,18 +1096,40 @@ function isSeriesReleased(item) {
   return true;
 }
 
-function isCurrentSeasonStarted(item) {
-  if (!item?.seasonAirDates) return true;
-  const currentSeason = item.currentSeason || 1;
+function isSeasonAired(item, season) {
   const airDateStr =
-    item.seasonAirDates[currentSeason] ||
-    item.seasonAirDates[String(currentSeason)];
+    item.seasonAirDates?.[season] || item.seasonAirDates?.[String(season)];
   if (!airDateStr) return true;
   const d = new Date(airDateStr);
   d.setHours(0, 0, 0, 0);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return d <= today;
+}
+
+function hasWatchableEpisode(item) {
+  if (!item?.seasonData) return true;
+  const currentSeason = item.currentSeason || 1;
+  const currentEpisode = item.currentEpisode || 1;
+  const currentSeasonTotal =
+    Number(
+      item.seasonData[currentSeason] || item.seasonData[String(currentSeason)],
+    ) || 0;
+
+  if (currentSeasonTotal === 0) return true;
+
+  if (currentEpisode <= currentSeasonTotal) {
+    return isSeasonAired(item, currentSeason);
+  }
+
+  // Current season exhausted — check next season
+  const nextSeason = currentSeason + 1;
+  const nextSeasonTotal =
+    Number(
+      item.seasonData[nextSeason] || item.seasonData[String(nextSeason)],
+    ) || 0;
+  if (nextSeasonTotal === 0) return false;
+  return isSeasonAired(item, nextSeason);
 }
 
 function formatFutureDistanceLabel(targetDate, fromDate) {
@@ -2705,7 +2727,7 @@ function renderWatchingStrip() {
     (i) =>
       i.type === "series" &&
       i.status === "watching" &&
-      isCurrentSeasonStarted(i),
+      hasWatchableEpisode(i),
   );
 
   if (watching.length === 0) {
@@ -4779,7 +4801,7 @@ function markEpisodeSeen(itemId, season, episode, event) {
       showToast(`Saison ${season} terminée · Saison ${nextSeason} en cours`);
     } else if (hasNextSeason) {
       updated.currentSeason = season;
-      updated.currentEpisode = seasonTotal;
+      updated.currentEpisode = seasonTotal + 1;
       showToast(`Saison ${season} terminée · En attente de la saison ${nextSeason}`);
     } else {
       updated.currentSeason = season;
