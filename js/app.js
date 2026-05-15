@@ -4806,14 +4806,15 @@ function getSeriesProgressViewState(itemId, season) {
 
 function reopenDetailAtSeason(itemId, season, viewState = {}) {
   const item = items.find((entry) => entry.id === itemId);
-  const detailContent = document.getElementById("detailContent");
-  if (!item || !detailContent) {
+  const progressTab = document.getElementById("sdTabProgress");
+  if (!item || !progressTab) {
     openDetail(itemId);
     return;
   }
 
-  document.getElementById("detailTitle").textContent = item.title;
-  detailContent.innerHTML = buildDetailHTML(item, currentDetailTmdb);
+  const detailBody = document.getElementById("detailContent");
+  if (detailBody) detailBody.scrollTop = viewState.scrollTop || 0;
+  progressTab.innerHTML = buildProgressTab(item, currentDetailTmdb);
 
   setTimeout(async () => {
     if (viewState.keepSeasonOpen) {
@@ -4822,7 +4823,6 @@ function reopenDetailAtSeason(itemId, season, viewState = {}) {
         await toggleSeasonEpisodes(itemId, season, { stopPropagation() {} });
       }
     }
-    const detailBody = document.getElementById("detailContent");
     if (detailBody) detailBody.scrollTop = viewState.scrollTop || 0;
   }, 80);
 }
