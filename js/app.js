@@ -8283,6 +8283,16 @@ async function loadTrending(type, buttonElement) {
   openDiscoverCollection(fallbackKey);
 }
 
+function deduplicateResults(results) {
+  // Remove duplicate items based on ID
+  const seen = new Set();
+  return results.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
 function boostFrenchFilmsInGrid(results) {
   // Separate French and non-French items
   const french = results.filter((item) => item.original_language === "fr");
@@ -8662,9 +8672,12 @@ async function loadMoreDiscoverCollection() {
       return;
     }
 
-    // Boost French films in genre browsing - ONLY on first page to avoid duplicates
-    if (nextPage === 1 && discoverBrowseState.inlineConfig && discoverBrowseState.key?.includes("genre")) {
-      results = boostFrenchFilmsInGrid(results);
+    // Deduplicate and boost French films in genre browsing - ONLY on first page
+    if (nextPage === 1) {
+      results = deduplicateResults(results);
+      if (discoverBrowseState.inlineConfig && discoverBrowseState.key?.includes("genre")) {
+        results = boostFrenchFilmsInGrid(results);
+      }
     }
 
     if (nextPage === 1) {
