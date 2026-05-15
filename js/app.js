@@ -1127,6 +1127,8 @@ function hasWatchableEpisode(item) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const hasAired = cached.some((ep) => {
+          const epNum = ep.episode_number || 0;
+          if (epNum > 0 && epNum < currentEpisode) return false; // déjà vu
           if (!ep.air_date) return true;
           const d = new Date(ep.air_date);
           d.setHours(0, 0, 0, 0);
