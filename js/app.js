@@ -1744,6 +1744,14 @@ const TMDB_TV_GENRES = [
   { id: 10765, name: "Science-Fiction & Fantastique" },
   { id: 10768, name: "Guerre & Politique" }, { id: 37, name: "Western" },
 ];
+const BROWSE_PROVIDERS = [
+  { id: 8, name: "Netflix" },
+  { id: 119, name: "Prime Video" },
+  { id: 337, name: "Disney+" },
+  { id: 350, name: "Apple TV+" },
+  { id: 190, name: "Canal+" },
+  { id: 1870, name: "Max" },
+];
 const seasonEpisodesCache = {};
 const movieReleaseEnrichmentInFlight = new Set();
 const orphanMovieRepairInFlight = new Set();
@@ -1793,6 +1801,8 @@ let personalGenreProfileCache = {
 let discoverBrowseState = {
   key: null,
   inlineConfig: null,
+  baseUrl: null,
+  activeFilters: { providers: [], year: null },
   page: 0,
   totalPages: 0,
   loading: false,
@@ -8082,12 +8092,72 @@ function openDiscoverByGenre(genreId, type, genreName) {
   const typeLabel = type === "movie" ? "Films" : "Séries";
   openDiscoverWithConfig({
     key: `genre-${type}-${genreId}`,
+    mediaType: type,
     title: `${typeLabel} · ${genreName}`,
     description: `Les meilleurs ${typeLabel.toLowerCase()} du genre ${genreName}, par popularité.`,
     url: `${TMDB_BASE_URL}/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=fr-FR&with_genres=${genreId}&sort_by=popularity.desc&watch_region=FR`,
     type,
     showDate: false,
   });
+}
+
+function buildFilteredUrl() {
+  const base = discoverBrowseState.baseUrl;
+  if (!base) return null;
+  let url = base;
+  const { providers, year } = discoverBrowseState.activeFilters;
+  if (providers.length > 0) {
+    url += `&with_watch_providers=${providers.join("|")}&watch_monetization_types=flatrate`;
+  }
+  if (year) {
+    const isMovie = discoverBrowseState.inlineConfig?.mediaType === "movie";
+    url += isMovie ? `&primary_release_year=${year}` : `&first_air_date_year=${year}`;
+  }
+  return url;
+}
+
+function renderBrowseFilters(mediaType) {
+  const filtersEl = document.getElementById("discoverBrowseFilters");
+  if (!filtersEl) return;
+  if (!mediaType) { filtersEl.style.display = "none"; return; }
+  const { providers, year } = discoverBrowseState.activeFilters;
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
+  filtersEl.innerHTML = `
+    <div class="discover-filter-row">
+      ${BROWSE_PROVIDERS.map((p) => `<button class="discover-filter-chip${providers.includes(p.id) ? " active" : ""}" onclick="app.toggleBrowseProvider(${p.id})">${escapeHtml(p.name)}</button>`).join("")}
+    </div>
+    <div class="discover-filter-row">
+      ${years.map((y) => `<button class="discover-filter-chip${year === y ? " active" : ""}" onclick="app.setBrowseYear(${y})">${y}</button>`).join("")}
+    </div>`;
+  filtersEl.style.display = "block";
+}
+
+async function toggleBrowseProvider(id) {
+  const { providers } = discoverBrowseState.activeFilters;
+  const idx = providers.indexOf(id);
+  if (idx === -1) providers.push(id);
+  else providers.splice(idx, 1);
+  await reloadBrowseWithFilters();
+}
+
+async function setBrowseYear(year) {
+  discoverBrowseState.activeFilters.year =
+    discoverBrowseState.activeFilters.year === year ? null : year;
+  await reloadBrowseWithFilters();
+}
+
+async function reloadBrowseWithFilters() {
+  const grid = document.getElementById("discoverBrowseGrid");
+  const loadMoreWrap = document.getElementById("discoverBrowseLoadMoreWrap");
+  if (!grid) return;
+  discoverBrowseState.page = 0;
+  discoverBrowseState.totalPages = 0;
+  discoverBrowseState.loading = false;
+  grid.innerHTML = `<p class="discover-loading">Chargement…</p>`;
+  if (loadMoreWrap) loadMoreWrap.style.display = "none";
+  renderBrowseFilters(discoverBrowseState.inlineConfig?.mediaType);
+  await loadMoreDiscoverCollection();
 }
 
 async function loadPersonalizedRows() {
@@ -8193,9 +8263,13 @@ function closeDiscoverCollection() {
 
   panel.classList.remove("active");
   rows.style.display = "block";
+  const filtersEl = document.getElementById("discoverBrowseFilters");
+  if (filtersEl) filtersEl.style.display = "none";
   discoverBrowseState = {
     key: null,
     inlineConfig: null,
+    baseUrl: null,
+    activeFilters: { providers: [], year: null },
     page: 0,
     totalPages: 0,
     loading: false,
@@ -8219,11 +8293,14 @@ async function openDiscoverWithConfig(config) {
   discoverBrowseState = {
     key: config.key,
     inlineConfig: config,
+    baseUrl: config.url,
+    activeFilters: { providers: [], year: null },
     page: 0,
     totalPages: 0,
     loading: false,
   };
 
+  renderBrowseFilters(config.mediaType);
   await loadMoreDiscoverCollection();
 }
 
@@ -8245,11 +8322,15 @@ async function openDiscoverCollection(key) {
 
   discoverBrowseState = {
     key,
+    inlineConfig: config,
+    baseUrl: config.url,
+    activeFilters: { providers: [], year: null },
     page: 0,
     totalPages: 0,
     loading: false,
   };
 
+  renderBrowseFilters(null);
   await loadMoreDiscoverCollection();
 }
 
@@ -8271,7 +8352,8 @@ async function loadMoreDiscoverCollection() {
 
   try {
     const nextPage = discoverBrowseState.page + 1;
-    const res = await fetch(buildPagedUrl(config.url, nextPage));
+    const fetchUrl = discoverBrowseState.baseUrl ? buildFilteredUrl() : config.url;
+    const res = await fetch(buildPagedUrl(fetchUrl, nextPage));
     if (!res.ok) throw new Error("Erreur API");
 
     const data = await res.json();
@@ -9188,6 +9270,8 @@ window.app = {
   openDiscoverWithConfig,
   openDiscoverByGenre,
   switchGenreTab,
+  toggleBrowseProvider,
+  setBrowseYear,
   openCollectionBrowse,
   closeCollectionBrowse,
   closeDiscoverCollection,

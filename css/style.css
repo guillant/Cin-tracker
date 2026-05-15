@@ -10445,6 +10445,48 @@ header {
   font-style: italic;
 }
 
+.discover-browse-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.discover-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.discover-filter-chip {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 5px 14px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.discover-filter-chip:hover {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.discover-filter-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+  font-weight: 600;
+}
+
 .discover-more-card {
   appearance: none;
   -webkit-appearance: none;
