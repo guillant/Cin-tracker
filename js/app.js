@@ -38,17 +38,17 @@ const USER_PROVIDERS_STORAGE_KEY = "cinetrackerUserProviders";
 const GROUP_PROFILES_STORAGE_KEY = "cinetrackerGroupProfiles";
 const GROUP_ACTIVE_PROFILES_STORAGE_KEY = "cinetrackerGroupActiveProfiles";
 const USER_PROVIDER_OPTIONS = [
-  { key: "netflix", label: "Netflix" },
-  { key: "prime-video", label: "Prime Video" },
-  { key: "disney+", label: "Disney+" },
-  { key: "canal+", label: "Canal+" },
-  { key: "apple-tv+", label: "Apple TV+" },
-  { key: "arte", label: "Arte" },
-  { key: "france-tv", label: "France.tv" },
-  { key: "max", label: "Max" },
-  { key: "paramount+", label: "Paramount+" },
-  { key: "crunchyroll", label: "Crunchyroll" },
-  { key: "mubi", label: "MUBI" },
+  { key: "netflix", label: "Netflix", tmdbId: 8 },
+  { key: "prime-video", label: "Prime Video", tmdbId: 119 },
+  { key: "disney+", label: "Disney+", tmdbId: 337 },
+  { key: "canal+", label: "Canal+", tmdbId: 381 },
+  { key: "apple-tv+", label: "Apple TV+", tmdbId: 350 },
+  { key: "arte", label: "Arte", tmdbId: 234 },
+  { key: "france-tv", label: "France.tv", tmdbId: 190 },
+  { key: "max", label: "Max", tmdbId: 1899 },
+  { key: "paramount+", label: "Paramount+", tmdbId: 531 },
+  { key: "crunchyroll", label: "Crunchyroll", tmdbId: 283 },
+  { key: "mubi", label: "MUBI", tmdbId: 11 },
 ];
 const GROUP_GENRE_OPTIONS = [
   { key: "comedy", label: "Comedie", terms: ["comedie", "comedy"] },
@@ -1225,6 +1225,12 @@ function getGroupProviderMatchCountForItem(item) {
   return getGroupProviderMatchCount(item.providerName);
 }
 
+function getUserProviderTmdbIds() {
+  return USER_PROVIDER_OPTIONS.filter(
+    (p) => userProviderKeys.includes(p.key) && p.tmdbId,
+  ).map((p) => p.tmdbId);
+}
+
 function getUserProviderLabelList() {
   return USER_PROVIDER_OPTIONS.filter((provider) =>
     userProviderKeys.includes(provider.key),
@@ -1674,6 +1680,7 @@ let currentEpisode = 1;
 let searchTimeout;
 let deferredPrompt;
 let lastSuggestedItemId = null;
+let currentSuggestionCandidates = [];
 let suggestionFilters = {
   mode: "solo",
   source: "all",
@@ -1687,6 +1694,11 @@ let groupProfiles = loadGroupProfiles();
 let activeGroupProfileIds = loadActiveGroupProfileIds();
 syncCurrentUserGroupProfile();
 let suggestionExternalCache = {
+  key: "",
+  items: [],
+  fetchedAt: 0,
+};
+let suggestionProviderCache = {
   key: "",
   items: [],
   fetchedAt: 0,
@@ -6485,7 +6497,7 @@ function matchesSuggestionFilters(item, source, { ignoreAvailability = false } =
   if (!ignoreAvailability && suggestionFilters.availability === "mine") {
     if (suggestionFilters.mode === "group") {
       if (!getGroupProviderMatchCountForItem(item)) return false;
-    } else if (!isUserProviderAvailableItem(item)) {
+    } else if (!isUserProviderAvailableItem(item) && !item.onUserPlatforms) {
       return false;
     }
   }
@@ -6598,7 +6610,7 @@ function getSuggestionReasons(item) {
       ];
 }
 
-function normalizeExternalSuggestionItem(tmdbItem, mediaType) {
+function normalizeExternalSuggestionItem(tmdbItem, mediaType, { onUserPlatforms = false } = {}) {
   const type = getCollectionTypeFromTmdbType(mediaType);
   const genreMap = type === "movie" ? GENRE_MAP.movie : GENRE_MAP.tv;
   const genre = Array.isArray(tmdbItem.genre_ids)
@@ -6638,6 +6650,8 @@ function normalizeExternalSuggestionItem(tmdbItem, mediaType) {
       : null,
     isExternalSuggestion: true,
     mediaType,
+    releaseDate: tmdbItem.release_date || tmdbItem.first_air_date || null,
+    onUserPlatforms,
   };
 }
 
@@ -6696,50 +6710,141 @@ async function fetchExternalSuggestionItems() {
   }
 }
 
-async function getSmartSuggestion() {
-  await refreshSuggestionProviderAvailability();
+async function fetchExternalProviderItems() {
+  if (TMDB_API_KEY === "VOTRE_CLE_API_ICI") return [];
 
-  const collectionCandidates = items
-    .filter((item) => ["towatch", "watching", "paused"].includes(item.status))
-    .filter((item) => matchesSuggestionFilters(item, "collection"));
+  const providerTmdbIds = getUserProviderTmdbIds();
+  if (!providerTmdbIds.length) return [];
 
-  let pool = [...collectionCandidates];
+  const cacheKey = `${suggestionFilters.type}:providers:${[...userProviderKeys].sort().join(",")}`;
+  const cacheIsFresh =
+    suggestionProviderCache.key === cacheKey &&
+    Date.now() - suggestionProviderCache.fetchedAt < 10 * 60 * 1000;
+  if (cacheIsFresh) return suggestionProviderCache.items;
 
-  let externalItems = [];
-  if (suggestionFilters.source !== "collection") {
-    externalItems = await fetchExternalSuggestionItems();
-    pool = [
-      ...pool,
-      ...externalItems.filter((item) =>
-        matchesSuggestionFilters(item, "discover"),
-      ),
-    ];
+  const providerParam = providerTmdbIds.join("%7C");
+  const endpoints = [];
+  if (suggestionFilters.type === "all" || suggestionFilters.type === "movie") {
+    endpoints.push({
+      mediaType: "movie",
+      url: `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&language=fr-FR&watch_region=FR&with_watch_providers=${providerParam}&with_watch_monetization_types=flatrate%7Cfree%7Cads&sort_by=popularity.desc`,
+    });
+  }
+  if (suggestionFilters.type === "all" || suggestionFilters.type === "series") {
+    endpoints.push({
+      mediaType: "tv",
+      url: `${TMDB_BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&language=fr-FR&watch_region=FR&with_watch_providers=${providerParam}&with_watch_monetization_types=flatrate%7Cfree%7Cads&sort_by=popularity.desc`,
+    });
   }
 
-  // Fallback: relax availability filter (provider data often missing)
-  if (!pool.length && suggestionFilters.availability === "mine") {
-    const collectionFallback = items
-      .filter((item) => ["towatch", "watching", "paused"].includes(item.status))
+  try {
+    const payloads = await Promise.all(
+      endpoints.map(async (endpoint) => {
+        const response = await fetch(endpoint.url);
+        if (!response.ok) return [];
+        const data = await response.json();
+        return (data.results || [])
+          .filter(
+            (tmdbItem) =>
+              !items.some((item) =>
+                isSameTmdbCollectionItem(item, tmdbItem.id, endpoint.mediaType),
+              ),
+          )
+          .slice(0, 14)
+          .map((tmdbItem) =>
+            normalizeExternalSuggestionItem(tmdbItem, endpoint.mediaType, {
+              onUserPlatforms: true,
+            }),
+          );
+      }),
+    );
+    const providerItems = payloads.flat();
+    suggestionProviderCache = {
+      key: cacheKey,
+      items: providerItems,
+      fetchedAt: Date.now(),
+    };
+    return providerItems;
+  } catch (error) {
+    console.error("Erreur suggestion plateformes:", error);
+    return [];
+  }
+}
+
+async function getSuggestionCandidatePool() {
+  await refreshSuggestionProviderAvailability();
+
+  const wantsExternal = suggestionFilters.source !== "collection";
+  const wantsCollection = suggestionFilters.source !== "discover";
+  const wantsPlatforms =
+    suggestionFilters.availability === "mine" && getUserProviderTmdbIds().length > 0;
+
+  const releasedFilter = (item) => !isUpcomingMovieItem(item);
+  const watchableStatuses = ["towatch", "watching", "paused"];
+
+  // Fetch external items upfront (both trending and provider-filtered if needed).
+  // Both are cached so parallel fetch is cheap on repeat calls.
+  let trendingItems = [];
+  let providerItems = [];
+  if (wantsExternal) {
+    [trendingItems, providerItems] = await Promise.all([
+      fetchExternalSuggestionItems(),
+      wantsPlatforms ? fetchExternalProviderItems() : Promise.resolve([]),
+    ]);
+  }
+
+  // Main pool: items that strictly match all active filters.
+  const collectionCandidates = wantsCollection
+    ? items
+        .filter((item) => watchableStatuses.includes(item.status))
+        .filter(releasedFilter)
+        .filter((item) => matchesSuggestionFilters(item, "collection"))
+    : [];
+
+  const externalCandidates = wantsExternal
+    ? (wantsPlatforms ? providerItems : trendingItems)
+        .filter(releasedFilter)
+        .filter((item) => matchesSuggestionFilters(item, "discover"))
+    : [];
+
+  let pool = [...collectionCandidates, ...externalCandidates];
+
+  // Fallback 1: provider items didn't match -> try trending (ignoring availability).
+  if (!pool.length && wantsPlatforms && wantsExternal) {
+    pool = trendingItems
+      .filter(releasedFilter)
+      .filter((item) => matchesSuggestionFilters(item, "discover", { ignoreAvailability: true }));
+  }
+
+  // Fallback 2: relax provider filter for collection items (provider data may be missing).
+  if (!pool.length && suggestionFilters.availability === "mine" && wantsCollection) {
+    pool = items
+      .filter((item) => watchableStatuses.includes(item.status))
+      .filter(releasedFilter)
       .filter((item) =>
         matchesSuggestionFilters(item, "collection", { ignoreAvailability: true }),
       );
-    const externalFallback =
-      suggestionFilters.source !== "collection"
-        ? externalItems.filter((item) =>
-            matchesSuggestionFilters(item, "discover", { ignoreAvailability: true }),
-          )
-        : [];
-    pool = [...collectionFallback, ...externalFallback];
   }
 
-  // Last resort: anything towatch/watching/paused in collection
-  if (!pool.length && suggestionFilters.source !== "discover") {
-    pool = items.filter((item) =>
-      ["towatch", "watching", "paused"].includes(item.status),
+  // Last resort: any watchable collection items regardless of filters.
+  if (!pool.length && wantsCollection) {
+    pool = items.filter(
+      (item) => watchableStatuses.includes(item.status) && releasedFilter(item),
     );
   }
 
-  return [...pool]
+  return pool;
+}
+
+async function getSmartSuggestion({ excludeIds = [] } = {}) {
+  const pool = await getSuggestionCandidatePool();
+  currentSuggestionCandidates = pool;
+
+  const excludedIds = new Set(excludeIds.filter(Boolean));
+  const filteredPool = pool.filter((item) => !excludedIds.has(item.id));
+  const scoredPool = filteredPool.length ? filteredPool : pool;
+
+  return [...scoredPool]
     .map((item, index) => ({
       item,
       score: getSuggestionScore(item, index),
@@ -6769,7 +6874,9 @@ async function randomSuggestion() {
     </div>
   `;
 
-  const suggestedItem = await getSmartSuggestion();
+  const suggestedItem = await getSmartSuggestion({
+    excludeIds: [lastSuggestedItemId],
+  });
   if (!suggestedItem) {
     document.getElementById("suggestionContent").innerHTML = `
       <div class="watch-pick">
@@ -6796,9 +6903,12 @@ function renderSuggestion(item) {
   const genre = item.genre
     ? `<span>${escapeHtml(item.genre.split(",")[0].trim())}</span>`
     : "";
-  const provider = item.providerName
-    ? `<span>${escapeHtml(item.providerName)}</span>`
-    : "";
+  const platformRow =
+    item.providerLogo && item.providerName
+      ? `<div class="watch-pick-platform"><img src="${escapeHtml(item.providerLogo)}" alt="${escapeHtml(item.providerName)}"><span>${escapeHtml(item.providerName)}</span></div>`
+      : item.onUserPlatforms
+      ? `<div class="watch-pick-platform"><span>Sur tes plateformes</span></div>`
+      : "";
   const rating = item.rating || item.tmdbRating || null;
   const ratingLabel = item.rating ? "Ta note" : "TMDB";
   const reasons = getSuggestionReasons(item);
@@ -6808,11 +6918,8 @@ function renderSuggestion(item) {
   const secondaryAction = item.isExternalSuggestion
     ? `addFromTrendingById(${Number(item.tmdbId)}, '${item.mediaType}')`
     : `openWatchedFlowForSuggestion(${inlineJsString(item.id)})`;
-  const alternatives = items
+  const alternatives = currentSuggestionCandidates
     .filter((candidate) => candidate.id !== item.id)
-    .filter((candidate) =>
-      ["towatch", "watching", "paused"].includes(candidate.status),
-    )
     .sort(
       (left, right) =>
         getSuggestionScore(right, 0) - getSuggestionScore(left, 0),
@@ -6833,11 +6940,6 @@ function renderSuggestion(item) {
                     ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
                     : `<div class="watch-pick-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`
                 }
-                ${
-                  item.providerLogo
-                    ? `<div class="watch-pick-provider-badge"><img src="${escapeHtml(item.providerLogo)}" alt="${escapeHtml(item.providerName || "")}"></div>`
-                    : ""
-                }
               </div>
               <div class="watch-pick-main">
                 <span class="watch-pick-kicker">Notre choix</span>
@@ -6846,8 +6948,8 @@ function renderSuggestion(item) {
                   <span>${item.type === "movie" ? "Film" : "Série"}</span>
                   ${year}
                   ${genre}
-                  ${provider}
                 </div>
+                ${platformRow}
                 <div class="watch-pick-badges">
                   <span>${escapeHtml(statusText)}</span>
                   ${item.isExternalSuggestion ? `<span>Découverte TMDB</span>` : ""}
@@ -6923,7 +7025,9 @@ function renderSuggestion(item) {
 }
 
 function showSuggestionById(itemId) {
-  const item = items.find((entry) => entry.id === itemId);
+  const item =
+    currentSuggestionCandidates.find((entry) => entry.id === itemId) ||
+    items.find((entry) => entry.id === itemId);
   if (!item) return;
   lastSuggestedItemId = item.id;
   renderSuggestion(item);
