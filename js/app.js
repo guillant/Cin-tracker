@@ -4764,7 +4764,7 @@ function markEpisodeSeen(itemId, season, episode, event) {
   items[idx] = updated;
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
-  reopenDetailAtSeason(itemId, season, { ...viewState, keepSeasonOpen: true });
+  refreshOpenSeasonProgressInPlace(itemId, season, viewState);
 }
 
 function unmarkEpisodeSeen(itemId, season, episode, event) {
@@ -4783,7 +4783,7 @@ function unmarkEpisodeSeen(itemId, season, episode, event) {
   };
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
-  reopenDetailAtSeason(itemId, season, { ...viewState, keepSeasonOpen: true });
+  refreshOpenSeasonProgressInPlace(itemId, season, viewState);
   showToast(`S${season} E${episode} remis en non vu`);
 }
 
@@ -4802,6 +4802,60 @@ function getSeriesProgressViewState(itemId, season) {
     scrollTop: detailBody?.scrollTop || 0,
     keepSeasonOpen: Boolean(block?.classList.contains("sd-open")),
   };
+}
+
+function refreshOpenSeasonProgressInPlace(itemId, season, viewState = {}) {
+  const item = items.find((entry) => entry.id === itemId);
+  const block = document.getElementById(`sdSeasonBlock_${itemId}_${season}`);
+  const list = document.getElementById(`sdEpList_${itemId}_${season}`);
+  if (!item || !block || !list || !block.classList.contains("sd-open")) {
+    reopenDetailAtSeason(itemId, season, { ...viewState, keepSeasonOpen: true });
+    return;
+  }
+
+  const episodeButtons = list.querySelectorAll(".sd-ep-item");
+  const currentSeason = item.currentSeason || 1;
+  const currentEpisode = item.currentEpisode || 1;
+  const isSeriesWatched = item.status === "watched";
+
+  episodeButtons.forEach((row) => {
+    const epNum = Number(
+      row.querySelector(".sd-ep-num")?.textContent?.replace(/\D/g, "") || 0,
+    );
+    if (!epNum) return;
+    const isDone =
+      season < currentSeason ||
+      (season === currentSeason &&
+        (isSeriesWatched ? epNum <= currentEpisode : epNum < currentEpisode));
+    const isCurrent =
+      !isSeriesWatched && season === currentSeason && epNum === currentEpisode;
+    const button = row.querySelector(".sd-ep-mark");
+
+    row.classList.toggle("sd-ep-done", isDone);
+    row.classList.toggle("sd-ep-current", isCurrent);
+    if (button) {
+      button.classList.toggle("sd-ep-mark-done", isDone);
+      button.classList.toggle("sd-ep-mark-current", isCurrent);
+      button.textContent = isDone ? "✓ Vu" : "Pas vu";
+      button.setAttribute(
+        "onclick",
+        `toggleEpisodeSeen(${inlineJsString(itemId)}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event)`,
+      );
+    }
+  });
+
+  const epCount = episodeButtons.length || 0;
+  const seasonState = getSeasonProgressState(item, season, epCount);
+  const fill = block.querySelector(".sd-season-fill");
+  const pct = block.querySelector(".sd-season-pct");
+  if (fill) {
+    fill.style.width = `${seasonState.pct}%`;
+    fill.classList.toggle("sd-fill-done", seasonState.isDone);
+  }
+  if (pct) pct.textContent = `${seasonState.watchedEpisodes}/${epCount}`;
+
+  const detailBody = document.getElementById("detailContent");
+  if (detailBody) detailBody.scrollTop = viewState.scrollTop || 0;
 }
 
 function reopenDetailAtSeason(itemId, season, viewState = {}) {
