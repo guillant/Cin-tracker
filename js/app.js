@@ -1096,6 +1096,20 @@ function isSeriesReleased(item) {
   return true;
 }
 
+function isCurrentSeasonStarted(item) {
+  if (!item?.seasonAirDates) return true;
+  const currentSeason = item.currentSeason || 1;
+  const airDateStr =
+    item.seasonAirDates[currentSeason] ||
+    item.seasonAirDates[String(currentSeason)];
+  if (!airDateStr) return true;
+  const d = new Date(airDateStr);
+  d.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return d <= today;
+}
+
 function formatFutureDistanceLabel(targetDate, fromDate) {
   const diffDays = Math.round((targetDate - fromDate) / 86400000);
   if (diffDays <= 1) return diffDays === 0 ? "Aujourd'hui" : "Demain";
@@ -2688,7 +2702,10 @@ function renderWatchingStrip() {
   }
 
   const watching = items.filter(
-    (i) => i.type === "series" && i.status === "watching",
+    (i) =>
+      i.type === "series" &&
+      i.status === "watching" &&
+      isCurrentSeasonStarted(i),
   );
 
   if (watching.length === 0) {
@@ -4737,6 +4754,18 @@ function markEpisodeSeen(itemId, season, episode, event) {
   const hasNextSeason =
     !!item.seasonData?.[nextSeason] || !!item.seasonData?.[String(nextSeason)];
 
+  const nextSeasonAirDateStr =
+    item.seasonAirDates?.[nextSeason] ||
+    item.seasonAirDates?.[String(nextSeason)];
+  const nextSeasonStarted = (() => {
+    if (!nextSeasonAirDateStr) return true;
+    const d = new Date(nextSeasonAirDateStr);
+    d.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d <= today;
+  })();
+
   let updated = {
     ...item,
     status: "watching",
@@ -4744,10 +4773,14 @@ function markEpisodeSeen(itemId, season, episode, event) {
   };
 
   if (episode >= seasonTotal) {
-    if (hasNextSeason) {
+    if (hasNextSeason && nextSeasonStarted) {
       updated.currentSeason = nextSeason;
       updated.currentEpisode = 1;
       showToast(`Saison ${season} terminée · Saison ${nextSeason} en cours`);
+    } else if (hasNextSeason) {
+      updated.currentSeason = season;
+      updated.currentEpisode = seasonTotal;
+      showToast(`Saison ${season} terminée · En attente de la saison ${nextSeason}`);
     } else {
       updated.currentSeason = season;
       updated.currentEpisode = seasonTotal;
@@ -6051,6 +6084,28 @@ async function openDetail(id) {
             };
             item = items[idx];
             localStorage.setItem("watchlist", JSON.stringify(items));
+          }
+        }
+
+        // Toujours mettre à jour les dates de sortie des saisons pour les séries
+        if (item.type === "series" && tmdb.seasons) {
+          const newAirDates = {};
+          tmdb.seasons
+            .filter((s) => s.season_number > 0 && s.air_date)
+            .forEach((s) => {
+              newAirDates[String(s.season_number)] = s.air_date;
+            });
+          if (Object.keys(newAirDates).length > 0) {
+            const idx2 = items.findIndex((i) => i.id === item.id);
+            if (
+              idx2 !== -1 &&
+              JSON.stringify(items[idx2].seasonAirDates) !==
+                JSON.stringify(newAirDates)
+            ) {
+              items[idx2] = { ...items[idx2], seasonAirDates: newAirDates };
+              item = items[idx2];
+              localStorage.setItem("watchlist", JSON.stringify(items));
+            }
           }
         }
 
