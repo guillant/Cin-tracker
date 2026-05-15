@@ -8283,6 +8283,35 @@ async function loadTrending(type, buttonElement) {
   openDiscoverCollection(fallbackKey);
 }
 
+function boostFrenchFilmsInGrid(results) {
+  // Separate French and non-French items
+  const french = results.filter((item) => item.original_language === "fr");
+  const nonFrench = results.filter((item) => item.original_language !== "fr");
+
+  if (french.length === 0) return results; // No French items to boost
+
+  // Inject one French film every 4 non-French films
+  const boosted = [];
+  let frenchIndex = 0;
+
+  for (let i = 0; i < nonFrench.length; i++) {
+    boosted.push(nonFrench[i]);
+    // After every 4 non-French items, inject a French one
+    if ((i + 1) % 4 === 0 && frenchIndex < french.length) {
+      boosted.push(french[frenchIndex]);
+      frenchIndex++;
+    }
+  }
+
+  // Append remaining French films at the end
+  while (frenchIndex < french.length) {
+    boosted.push(french[frenchIndex]);
+    frenchIndex++;
+  }
+
+  return boosted;
+}
+
 function renderGenreChips(type = "movie") {
   const container = document.getElementById("discoverGenreChips");
   if (!container) return;
@@ -8631,6 +8660,11 @@ async function loadMoreDiscoverCollection() {
       grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;"><div class="empty-icon">😕</div><p class="empty-text">Aucun contenu disponible.</p></div>`;
       loadMoreWrap.style.display = "none";
       return;
+    }
+
+    // Boost French films in genre browsing (but not in other Discover modes)
+    if (discoverBrowseState.inlineConfig && discoverBrowseState.key?.includes("genre")) {
+      results = boostFrenchFilmsInGrid(results);
     }
 
     if (nextPage === 1) {
