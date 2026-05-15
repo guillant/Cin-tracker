@@ -5284,6 +5284,15 @@ function buildAvailabilityInfoRow(item, watchProviders, tmdb = null) {
     );
   }
 
+  // Final fallback: show network provider for TV series
+  if (networkProvider?.providerName) {
+    return buildDetailInfoRow(
+      "Plateforme",
+      `<strong>${escapeHtml(getCompactProviderLabel(networkProvider.providerName))}</strong><span class="detail-availability-note">Diffuseur TMDB</span>`,
+      "detail-row-availability",
+    );
+  }
+
   return buildDetailInfoRow(
     "Disponibilite",
     `<span class="detail-availability-note">Aucune disponibilite FR detectee pour le moment.</span>`,
