@@ -1119,7 +1119,23 @@ function hasWatchableEpisode(item) {
   if (currentSeasonTotal === 0) return true;
 
   if (currentEpisode <= currentSeasonTotal) {
-    return isSeasonAired(item, currentSeason);
+    if (!isSeasonAired(item, currentSeason)) return false;
+    // Si les épisodes de la saison sont en cache, vérifier qu'au moins un a été diffusé
+    if (item.tmdbId) {
+      const cached = seasonEpisodesCache[`${item.tmdbId}-${currentSeason}`];
+      if (cached?.length > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const hasAired = cached.some((ep) => {
+          if (!ep.air_date) return true;
+          const d = new Date(ep.air_date);
+          d.setHours(0, 0, 0, 0);
+          return d <= today;
+        });
+        if (!hasAired) return false;
+      }
+    }
+    return true;
   }
 
   // Current season exhausted — check next season
@@ -6119,14 +6135,11 @@ async function openDetail(id) {
             });
           if (Object.keys(newAirDates).length > 0) {
             const idx2 = items.findIndex((i) => i.id === item.id);
-            if (
-              idx2 !== -1 &&
-              JSON.stringify(items[idx2].seasonAirDates) !==
-                JSON.stringify(newAirDates)
-            ) {
+            if (idx2 !== -1) {
               items[idx2] = { ...items[idx2], seasonAirDates: newAirDates };
               item = items[idx2];
               localStorage.setItem("watchlist", JSON.stringify(items));
+              renderWatchingStrip();
             }
           }
         }
