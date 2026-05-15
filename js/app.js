@@ -8062,7 +8062,7 @@ function renderGenreChips(type = "movie") {
   container.innerHTML = genres
     .map(
       (g) =>
-        `<button class="discover-genre-chip" onclick="app.openDiscoverByGenre(${g.id}, '${type}', ${JSON.stringify(g.name)})">${escapeHtml(g.name)}</button>`,
+        `<button class="discover-genre-chip" onclick="app.openDiscoverByGenre(${g.id}, '${type}', ${JSON.stringify(g.name).replace(/"/g, '&quot;')})">${escapeHtml(g.name)}</button>`,
     )
     .join("");
   document
