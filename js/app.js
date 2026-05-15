@@ -5310,18 +5310,19 @@ async function fetchWatchProviders(endpoint, tmdbId) {
 
     const payload = await res.json();
     const tmdbProviders = normalizeWatchProviders(payload);
-    if (mode === "hybrid") {
-      const hasIncludedProviders = WATCH_PROVIDER_INCLUDED_GROUPS.size
-        ? WATCH_PROVIDER_GROUP_ORDER
-            .filter((groupKey) => WATCH_PROVIDER_INCLUDED_GROUPS.has(groupKey))
-            .some((groupKey) => (getWatchProviderGroup(tmdbProviders, groupKey)?.providers || []).length > 0)
-        : false;
-      if (!hasIncludedProviders) {
-        const fresh = await fetchFreshWatchProviders(endpoint, tmdbId);
-        if (fresh) return fresh;
-      }
+    
+    // Return TMDB data if available (includes all types: flatrate, rent, buy, etc.)
+    if (tmdbProviders) {
+      return tmdbProviders;
     }
-    return tmdbProviders;
+
+    // Only fallback to fresh if TMDB has absolutely nothing
+    if (mode === "hybrid") {
+      const fresh = await fetchFreshWatchProviders(endpoint, tmdbId);
+      if (fresh) return fresh;
+    }
+    
+    return null;
   } catch (error) {
     console.error("Erreur watch providers:", error);
     if (mode === "hybrid") {
