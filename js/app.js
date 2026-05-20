@@ -1750,6 +1750,128 @@ const TMDB_TV_GENRES = [
   { id: 10765, name: "Science-Fiction & Fantastique" },
   { id: 10768, name: "Guerre & Politique" }, { id: 37, name: "Western" },
 ];
+const DISCOVER_PROMPTS = [
+  {
+    id: "movie-tonight",
+    label: "À regarder ce soir",
+    sublabel: "Films populaires",
+    mediaType: "movie",
+    genreId: null,
+    title: "Films à regarder ce soir",
+    description: "Films populaires, récents ou incontournables, faciles à lancer.",
+    extraQuery: "&vote_count.gte=300&vote_average.gte=6.4",
+  },
+  {
+    id: "short-movie",
+    label: "Court et efficace",
+    sublabel: "Moins de 100 min",
+    mediaType: "movie",
+    genreId: null,
+    title: "Films courts et efficaces",
+    description: "Films populaires de moins de 100 minutes.",
+    extraQuery: "&with_runtime.lte=100&vote_count.gte=150",
+  },
+  {
+    id: "tense-thriller",
+    label: "Un thriller tendu",
+    sublabel: "Films nerveux",
+    mediaType: "movie",
+    genreId: 53,
+    title: "Thrillers tendus",
+    description: "Films populaires avec tension, suspense et rythme.",
+    extraQuery: "&vote_count.gte=300",
+  },
+  {
+    id: "feel-good",
+    label: "Un film feel-good",
+    sublabel: "Comédies douces",
+    mediaType: "movie",
+    genreId: 35,
+    title: "Films feel-good",
+    description: "Comédies populaires pour une session plus légère.",
+    extraQuery: "&vote_average.gte=6.5&vote_count.gte=200",
+  },
+  {
+    id: "ambitious-sci-fi",
+    label: "De la SF ambitieuse",
+    sublabel: "Grand spectacle",
+    mediaType: "movie",
+    genreId: 878,
+    title: "Science-fiction ambitieuse",
+    description: "Films de science-fiction populaires et marquants.",
+    extraQuery: "&vote_count.gte=500",
+  },
+  {
+    id: "animation-discovery",
+    label: "De l'animation",
+    sublabel: "À explorer",
+    mediaType: "movie",
+    genreId: 16,
+    title: "Animation à explorer",
+    description: "Films d'animation populaires, récents et accessibles.",
+    extraQuery: "&vote_count.gte=150",
+  },
+  {
+    id: "series-tonight",
+    label: "Une série à lancer",
+    sublabel: "Populaire maintenant",
+    mediaType: "tv",
+    genreId: null,
+    title: "Séries à lancer",
+    description: "Séries populaires en ce moment, parfaites pour commencer.",
+    extraQuery: "&vote_count.gte=100&vote_average.gte=6.5",
+  },
+  {
+    id: "short-series",
+    label: "Une série courte",
+    sublabel: "Épisodes légers",
+    mediaType: "tv",
+    genreId: 18,
+    title: "Séries courtes",
+    description: "Séries populaires avec épisodes faciles à lancer.",
+    extraQuery: "&with_runtime.lte=35",
+  },
+  {
+    id: "dark-series",
+    label: "Une série sombre",
+    sublabel: "Mystère et crime",
+    mediaType: "tv",
+    genreId: 9648,
+    title: "Séries sombres",
+    description: "Séries populaires avec mystère, enquête ou ambiance noire.",
+    extraQuery: "&vote_count.gte=100",
+  },
+  {
+    id: "light-series",
+    label: "Épisodes légers",
+    sublabel: "Comédies",
+    mediaType: "tv",
+    genreId: 35,
+    title: "Séries légères",
+    description: "Comédies et séries faciles à regarder.",
+    extraQuery: "&with_runtime.lte=35&vote_count.gte=80",
+  },
+  {
+    id: "sci-fi-series",
+    label: "SF et fantastique",
+    sublabel: "Univers forts",
+    mediaType: "tv",
+    genreId: 10765,
+    title: "Séries SF et fantastiques",
+    description: "Séries populaires avec univers marqués et idées fortes.",
+    extraQuery: "&vote_count.gte=120",
+  },
+  {
+    id: "doc-series",
+    label: "Documentaires",
+    sublabel: "À picorer",
+    mediaType: "tv",
+    genreId: 99,
+    title: "Séries documentaires",
+    description: "Documentaires et mini-séries populaires.",
+    extraQuery: "&vote_count.gte=40",
+  },
+];
 const BROWSE_PROVIDER_KEYS = [
   "netflix",
   "prime-video",
@@ -1826,11 +1948,14 @@ let discoverBrowseState = {
   key: null,
   inlineConfig: null,
   baseUrl: null,
-  activeFilters: { providers: [], year: null },
+  activeFilters: { providers: [], year: null, sort: "popular" },
   page: 0,
   totalPages: 0,
   loading: false,
 };
+let discoverPendingGenre = null;
+let discoverGenreType = "movie";
+let discoverMediaType = "movie";
 
 function stripHiddenSystemTags(tagList) {
   if (!Array.isArray(tagList) || tagList.length === 0) return [];
@@ -1941,7 +2066,7 @@ function installPWA() {
   }
 
   if (isIosDevice() && !isStandaloneMode()) {
-    showToast("iPhone: Safari > Partager > Sur l'ecran d'accueil");
+    showToast("iPhone: Safari > Partager > Sur l'écran d'accueil");
     return;
   }
 
@@ -3204,15 +3329,12 @@ function buildSeriesUpcomingEpisodesRow(seriesItems) {
                         const isUrgent = daysLeft <= 2;
                         const isFeatured = index === 0;
                         const episodeCode = `S${String(next.season_number).padStart(2, "0")} E${String(next.episode_number).padStart(2, "0")}`;
-                        const providerLabel = getCompactProviderLabel(
-                          item.providerName,
-                        );
                         return `
                   <article class="collection-upcoming-card ${isFeatured ? "collection-upcoming-card-featured" : ""} ${isUrgent ? "collection-upcoming-card-urgent" : ""}" onclick="openDetail(${inlineJsString(item.id)})">
                     <div class="collection-upcoming-card-image">
                       ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="upcoming-poster-placeholder">📺</div>`}
                       <div class="collection-upcoming-card-imagefade"></div>
-                      ${providerLabel ? `<div class="collection-upcoming-card-provider">${escapeHtml(providerLabel)}</div>` : ""}
+                      ${item.providerLogo ? `<div class="collection-upcoming-card-provider"><img src="${escapeHtml(item.providerLogo)}" alt="${escapeHtml(item.providerName || "")}" class="collection-upcoming-card-provider-logo${getProviderLogoFitClass(item.providerName)}"></div>` : ""}
                       <div class="collection-upcoming-card-info">
                         <div class="collection-upcoming-show">${escapeHtml(item.title)}</div>
                         <div class="collection-upcoming-episode">${escapeHtml(episodeCode)}</div>
@@ -4747,12 +4869,22 @@ function setProviderDataset(input, watchProviders) {
   delete input.dataset.providerAccessType;
 }
 
+function getProviderLogoFitClass(providerName) {
+  const normalizedName = (providerName || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  return normalizedName.includes("apple tv") ? " provider-logo-contain" : "";
+}
+
 function buildCardProviderHTML(item) {
   if (!item.providerLogo) return "";
+  const fitClass = getProviderLogoFitClass(item.providerName);
 
   return `
     <div class="card-provider" title="Disponible sur ${escapeHtml(item.providerName || "plateforme")}">
-      <img src="${escapeHtml(item.providerLogo)}" alt="${escapeHtml(item.providerName || "Plateforme")}" class="card-provider-logo">
+      <img src="${escapeHtml(item.providerLogo)}" alt="${escapeHtml(item.providerName || "Plateforme")}" class="card-provider-logo${fitClass}">
     </div>
   `;
 }
@@ -6274,14 +6406,22 @@ async function openDetail(id) {
   let item = items.find((i) => i.id === id);
   if (!item) return;
 
+  const detailModal = document.getElementById("detailModal");
+  const detailContent = document.getElementById("detailContent");
+
   currentItemId = id;
   currentDetailTmdb = null;
   document.getElementById("detailTitle").textContent = item.title;
-  document.getElementById("detailContent").innerHTML = buildDetailHTML(
-    item,
-    null,
-  );
-  document.getElementById("detailModal").classList.add("active");
+  if (detailContent) {
+    detailContent.scrollTop = 0;
+    detailContent.innerHTML = buildDetailHTML(item, null);
+    detailContent.scrollTop = 0;
+  }
+  detailModal?.classList.add("active");
+  requestAnimationFrame(() => {
+    const latestDetailContent = document.getElementById("detailContent");
+    if (latestDetailContent) latestDetailContent.scrollTop = 0;
+  });
 
   if (item.tmdbId && TMDB_API_KEY !== "VOTRE_CLE_API_ICI") {
     try {
@@ -6383,9 +6523,10 @@ async function openDetail(id) {
         const openSeasonNum = openSeasonId
           ? parseInt(openSeasonId.split("_").pop(), 10)
           : NaN;
-        const savedScrollTop = detailContentEl?.scrollTop || 0;
+        const savedScrollTop = 0;
 
         detailContentEl.innerHTML = buildDetailHTML(item, tmdb);
+        detailContentEl.scrollTop = 0;
 
         if (!isNaN(openSeasonNum)) {
           setTimeout(async () => {
@@ -7884,7 +8025,7 @@ function renderProviderSettings() {
 }
 
 function openDesignMockups() {
-  const targetUrl = `design-lab.html?v=${Date.now()}#mockup-info-layouts`;
+  const targetUrl = `design-lab.html?v=${Date.now()}#mockup-discover-chips`;
   const isMobileViewport = window.matchMedia("(max-width: 900px)").matches;
 
   if (isMobileViewport) {
@@ -8211,7 +8352,7 @@ function buildDiscoverRowCardHTML(item, type, showDate = false) {
       </div>
       <div class="discover-card-info">
         <div class="discover-card-title">${escapeHtml(title)}</div>
-        <div class="discover-card-year">${dateLabel || year || "—"}</div>
+        ${dateLabel ? `<div class="discover-card-year">${escapeHtml(dateLabel)}</div>` : ""}
       </div>
     </div>`;
 }
@@ -8233,29 +8374,13 @@ function buildDiscoverGridCardHTML(
 ) {
   const title = item.title || item.name;
   const itemType = item._type || type;
-  const dateRaw = item.release_date || item.first_air_date || "";
-  const year = dateRaw.substring(0, 4);
-  const dateLabel =
-    showDate && dateRaw
-      ? new Date(dateRaw).toLocaleDateString("fr-FR", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        })
-      : null;
   const posterPath = item.poster_path
     ? `${TMDB_IMAGE_BASE}${item.poster_path}`
     : "";
   const rating = item.vote_average ? (item.vote_average / 2).toFixed(1) : "";
-  const stars = rating
-    ? buildRatingStarsHTML(rating, {
-        includeEmpty: true,
-        extraClass: "card-rating-stars-inline",
-      })
-    : "";
 
   return `
-    <div class="card" onclick="showTrendingDetail(${item.id}, '${itemType}')">
+    <div class="card discover-grid-card" onclick="showTrendingDetail(${item.id}, '${itemType}')">
       <div class="card-image">
         ${
           posterPath
@@ -8267,13 +8392,10 @@ function buildDiscoverGridCardHTML(
             ? `<div class="card-badge" style="background: rgba(59, 130, 246, 0.95); color: white;">${itemType === "movie" ? "Film" : "Série"}</div>`
             : ""
         }
+        ${rating ? `<div class="discover-grid-rating">★ ${rating}</div>` : ""}
       </div>
       <div class="card-content">
         <div class="card-title">${escapeHtml(title)}</div>
-        <div class="card-meta">
-          <span>${dateLabel ? escapeHtml(dateLabel) : escapeHtml(year) || "—"}</span>
-        </div>
-        ${rating ? `<div class="card-rating">${stars}<span>${rating}/5</span></div>` : ""}
       </div>
     </div>`;
 }
@@ -8322,39 +8444,142 @@ function boostFrenchFilmsInGrid(results) {
   return boosted;
 }
 
+function getDiscoverMediaLabel(type = discoverMediaType) {
+  return type === "tv" ? "Séries" : "Films";
+}
+
+function updateDiscoverMediaView(type = discoverMediaType) {
+  discoverMediaType = type === "tv" ? "tv" : "movie";
+  const title = document.getElementById("discoverMediaTitle");
+  if (title) {
+    title.textContent =
+      discoverMediaType === "tv" ? "Séries à explorer" : "Films à explorer";
+  }
+
+  document.querySelectorAll("[data-discover-media]").forEach((row) => {
+    row.style.display =
+      row.dataset.discoverMedia === discoverMediaType ? "" : "none";
+  });
+}
+
+function renderDiscoverPrompts(type = discoverMediaType) {
+  const container = document.getElementById("discoverMoodChips");
+  if (!container) return;
+
+  const prompts = DISCOVER_PROMPTS.filter((prompt) => prompt.mediaType === type);
+  container.innerHTML = prompts
+    .map(
+      (prompt) => `
+      <button class="discover-mood-chip" onclick="app.openDiscoverPrompt('${prompt.id}')">
+        <span>${escapeHtml(prompt.label)}</span>
+        <small>${escapeHtml(prompt.sublabel)}</small>
+      </button>
+    `,
+    )
+    .join("");
+}
+
+function openDiscoverPrompt(promptId) {
+  const prompt = DISCOVER_PROMPTS.find((item) => item.id === promptId);
+  if (!prompt) return;
+
+  const endpoint = prompt.mediaType === "movie" ? "movie" : "tv";
+  const dateParam =
+    prompt.mediaType === "movie"
+      ? "&primary_release_date.lte="
+      : "&first_air_date.lte=";
+  const today = new Date().toISOString().slice(0, 10);
+  const genreParam = prompt.genreId ? `&with_genres=${prompt.genreId}` : "";
+
+  openDiscoverWithConfig({
+    key: `prompt-${prompt.id}`,
+    mediaType: prompt.mediaType,
+    title: prompt.title,
+    description: prompt.description,
+    url: `${TMDB_BASE_URL}/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=fr-FR&watch_region=FR${genreParam}&sort_by=popularity.desc${dateParam}${today}${prompt.extraQuery || ""}`,
+    type: prompt.mediaType,
+    showDate: false,
+  });
+}
+
 function renderGenreChips(type = "movie") {
+  discoverGenreType = type;
   const container = document.getElementById("discoverGenreChips");
   if (!container) return;
   const genres = type === "movie" ? TMDB_MOVIE_GENRES : TMDB_TV_GENRES;
-  const typeLabel = type === "movie" ? "Films" : "Séries";
+
   container.innerHTML = genres
     .map(
       (g) =>
-        `<button class="discover-genre-chip" onclick="app.openDiscoverByGenre(${g.id}, '${type}', ${JSON.stringify(g.name).replace(/"/g, '&quot;')})">${escapeHtml(g.name)}</button>`,
+        `<button class="discover-genre-chip" data-genre-id="${g.id}" data-genre-type="${type}" onclick="app.openDiscoverByGenre(${g.id}, '${type}', ${JSON.stringify(g.name).replace(/"/g, '&quot;')})">${escapeHtml(g.name)}</button>`,
     )
     .join("");
   document
-    .getElementById("genreTabMovie")
+    .getElementById("discoverGenreTypeMovie")
     ?.classList.toggle("active", type === "movie");
   document
-    .getElementById("genreTabTv")
+    .getElementById("discoverGenreTypeTv")
     ?.classList.toggle("active", type === "tv");
+  updateDiscoverGenreEditorialState();
 }
 
-function switchGenreTab(type) {
+function setDiscoverGenreType(type) {
+  discoverPendingGenre = null;
+  discoverMediaType = type === "tv" ? "tv" : "movie";
+  updateDiscoverMediaView(discoverMediaType);
+  renderDiscoverPrompts(discoverMediaType);
   renderGenreChips(type);
 }
 
+function switchGenreTab(type) {
+  setDiscoverGenreType(type);
+}
+
+function updateDiscoverGenreEditorialState() {
+  const editorial = document.getElementById("discoverGenreEditorial");
+  const title = document.getElementById("discoverGenreEditorialTitle");
+  const row = document.getElementById("discoverGenreRow");
+
+  if (!editorial || !title || !row) return;
+
+  const hasSelection = Boolean(discoverPendingGenre?.genreName);
+  editorial.style.display = hasSelection ? "flex" : "none";
+  row.classList.toggle("is-editorial-active", hasSelection);
+
+  if (hasSelection) {
+    title.textContent = discoverPendingGenre.genreName;
+  }
+
+  document.querySelectorAll(".discover-genre-chip").forEach((chip) => {
+    chip.classList.toggle(
+      "is-selected",
+      hasSelection &&
+        chip.dataset.genreId === String(discoverPendingGenre.genreId) &&
+        chip.dataset.genreType === discoverPendingGenre.type,
+    );
+  });
+}
+
 function openDiscoverByGenre(genreId, type, genreName) {
-  const endpoint = type === "movie" ? "movie" : "tv";
-  const typeLabel = type === "movie" ? "Films" : "Séries";
+  discoverPendingGenre = { genreId, type, genreName };
+  updateDiscoverGenreEditorialState();
+  openDiscoverGenreWithType(type);
+}
+
+function openDiscoverGenreWithType(targetType) {
+  const genre = discoverPendingGenre;
+  if (!genre) return;
+
+  const endpoint = targetType === "movie" ? "movie" : "tv";
+  const typeLabel = getDiscoverMediaLabel(targetType);
+
   openDiscoverWithConfig({
-    key: `genre-${type}-${genreId}`,
-    mediaType: type,
-    title: `${typeLabel} · ${genreName}`,
-    description: `Les meilleurs ${typeLabel.toLowerCase()} du genre ${genreName}, par popularité.`,
-    url: `${TMDB_BASE_URL}/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=fr-FR&with_genres=${genreId}&sort_by=popularity.desc&watch_region=FR`,
-    type,
+    key: `genre-${targetType}-${genre.genreId}`,
+    mediaType: targetType,
+    title: genre.genreName,
+    description: `${typeLabel} populaires maintenant, triés par popularité.`,
+    url: `${TMDB_BASE_URL}/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=fr-FR&with_genres=${genre.genreId}&sort_by=popularity.desc&watch_region=FR`,
+    type: targetType,
     showDate: false,
   });
 }
@@ -8364,7 +8589,9 @@ function buildFilteredUrl(options = {}) {
   if (!base) return null;
   const { ignoreYear = false } = options;
   let url = base;
-  const { providers, year } = discoverBrowseState.activeFilters;
+  const { providers, year, sort } = discoverBrowseState.activeFilters;
+  const isMovie = discoverBrowseState.inlineConfig?.mediaType === "movie";
+
   if (providers.length > 0) {
     const resolvedProviderIds = [
       ...new Set(
@@ -8381,21 +8608,31 @@ function buildFilteredUrl(options = {}) {
     url += `&with_watch_providers=${resolvedProviderIds.join("|")}&with_watch_monetization_types=flatrate`;
   }
   if (year && !ignoreYear) {
-    const isMovie = discoverBrowseState.inlineConfig?.mediaType === "movie";
     url += isMovie ? `&primary_release_year=${year}` : `&first_air_date_year=${year}`;
+  }
+
+  if (sort === "recent") {
     url = upsertQueryParam(
       url,
       "sort_by",
       isMovie ? "primary_release_date.desc" : "first_air_date.desc",
     );
+  } else if (sort === "rating") {
+    url = upsertQueryParam(url, "sort_by", "vote_average.desc");
+    if (!/[?&]vote_count\.gte=/i.test(url)) {
+      url += isMovie ? "&vote_count.gte=250" : "&vote_count.gte=80";
+    }
+  } else {
+    url = upsertQueryParam(url, "sort_by", "popularity.desc");
   }
+
   return url;
 }
 
 function buildDiscoverFilterFallbackNoticeHTML(year) {
   return `
     <div style="grid-column: 1/-1; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.35); background: rgba(59, 130, 246, 0.1); color: var(--text-secondary); font-size: 13px;">
-      Aucun resultat pour ${escapeHtml(String(year))} avec ces plateformes. Affichage des resultats toutes annees pour eviter une liste vide.
+      Aucun résultat pour ${escapeHtml(String(year))} avec ces plateformes. Affichage des résultats toutes années pour éviter une liste vide.
     </div>`;
 }
 
@@ -8403,16 +8640,41 @@ function renderBrowseFilters(mediaType) {
   const filtersEl = document.getElementById("discoverBrowseFilters");
   if (!filtersEl) return;
   if (!mediaType) { filtersEl.style.display = "none"; return; }
-  const { providers, year } = discoverBrowseState.activeFilters;
+  const { providers, year, sort } = discoverBrowseState.activeFilters;
+  const kicker = document.getElementById("discoverBrowseKicker");
+  if (kicker && discoverBrowseState.inlineConfig) {
+    kicker.textContent = buildDiscoverBrowseKicker(discoverBrowseState.inlineConfig);
+  }
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
+  const hasActiveFilters = providers.length > 0 || Boolean(year) || sort !== "popular";
+  const sortOptions = [
+    { id: "popular", label: "Popularité" },
+    { id: "rating", label: "Note" },
+    { id: "recent", label: "Récent" },
+  ];
+
   filtersEl.innerHTML = `
-    <div class="discover-filter-row">
-      ${BROWSE_PROVIDERS.map((p) => `<button class="discover-filter-chip${providers.includes(p.id) ? " active" : ""}" onclick="app.toggleBrowseProvider(${p.id})">${escapeHtml(p.name)}</button>`).join("")}
+    <div class="discover-filter-line">
+      <span class="discover-filter-label">Où regarder</span>
+      <div class="discover-filter-row">
+        ${BROWSE_PROVIDERS.map((p) => `<button class="discover-filter-chip${providers.includes(p.id) ? " active" : ""}" onclick="app.toggleBrowseProvider(${p.id})">${escapeHtml(p.name)}</button>`).join("")}
+      </div>
     </div>
-    <div class="discover-filter-row">
-      ${years.map((y) => `<button class="discover-filter-chip${year === y ? " active" : ""}" onclick="app.setBrowseYear(${y})">${y}</button>`).join("")}
-    </div>`;
+    <div class="discover-filter-line">
+      <span class="discover-filter-label">Année</span>
+      <div class="discover-filter-row">
+        ${years.map((y) => `<button class="discover-filter-chip${year === y ? " active" : ""}" onclick="app.setBrowseYear(${y})">${y}</button>`).join("")}
+      </div>
+    </div>
+    <div class="discover-filter-line">
+      <span class="discover-filter-label">Tri</span>
+      <div class="discover-filter-row">
+        ${sortOptions.map((option) => `<button class="discover-filter-chip${sort === option.id ? " active" : ""}" onclick="app.setBrowseSort('${option.id}')">${escapeHtml(option.label)}</button>`).join("")}
+        ${hasActiveFilters ? `<button class="discover-filter-reset" onclick="app.resetBrowseFilters()">Réinitialiser</button>` : ""}
+      </div>
+    </div>
+  `;
   filtersEl.style.display = "block";
 }
 
@@ -8427,6 +8689,17 @@ async function toggleBrowseProvider(id) {
 async function setBrowseYear(year) {
   discoverBrowseState.activeFilters.year =
     discoverBrowseState.activeFilters.year === year ? null : year;
+  await reloadBrowseWithFilters();
+}
+
+async function setBrowseSort(sort) {
+  discoverBrowseState.activeFilters.sort =
+    ["popular", "rating", "recent"].includes(sort) ? sort : "popular";
+  await reloadBrowseWithFilters();
+}
+
+async function resetBrowseFilters() {
+  discoverBrowseState.activeFilters = { providers: [], year: null, sort: "popular" };
   await reloadBrowseWithFilters();
 }
 
@@ -8501,7 +8774,9 @@ async function loadDiscover() {
   getDiscoverRowsConfig().forEach((config) => {
     loadDiscoverRow(config);
   });
-  renderGenreChips("movie");
+  updateDiscoverMediaView(discoverMediaType);
+  renderDiscoverPrompts(discoverMediaType);
+  renderGenreChips(discoverMediaType);
   loadPersonalizedRows();
 }
 
@@ -8552,36 +8827,62 @@ function closeDiscoverCollection() {
     key: null,
     inlineConfig: null,
     baseUrl: null,
-    activeFilters: { providers: [], year: null },
+    activeFilters: { providers: [], year: null, sort: "popular" },
     page: 0,
     totalPages: 0,
     loading: false,
   };
 }
 
+function buildDiscoverBrowseKicker(config) {
+  const mediaLabel = config?.mediaType === "tv" || config?.type === "tv"
+    ? "Séries"
+    : "Films";
+  const sortLabel = config?.showDate
+    ? "Sorties à venir"
+    : getBrowseSortLabel(discoverBrowseState.activeFilters.sort);
+  return `${mediaLabel} • France • ${sortLabel}`;
+}
+
+function getBrowseSortLabel(sort = "popular") {
+  if (sort === "rating") return "Note";
+  if (sort === "recent") return "Récent";
+  return "Popularité";
+}
+
+function buildDiscoverBrowseDescription(config) {
+  const mediaLabel = config?.mediaType === "tv" || config?.type === "tv"
+    ? "Séries"
+    : "Films";
+  return `${mediaLabel} populaires maintenant. Affinez par plateforme, année ou tri.`;
+}
+
 async function openDiscoverWithConfig(config) {
   const rows = document.getElementById("discoverRows");
   const panel = document.getElementById("discoverBrowsePanel");
   const title = document.getElementById("discoverBrowseTitle");
+  const kicker = document.getElementById("discoverBrowseKicker");
   const description = document.getElementById("discoverBrowseDescription");
   const grid = document.getElementById("discoverBrowseGrid");
   if (!rows || !panel || !title || !description || !grid) return;
 
   rows.style.display = "none";
   panel.classList.add("active");
-  title.textContent = config.title;
-  description.textContent = config.description || "";
-  grid.innerHTML = `<p class="discover-loading">Chargement…</p>`;
 
   discoverBrowseState = {
     key: config.key,
     inlineConfig: config,
     baseUrl: config.url,
-    activeFilters: { providers: [], year: null },
+    activeFilters: { providers: [], year: null, sort: "popular" },
     page: 0,
     totalPages: 0,
     loading: false,
   };
+
+  title.textContent = config.title;
+  if (kicker) kicker.textContent = buildDiscoverBrowseKicker(config);
+  description.textContent = config.description || buildDiscoverBrowseDescription(config);
+  grid.innerHTML = `<p class="discover-loading">Chargement…</p>`;
 
   renderBrowseFilters(config.mediaType);
   await loadMoreDiscoverCollection();
@@ -8592,6 +8893,7 @@ async function openDiscoverCollection(key) {
   const rows = document.getElementById("discoverRows");
   const panel = document.getElementById("discoverBrowsePanel");
   const title = document.getElementById("discoverBrowseTitle");
+  const kicker = document.getElementById("discoverBrowseKicker");
   const description = document.getElementById("discoverBrowseDescription");
   const grid = document.getElementById("discoverBrowseGrid");
 
@@ -8599,19 +8901,21 @@ async function openDiscoverCollection(key) {
 
   rows.style.display = "none";
   panel.classList.add("active");
-  title.textContent = config.title;
-  description.textContent = config.description;
-  grid.innerHTML = `<p class="discover-loading">Chargement…</p>`;
 
   discoverBrowseState = {
     key,
     inlineConfig: config,
     baseUrl: config.url,
-    activeFilters: { providers: [], year: null },
+    activeFilters: { providers: [], year: null, sort: "popular" },
     page: 0,
     totalPages: 0,
     loading: false,
   };
+
+  title.textContent = config.title;
+  if (kicker) kicker.textContent = buildDiscoverBrowseKicker(config);
+  description.textContent = config.description || buildDiscoverBrowseDescription(config);
+  grid.innerHTML = `<p class="discover-loading">Chargement…</p>`;
 
   renderBrowseFilters(null);
   await loadMoreDiscoverCollection();
@@ -8881,16 +9185,22 @@ async function showTrendingDetail(id, mediaType = null) {
   const cached = getTrendingCacheItem(id, mediaType);
   if (!cached) return;
   const { item, type } = cached;
+  const detailModal = document.getElementById("detailModal");
+  const detailContent = document.getElementById("detailContent");
 
   currentItemId = null;
   const title = item.title || item.name;
   document.getElementById("detailTitle").textContent = title;
-  document.getElementById("detailContent").innerHTML = buildTrendingDetailHTML(
-    item,
-    type,
-    null,
-  );
-  document.getElementById("detailModal").classList.add("active");
+  if (detailContent) {
+    detailContent.scrollTop = 0;
+    detailContent.innerHTML = buildTrendingDetailHTML(item, type, null);
+    detailContent.scrollTop = 0;
+  }
+  detailModal?.classList.add("active");
+  requestAnimationFrame(() => {
+    const latestDetailContent = document.getElementById("detailContent");
+    if (latestDetailContent) latestDetailContent.scrollTop = 0;
+  });
 
   try {
     const endpoint = type === "movie" ? "movie" : "tv";
@@ -8903,8 +9213,15 @@ async function showTrendingDetail(id, mediaType = null) {
     if (res.ok) {
       const tmdb = await res.json();
       tmdb.watchProviders = watchProviders;
-      document.getElementById("detailContent").innerHTML =
-        buildTrendingDetailHTML(item, type, tmdb);
+      const latestDetailContent = document.getElementById("detailContent");
+      if (latestDetailContent) {
+        latestDetailContent.innerHTML = buildTrendingDetailHTML(
+          item,
+          type,
+          tmdb,
+        );
+        latestDetailContent.scrollTop = 0;
+      }
     }
   } catch (e) {
     console.error("Erreur détail trending:", e);
@@ -9594,10 +9911,15 @@ window.app = {
   loadDiscover,
   openDiscoverCollection,
   openDiscoverWithConfig,
+  openDiscoverPrompt,
   openDiscoverByGenre,
+  openDiscoverGenreWithType,
+  setDiscoverGenreType,
   switchGenreTab,
   toggleBrowseProvider,
   setBrowseYear,
+  setBrowseSort,
+  resetBrowseFilters,
   openCollectionBrowse,
   closeCollectionBrowse,
   closeDiscoverCollection,

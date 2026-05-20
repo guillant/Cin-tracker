@@ -11,6 +11,7 @@ const entriesToCopy = [
   "css",
   "js",
   "assets",
+  "design-lab.html",
 ];
 
 function copyEntry(entry) {

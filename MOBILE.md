@@ -34,7 +34,7 @@ npm run cap:open:ios
 Ensuite, dans Xcode :
 
 - choisis une equipe Apple Developer dans `Signing & Capabilities`
-- selectionne un simulateur ou un iPhone branche
+- sélectionne un simulateur ou un iPhone branché
 - lance l'app avec le bouton Run
 
 Pour publier sur l'App Store, il faudra aussi un compte Apple Developer payant.

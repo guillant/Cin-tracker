@@ -3051,6 +3051,433 @@
       section[id] {
         scroll-margin-top: 20px;
       }
+
+      /* ═══ DISCOVER CHIPS — HOVER PROPOSALS ═══ */
+
+      .dc-section-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+
+      .dc-card {
+        background: linear-gradient(160deg, rgba(15,23,42,0.5), rgba(15,23,42,0.3));
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .dc-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .dc-card-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin: 0;
+      }
+
+      .dc-card-badge {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #93c5fd;
+        border: 1px solid rgba(147, 197, 253, 0.3);
+        border-radius: 999px;
+        padding: 2px 8px;
+        white-space: nowrap;
+      }
+
+      .dc-card-desc {
+        font-size: 12px;
+        color: rgba(148, 163, 184, 0.75);
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      .dc-preview {
+        background: #060d1a;
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .dc-spec {
+        display: grid;
+        grid-template-columns: 52px 1fr;
+        gap: 7px;
+        align-items: center;
+      }
+
+      .dc-spec-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: rgba(100, 116, 139, 0.9);
+      }
+
+      .dcp {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 7px 14px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        font-size: 12px;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          color 0.18s ease,
+          box-shadow 0.18s ease,
+          transform 0.14s ease;
+        user-select: none;
+      }
+      .dc-spec .dcp { pointer-events: none; }
+
+      /* 1 · Lift & Glow */
+      .dcp-1 { background: rgba(15,23,42,0.8); border-color: rgba(148,163,184,0.26); color: #cbd5e1; }
+      .dc-preview .dcp-1:hover { background: rgba(15,23,42,0.96); border-color: rgba(147,197,253,0.7); color: #bfdbfe; transform: translateY(-3px); box-shadow: 0 14px 22px -10px rgba(37,99,235,0.5); }
+      .dc-preview .dcp-1:active { transform: translateY(-1px) scale(0.97); box-shadow: none; }
+      .dcp-1.s-hover { background: rgba(15,23,42,0.96); border-color: rgba(147,197,253,0.7); color: #bfdbfe; transform: translateY(-3px); box-shadow: 0 14px 22px -10px rgba(37,99,235,0.5); }
+      .dcp-1.s-active { background: linear-gradient(160deg, #2563eb 0%, #1d4ed8 100%); border-color: rgba(147,197,253,0.85); color: #fff; }
+      .dcp-1.s-focus { border-color: rgba(147,197,253,0.4); color: #bfdbfe; outline: 2px solid rgba(147,197,253,0.8); outline-offset: 2px; }
+
+      /* 2 · Ghost Bloom */
+      .dcp-2 { background: transparent; border-color: rgba(148,163,184,0.28); color: #64748b; }
+      .dc-preview .dcp-2:hover { background: rgba(37,99,235,0.1); border-color: #60a5fa; color: #bfdbfe; }
+      .dc-preview .dcp-2:active { background: rgba(37,99,235,0.22); transform: scale(0.97); }
+      .dcp-2.s-hover { background: rgba(37,99,235,0.1); border-color: #60a5fa; color: #bfdbfe; }
+      .dcp-2.s-active { background: linear-gradient(160deg, #2563eb 0%, #0ea5e9 100%); border-color: transparent; color: #fff; box-shadow: 0 0 0 1px rgba(147,197,253,0.35); }
+      .dcp-2.s-focus { background: rgba(37,99,235,0.06); border-color: #93c5fd; color: #93c5fd; outline: 2px solid rgba(147,197,253,0.45); outline-offset: 2px; }
+
+      /* 3 · Scale Pop */
+      .dcp-3 { background: rgba(15,23,42,0.78); border-color: rgba(148,163,184,0.24); color: #cbd5e1; transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.13s cubic-bezier(0.34,1.56,0.64,1); }
+      .dc-preview .dcp-3:hover { transform: scale(1.07); border-color: rgba(147,197,253,0.6); color: #bfdbfe; box-shadow: 0 0 0 4px rgba(37,99,235,0.14), 0 8px 18px -8px rgba(37,99,235,0.4); }
+      .dc-preview .dcp-3:active { transform: scale(0.93); box-shadow: none; }
+      .dcp-3.s-hover { transform: scale(1.07); border-color: rgba(147,197,253,0.6); color: #bfdbfe; box-shadow: 0 0 0 4px rgba(37,99,235,0.14), 0 8px 18px -8px rgba(37,99,235,0.4); }
+      .dcp-3.s-active { background: linear-gradient(160deg, #2563eb 0%, #1d4ed8 100%); border-color: rgba(147,197,253,0.7); color: #fff; transform: scale(0.93); }
+      .dcp-3.s-focus { border-color: rgba(147,197,253,0.4); color: #bfdbfe; box-shadow: 0 0 0 3px rgba(147,197,253,0.55); }
+
+      /* 4 · Border Trace */
+      .dcp-4 { background: rgba(15,23,42,0.76); border-color: rgba(148,163,184,0.2); color: #94a3b8; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
+      .dc-preview .dcp-4:hover { border-color: #3b82f6; color: #93c5fd; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(59,130,246,0.22), 0 6px 16px -6px rgba(37,99,235,0.45); }
+      .dc-preview .dcp-4:active { background: rgba(37,99,235,0.14); }
+      .dcp-4.s-hover { border-color: #3b82f6; color: #93c5fd; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(59,130,246,0.22), 0 6px 16px -6px rgba(37,99,235,0.45); }
+      .dcp-4.s-active { background: linear-gradient(160deg, #2563eb 0%, #1d4ed8 100%); border-color: rgba(147,197,253,0.6); color: #fff; box-shadow: 0 4px 14px -6px rgba(37,99,235,0.6); }
+      .dcp-4.s-focus { border-color: rgba(59,130,246,0.4); color: #93c5fd; outline: 2px solid rgba(59,130,246,0.7); outline-offset: 2px; }
+
+      /* 5 · Neon Aura */
+      .dcp-5 { background: rgba(8,14,26,0.92); border-color: rgba(37,99,235,0.38); color: #93c5fd; box-shadow: 0 0 8px rgba(37,99,235,0.08); }
+      .dc-preview .dcp-5:hover { border-color: rgba(96,165,250,0.82); color: #bfdbfe; transform: translateY(-2px); box-shadow: 0 0 0 3px rgba(37,99,235,0.2), 0 0 22px rgba(37,99,235,0.32); }
+      .dc-preview .dcp-5:active { transform: translateY(0) scale(0.97); box-shadow: none; }
+      .dcp-5.s-hover { border-color: rgba(96,165,250,0.82); color: #bfdbfe; transform: translateY(-2px); box-shadow: 0 0 0 3px rgba(37,99,235,0.2), 0 0 22px rgba(37,99,235,0.32); }
+      .dcp-5.s-active { background: linear-gradient(160deg, #2563eb 0%, #0ea5e9 100%); border-color: rgba(147,197,253,0.9); color: #fff; box-shadow: 0 0 0 2px rgba(37,99,235,0.3), 0 0 28px rgba(37,99,235,0.5); }
+      .dcp-5.s-focus { border-color: #93c5fd; color: #bfdbfe; outline: 2px solid rgba(147,197,253,0.65); outline-offset: 2px; }
+
+      /* Discover genre chips - alternate directions */
+      .dcp-1 {
+        padding: 6px 12px;
+        background: rgba(15,23,42,0.72);
+        border-color: rgba(148,163,184,0.22);
+        color: #cbd5e1;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      }
+      .dc-preview .dcp-1:hover,
+      .dcp-1.s-hover {
+        background: rgba(30,41,59,0.9);
+        border-color: rgba(226,232,240,0.28);
+        color: #f8fafc;
+        transform: translateY(-1px);
+        box-shadow: none;
+      }
+      .dc-preview .dcp-1:active { transform: translateY(0); }
+      .dcp-1.s-active {
+        background: #e2e8f0;
+        border-color: #e2e8f0;
+        color: #0f172a;
+        box-shadow: none;
+      }
+      .dcp-1.s-focus {
+        border-color: rgba(226,232,240,0.5);
+        color: #f8fafc;
+        outline: 2px solid rgba(226,232,240,0.55);
+        outline-offset: 2px;
+      }
+
+      .dcp-2 {
+        background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+        border-color: rgba(255,255,255,0.12);
+        color: #e0f2fe;
+        backdrop-filter: blur(10px);
+      }
+      .dc-preview .dcp-2:hover,
+      .dcp-2.s-hover {
+        background: linear-gradient(180deg, rgba(14,165,233,0.22), rgba(14,165,233,0.08));
+        border-color: rgba(125,211,252,0.55);
+        color: #f0f9ff;
+        box-shadow: 0 12px 22px -16px rgba(14,165,233,0.8);
+      }
+      .dc-preview .dcp-2:active { transform: scale(0.97); }
+      .dcp-2.s-active {
+        background: rgba(240,249,255,0.96);
+        border-color: rgba(240,249,255,0.95);
+        color: #075985;
+        box-shadow: 0 12px 24px -14px rgba(125,211,252,0.9);
+      }
+      .dcp-2.s-focus {
+        border-color: rgba(125,211,252,0.75);
+        color: #e0f2fe;
+        outline: 2px solid rgba(125,211,252,0.55);
+        outline-offset: 2px;
+      }
+
+      .dcp-3 {
+        --genre-accent: #38bdf8;
+        position: relative;
+        padding-left: 24px;
+        background: rgba(15,23,42,0.78);
+        border-color: rgba(148,163,184,0.22);
+        color: #cbd5e1;
+      }
+      .dcp-3::before {
+        content: "";
+        position: absolute;
+        left: 10px;
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--genre-accent);
+        box-shadow: 0 0 12px var(--genre-accent);
+      }
+      .dcp-3:nth-child(2) { --genre-accent: #f97316; }
+      .dcp-3:nth-child(3) { --genre-accent: #a78bfa; }
+      .dcp-3:nth-child(4) { --genre-accent: #22c55e; }
+      .dcp-3:nth-child(5) { --genre-accent: #e879f9; }
+      .dcp-3:nth-child(6) { --genre-accent: #ef4444; }
+      .dc-preview .dcp-3:hover,
+      .dcp-3.s-hover {
+        border-color: var(--genre-accent);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -14px var(--genre-accent);
+      }
+      .dc-preview .dcp-3:active { transform: translateY(0) scale(0.97); }
+      .dcp-3.s-active {
+        background: rgba(167,139,250,0.22);
+        border-color: var(--genre-accent);
+        color: #fff;
+      }
+      .dcp-3.s-focus {
+        border-color: var(--genre-accent);
+        color: #fff;
+        outline: 2px solid rgba(167,139,250,0.55);
+        outline-offset: 2px;
+      }
+
+      .dcp-4 {
+        border-radius: 8px;
+        padding: 6px 4px;
+        background: transparent;
+        border-color: transparent;
+        color: #94a3b8;
+        box-shadow: inset 0 -1px 0 rgba(148,163,184,0.24);
+      }
+      .dc-preview .dcp-4:hover,
+      .dcp-4.s-hover {
+        color: #f8fafc;
+        transform: translateY(-1px);
+        box-shadow: inset 0 -2px 0 #facc15;
+      }
+      .dc-preview .dcp-4:active { transform: translateY(0); }
+      .dcp-4.s-active {
+        background: transparent;
+        border-color: transparent;
+        color: #facc15;
+        box-shadow: inset 0 -2px 0 #facc15;
+      }
+      .dcp-4.s-focus {
+        color: #f8fafc;
+        outline: 2px solid rgba(250,204,21,0.55);
+        outline-offset: 3px;
+      }
+
+      .dcp-5 {
+        background: rgba(2,6,23,0.8);
+        border-color: rgba(71,85,105,0.75);
+        color: #cbd5e1;
+        box-shadow: none;
+      }
+      .dc-preview .dcp-5:hover,
+      .dcp-5.s-hover {
+        background: rgba(15,23,42,0.95);
+        border-color: rgba(34,211,238,0.55);
+        color: #a5f3fc;
+        transform: none;
+        box-shadow: 0 0 0 1px rgba(34,211,238,0.16);
+      }
+      .dc-preview .dcp-5:active { transform: scale(0.97); }
+      .dcp-5.s-active {
+        background: #22d3ee;
+        border-color: #67e8f9;
+        color: #083344;
+        box-shadow: 0 0 0 3px rgba(34,211,238,0.18);
+      }
+      .dcp-5.s-active::after {
+        content: "✓";
+        margin-left: 7px;
+        font-weight: 900;
+      }
+      .dcp-5.s-focus {
+        border-color: #67e8f9;
+        color: #a5f3fc;
+        outline: 2px solid rgba(103,232,249,0.55);
+        outline-offset: 2px;
+      }
+
+      .dc-flow-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px;
+        margin-top: 24px;
+      }
+
+      .dc-flow {
+        background: #07101f;
+        border: 1px solid rgba(148,163,184,0.16);
+        border-radius: 18px;
+        overflow: hidden;
+      }
+
+      .dc-flow-head {
+        padding: 18px 18px 12px;
+        border-bottom: 1px solid rgba(148,163,184,0.1);
+      }
+
+      .dc-flow-kicker {
+        display: block;
+        color: #7dd3fc;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+
+      .dc-flow-title {
+        font-size: 18px;
+        line-height: 1.15;
+        margin: 0 0 5px;
+      }
+
+      .dc-flow-copy {
+        color: rgba(203,213,225,0.72);
+        font-size: 12px;
+        line-height: 1.45;
+        margin: 0;
+      }
+
+      .dc-flow-body {
+        padding: 16px 18px 18px;
+      }
+
+      .dc-flow-chiprow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .dc-flow-results {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .dc-flow-poster {
+        position: relative;
+        min-height: 142px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: linear-gradient(160deg, #1e293b, #020617);
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .dc-flow-poster::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 35%, rgba(2,6,23,0.88));
+      }
+
+      .dc-flow-poster span {
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        z-index: 1;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.1;
+      }
+
+      .dc-flow-poster.a { background: linear-gradient(160deg, #3b0764, #0f172a 70%); }
+      .dc-flow-poster.b { background: linear-gradient(160deg, #7f1d1d, #111827 68%); }
+      .dc-flow-poster.c { background: linear-gradient(160deg, #164e63, #020617 72%); }
+      .dc-flow-poster.d { background: linear-gradient(160deg, #422006, #111827 70%); }
+      .dc-flow-poster.e { background: linear-gradient(160deg, #312e81, #020617 74%); }
+      .dc-flow-poster.f { background: linear-gradient(160deg, #14532d, #0f172a 72%); }
+
+      .dc-count {
+        margin-left: 6px;
+        color: rgba(203,213,225,0.55);
+        font-weight: 800;
+      }
+
+      .dcp-1.s-active .dc-count,
+      .dcp-2.s-active .dc-count,
+      .dcp-5.s-active .dc-count {
+        color: currentColor;
+        opacity: 0.65;
+      }
+
+      .dc-flow-active-title {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .dc-flow-active-title strong {
+        font-size: 22px;
+        line-height: 1;
+      }
+
+      .dc-flow-active-title small {
+        color: rgba(203,213,225,0.58);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
     </style>
   </head>
   <body>
@@ -3060,6 +3487,7 @@
     </div>
 
     <div class="mockup-quick-nav">
+      <a class="mockup-quick-link" href="#mockup-discover-chips">Chips découvrir</a>
       <a class="mockup-quick-link" href="#mockup-icons">Icônes</a>
       <a class="mockup-quick-link" href="#mockup-logos">Logos</a>
       <a class="mockup-quick-link" href="#mockup-mobile-nav">Nav mobile</a>
@@ -3070,6 +3498,241 @@
       <a class="mockup-quick-link" href="#mockup-watched-cta">CTA Vu + note</a>
       <a class="mockup-quick-link" href="#mockup-under-hero">Sous le hero (refait)</a>
     </div>
+
+    <!-- CHIPS DÉCOUVRIR SECTION -->
+    <section id="mockup-discover-chips">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Découvrir</span>
+        <h3 class="mockup-subsection-title">5 directions pour les chips de genre</h3>
+        <p class="mockup-copy">Chaque carte compare Normal / Hover / Actif / Focus avec une zone interactive en haut pour sentir le rendu dans la section Découvrir.</p>
+      </div>
+
+      <div class="dc-section-grid">
+
+        <article class="dc-card">
+          <div class="dc-card-head">
+            <h4 class="dc-card-title">1 - Quiet Pills</h4>
+            <span class="dc-card-badge">compact</span>
+          </div>
+          <p class="dc-card-desc">Pastilles sobres et denses. Sélection très lisible en clair, utile si la ligne de genres doit rester calme.</p>
+          <div class="dc-preview">
+            <button class="dcp dcp-1">Action</button>
+            <button class="dcp dcp-1">Aventure</button>
+            <button class="dcp dcp-1 s-active">Thriller</button>
+            <button class="dcp dcp-1">Drame</button>
+            <button class="dcp dcp-1">SF</button>
+            <button class="dcp dcp-1">Horreur</button>
+          </div>
+          <div class="dc-spec">
+            <span class="dc-spec-label">Normal</span>
+            <button class="dcp dcp-1">Action</button>
+            <span class="dc-spec-label">Hover</span>
+            <button class="dcp dcp-1 s-hover">Action</button>
+            <span class="dc-spec-label">Actif</span>
+            <button class="dcp dcp-1 s-active">Action</button>
+            <span class="dc-spec-label">Focus</span>
+            <button class="dcp dcp-1 s-focus">Action</button>
+          </div>
+        </article>
+
+        <article class="dc-card">
+          <div class="dc-card-head">
+            <h4 class="dc-card-title">2 - Glass Select</h4>
+            <span class="dc-card-badge">premium</span>
+          </div>
+          <p class="dc-card-desc">Effet verre discret avec sélection lumineuse. Plus riche visuellement sans devenir trop décoratif.</p>
+          <div class="dc-preview">
+            <button class="dcp dcp-2">Action</button>
+            <button class="dcp dcp-2">Aventure</button>
+            <button class="dcp dcp-2 s-active">Thriller</button>
+            <button class="dcp dcp-2">Drame</button>
+            <button class="dcp dcp-2">SF</button>
+            <button class="dcp dcp-2">Horreur</button>
+          </div>
+          <div class="dc-spec">
+            <span class="dc-spec-label">Normal</span>
+            <button class="dcp dcp-2">Action</button>
+            <span class="dc-spec-label">Hover</span>
+            <button class="dcp dcp-2 s-hover">Action</button>
+            <span class="dc-spec-label">Actif</span>
+            <button class="dcp dcp-2 s-active">Action</button>
+            <span class="dc-spec-label">Focus</span>
+            <button class="dcp dcp-2 s-focus">Action</button>
+          </div>
+        </article>
+
+        <article class="dc-card">
+          <div class="dc-card-head">
+            <h4 class="dc-card-title">3 - Genre Signals</h4>
+            <span class="dc-card-badge">couleur</span>
+          </div>
+          <p class="dc-card-desc">Petit point colore par genre. Donne des reperes rapides sans transformer toute la barre en arc-en-ciel.</p>
+          <div class="dc-preview">
+            <button class="dcp dcp-3">Action</button>
+            <button class="dcp dcp-3">Aventure</button>
+            <button class="dcp dcp-3 s-active">Thriller</button>
+            <button class="dcp dcp-3">Drame</button>
+            <button class="dcp dcp-3">SF</button>
+            <button class="dcp dcp-3">Horreur</button>
+          </div>
+          <div class="dc-spec">
+            <span class="dc-spec-label">Normal</span>
+            <button class="dcp dcp-3">Action</button>
+            <span class="dc-spec-label">Hover</span>
+            <button class="dcp dcp-3 s-hover">Action</button>
+            <span class="dc-spec-label">Actif</span>
+            <button class="dcp dcp-3 s-active">Action</button>
+            <span class="dc-spec-label">Focus</span>
+            <button class="dcp dcp-3 s-focus">Action</button>
+          </div>
+        </article>
+
+        <article class="dc-card">
+          <div class="dc-card-head">
+            <h4 class="dc-card-title">4 - Editorial Underline</h4>
+            <span class="dc-card-badge">texte</span>
+          </div>
+          <p class="dc-card-desc">Moins bouton, plus navigation éditoriale. Idéal si Découvrir doit paraître plus magazine et moins filtre technique.</p>
+          <div class="dc-preview">
+            <button class="dcp dcp-4">Action</button>
+            <button class="dcp dcp-4">Aventure</button>
+            <button class="dcp dcp-4 s-active">Thriller</button>
+            <button class="dcp dcp-4">Drame</button>
+            <button class="dcp dcp-4">SF</button>
+            <button class="dcp dcp-4">Horreur</button>
+          </div>
+          <div class="dc-spec">
+            <span class="dc-spec-label">Normal</span>
+            <button class="dcp dcp-4">Action</button>
+            <span class="dc-spec-label">Hover</span>
+            <button class="dcp dcp-4 s-hover">Action</button>
+            <span class="dc-spec-label">Actif</span>
+            <button class="dcp dcp-4 s-active">Action</button>
+            <span class="dc-spec-label">Focus</span>
+            <button class="dcp dcp-4 s-focus">Action</button>
+          </div>
+        </article>
+
+        <article class="dc-card">
+          <div class="dc-card-head">
+            <h4 class="dc-card-title">5 - Selected Badge</h4>
+            <span class="dc-card-badge">affirme</span>
+          </div>
+          <p class="dc-card-desc">Sélection très visible avec coche. Pratique si on veut que le genre actif soit impossible à rater.</p>
+          <div class="dc-preview">
+            <button class="dcp dcp-5">Action</button>
+            <button class="dcp dcp-5">Aventure</button>
+            <button class="dcp dcp-5 s-active">Thriller</button>
+            <button class="dcp dcp-5">Drame</button>
+            <button class="dcp dcp-5">SF</button>
+            <button class="dcp dcp-5">Horreur</button>
+          </div>
+          <div class="dc-spec">
+            <span class="dc-spec-label">Normal</span>
+            <button class="dcp dcp-5">Action</button>
+            <span class="dc-spec-label">Hover</span>
+            <button class="dcp dcp-5 s-hover">Action</button>
+            <span class="dc-spec-label">Actif</span>
+            <button class="dcp dcp-5 s-active">Action</button>
+            <span class="dc-spec-label">Focus</span>
+            <button class="dcp dcp-5 s-focus">Action</button>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="dc-flow-grid">
+        <article class="dc-flow">
+          <div class="dc-flow-head">
+            <span class="dc-flow-kicker">Exemple A</span>
+            <h4 class="dc-flow-title">Genres classiques</h4>
+            <p class="dc-flow-copy">L'utilisateur choisit un genre TMDB. La chip active pilote la grille de résultats.</p>
+          </div>
+          <div class="dc-flow-body">
+            <div class="dc-flow-chiprow">
+              <button class="dcp dcp-1">Action</button>
+              <button class="dcp dcp-1 s-active">Thriller</button>
+              <button class="dcp dcp-1">Drame</button>
+              <button class="dcp dcp-1">SF</button>
+              <button class="dcp dcp-1">Horreur</button>
+            </div>
+            <div class="dc-flow-results">
+              <div class="dc-flow-poster a"><span>Night Run</span></div>
+              <div class="dc-flow-poster b"><span>Red Signal</span></div>
+              <div class="dc-flow-poster c"><span>Cold Case</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="dc-flow">
+          <div class="dc-flow-head">
+            <span class="dc-flow-kicker">Exemple B</span>
+            <h4 class="dc-flow-title">Moods humains</h4>
+            <p class="dc-flow-copy">Au lieu de demander un genre, on propose une intention: intense, facile, sombre, culte.</p>
+          </div>
+          <div class="dc-flow-body">
+            <div class="dc-flow-chiprow">
+              <button class="dcp dcp-2">Facile</button>
+              <button class="dcp dcp-2 s-active">Intense</button>
+              <button class="dcp dcp-2">Sombre</button>
+              <button class="dcp dcp-2">Court</button>
+              <button class="dcp dcp-2">Culte</button>
+            </div>
+            <div class="dc-flow-results">
+              <div class="dc-flow-poster d"><span>Pressure</span></div>
+              <div class="dc-flow-poster e"><span>Blackout</span></div>
+              <div class="dc-flow-poster b"><span>Last Hour</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="dc-flow">
+          <div class="dc-flow-head">
+            <span class="dc-flow-kicker">Exemple C</span>
+            <h4 class="dc-flow-title">Genres avec volume</h4>
+            <p class="dc-flow-copy">Les compteurs aident a comprendre ou il y a le plus de choix avant de cliquer.</p>
+          </div>
+          <div class="dc-flow-body">
+            <div class="dc-flow-chiprow">
+              <button class="dcp dcp-5">Action<span class="dc-count">42</span></button>
+              <button class="dcp dcp-5 s-active">Drame<span class="dc-count">31</span></button>
+              <button class="dcp dcp-5">SF<span class="dc-count">14</span></button>
+              <button class="dcp dcp-5">Comedie<span class="dc-count">26</span></button>
+            </div>
+            <div class="dc-flow-results">
+              <div class="dc-flow-poster f"><span>After Spring</span></div>
+              <div class="dc-flow-poster c"><span>Blue Room</span></div>
+              <div class="dc-flow-poster d"><span>The Visit</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="dc-flow">
+          <div class="dc-flow-head">
+            <span class="dc-flow-kicker">Exemple D</span>
+            <h4 class="dc-flow-title">Mode editorial</h4>
+            <p class="dc-flow-copy">Le genre actif devient presque un titre de rubrique, les autres genres restent secondaires.</p>
+          </div>
+          <div class="dc-flow-body">
+            <div class="dc-flow-active-title">
+              <strong>Science-fiction</strong>
+              <small>Populaire maintenant</small>
+            </div>
+            <div class="dc-flow-chiprow">
+              <button class="dcp dcp-4">Action</button>
+              <button class="dcp dcp-4">Thriller</button>
+              <button class="dcp dcp-4 s-active">SF</button>
+              <button class="dcp dcp-4">Animation</button>
+            </div>
+            <div class="dc-flow-results">
+              <div class="dc-flow-poster e"><span>Orbital</span></div>
+              <div class="dc-flow-poster a"><span>Signal 9</span></div>
+              <div class="dc-flow-poster c"><span>Europa</span></div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
 
     <!-- ICÔNES APP SECTION -->
     <section class="icon-mockup-section" id="mockup-icons">
@@ -3488,7 +4151,7 @@
                 <div class="bb-item active"><span class="bb-icon">▦</span><span>Collection</span></div>
                 <div class="bb-item"><span class="bb-icon">◎</span><span>Stats</span></div>
                 <div class="bb-item"><span class="bb-icon">☰</span><span>Listes</span></div>
-                <div class="bb-item"><span class="bb-icon">⌕</span><span>Decouvrir</span></div>
+                <div class="bb-item"><span class="bb-icon">⌕</span><span>Découvrir</span></div>
               </div>
             </div>
           </div>
@@ -3529,7 +4192,7 @@
                 <div class="bb-item active"><span class="bb-icon">▦</span><span>Collection</span></div>
                 <div class="bb-item"><span class="bb-icon">◎</span><span>Stats</span></div>
                 <div class="bb-item"><span class="bb-icon">☰</span><span>Listes</span></div>
-                <div class="bb-item"><span class="bb-icon">⌕</span><span>Decouvrir</span></div>
+                <div class="bb-item"><span class="bb-icon">⌕</span><span>Découvrir</span></div>
               </div>
             </div>
             <div class="bb-home-indicator dark"></div>
@@ -3606,7 +4269,7 @@
             </div>
           </div>
           <div class="bb-title">Option F — Thumb rail</div>
-          <p class="bb-copy">Pas une bottom bar: une navigation verticale au pouce. Plus audacieux, bon pour grands ecrans.</p>
+          <p class="bb-copy">Pas une bottom bar: une navigation verticale au pouce. Plus audacieux, bon pour grands écrans.</p>
         </article>
       </div>
     </section>
@@ -3769,7 +4432,7 @@
               <div class="hybrid-command">
                 <div>
                   <div class="hybrid-command-title">Ajouter</div>
-                  <div class="hybrid-command-sub">Film, serie, avis</div>
+                  <div class="hybrid-command-sub">Film, série, avis</div>
                 </div>
                 <div class="hybrid-mini-btn primary">+</div>
               </div>
@@ -3839,7 +4502,7 @@
             </div>
           </div>
           <div class="bb-title">V3 D — Context first</div>
-          <p class="bb-copy">La commande change selon l'ecran. Plus ambitieux, mais potentiellement tres utile.</p>
+          <p class="bb-copy">La commande change selon l'écran. Plus ambitieux, mais potentiellement très utile.</p>
         </article>
       </div>
     </section>
@@ -3897,7 +4560,7 @@
         <div class="apple-hig-notes">
           <strong>Principes suivis</strong>
           <ul>
-            <li>La tab bar sert a naviguer entre les sections principales, pas a declencher des actions.</li>
+            <li>La tab bar sert à naviguer entre les sections principales, pas à déclencher des actions.</li>
             <li>Chaque tab a un symbole et un label court.</li>
             <li>Cinq items maximum: Collection, Stats, Listes, Explorer, Search.</li>
             <li>Search est un item distinct en bout de barre, comme Apple le permet.</li>

@@ -37,14 +37,14 @@ Extensions recommandées :
 
 1. Créez un compte sur [themoviedb.org](https://www.themoviedb.org/signup)
 2. Demandez une clé API sur https://www.themoviedb.org/settings/api
-3. Créez `js/config.local.js` à partir de l'exemple ci-dessous et ajoutez-y votre clé TMDB. Ce fichier est ignoré par Git.
+3. Copiez `js/config.local.example.js` vers `js/config.local.js`, puis ajoutez-y votre clé TMDB. `js/config.local.js` est ignoré par Git.
 
 ```js
 if (typeof CONFIG !== "undefined") {
   CONFIG.TMDB_API_KEY = "votre_vraie_cle_ici";
 
-  // Optionnel: source plus fraiche pour les disponibilites plateformes.
-  // "tmdb" (defaut) | "hybrid" (TMDB + fallback externe) | "fresh" (externe prioritaire)
+  // Optionnel: source plus fraîche pour les disponibilités plateformes.
+  // "tmdb" (défaut) | "hybrid" (TMDB + fallback externe) | "fresh" (externe prioritaire)
   // CONFIG.AVAILABILITY_SOURCE = "hybrid";
   // CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE = "https://votre-proxy.example.com/availability/{mediaType}/{tmdbId}?country={country}";
   // CONFIG.FRESH_AVAILABILITY_API_KEY = "votre_cle_api";

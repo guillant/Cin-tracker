@@ -28,13 +28,13 @@ VS Code va vous proposer d'installer des extensions recommandées :
 
 **Vous avez déjà votre clé API ? Super !**
 
-1. Dans VS Code, créez le fichier `js/config.local.js`
-2. Ajoutez :
+1. Dans VS Code, copiez `js/config.local.example.js` vers `js/config.local.js`
+2. Remplacez la clé dans ce fichier :
    ```javascript
    if (typeof CONFIG !== "undefined") {
      CONFIG.TMDB_API_KEY = "votre_vraie_clé_ici";
 
-         // Optionnel: source plus fraiche pour les dispos plateformes
+         // Optionnel: source plus fraîche pour les dispos plateformes
          // CONFIG.AVAILABILITY_SOURCE = "hybrid"; // "tmdb" | "hybrid" | "fresh"
          // CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE = "https://votre-proxy.example.com/availability/{mediaType}/{tmdbId}?country={country}";
          // CONFIG.FRESH_AVAILABILITY_API_KEY = "votre_cle_api";
