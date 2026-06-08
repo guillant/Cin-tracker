@@ -2109,10 +2109,46 @@ function updateMobileNavGlider(preferredItem = null) {
   const w = Math.max(0, itemRect.width - horizontalInset * 2);
   const h = Math.max(0, itemRect.height - verticalInset * 2);
 
-  nav.style.setProperty("--mobile-glider-x", `${x}px`);
+  const previousX = Number(nav.dataset.mobileGliderX);
+  const previousW = Number(nav.dataset.mobileGliderW);
+  const hasPreviousPosition = Number.isFinite(previousX);
+
   nav.style.setProperty("--mobile-glider-y", `${y}px`);
-  nav.style.setProperty("--mobile-glider-w", `${w}px`);
   nav.style.setProperty("--mobile-glider-h", `${h}px`);
+
+  if (hasPreviousPosition) {
+    const delta = Math.abs(x - previousX);
+    const direction = x >= previousX ? 1 : -1;
+    const stretch = Math.min(18, Math.max(5, delta * 0.24));
+    const stretchScale = Math.min(1.22, 1 + delta / 280);
+    const shimmerShift = `${direction * Math.min(14, Math.max(4, delta / 6))}%`;
+    const stretchedX = x - stretch / 2;
+    const baseWidth = Number.isFinite(previousW) ? (previousW + w) / 2 : w;
+    const stretchedW = Math.max(baseWidth, w + stretch);
+
+    nav.style.setProperty("--mobile-glider-stretch", `${stretchScale}`);
+    nav.style.setProperty("--mobile-glider-shimmer", shimmerShift);
+    nav.style.setProperty("--mobile-glider-x", `${stretchedX}px`);
+    nav.style.setProperty("--mobile-glider-w", `${stretchedW}px`);
+
+    // Force style flush so the stretch frame is visible before settling.
+    glider.getBoundingClientRect();
+
+    requestAnimationFrame(() => {
+      nav.style.setProperty("--mobile-glider-stretch", "1");
+      nav.style.setProperty("--mobile-glider-shimmer", "0%");
+      nav.style.setProperty("--mobile-glider-x", `${x}px`);
+      nav.style.setProperty("--mobile-glider-w", `${w}px`);
+    });
+  } else {
+    nav.style.setProperty("--mobile-glider-stretch", "1");
+    nav.style.setProperty("--mobile-glider-shimmer", "0%");
+    nav.style.setProperty("--mobile-glider-x", `${x}px`);
+    nav.style.setProperty("--mobile-glider-w", `${w}px`);
+  }
+
+  nav.dataset.mobileGliderX = `${x}`;
+  nav.dataset.mobileGliderW = `${w}`;
   glider.style.opacity = "1";
 }
 
