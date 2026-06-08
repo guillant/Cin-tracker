@@ -2074,6 +2074,48 @@ function installPWA() {
   showToast("Installation non disponible dans ce navigateur");
 }
 
+function ensureMobileNavGlider(nav) {
+  let glider = nav.querySelector(".mobile-nav-glider");
+  if (glider) return glider;
+
+  glider = document.createElement("span");
+  glider.className = "mobile-nav-glider";
+  glider.setAttribute("aria-hidden", "true");
+  nav.insertBefore(glider, nav.firstChild);
+  return glider;
+}
+
+function updateMobileNavGlider(preferredItem = null) {
+  const nav = document.querySelector(".mobile-bottom-nav");
+  if (!nav) return;
+
+  const glider = ensureMobileNavGlider(nav);
+  const activeItem =
+    preferredItem && preferredItem.classList?.contains("mobile-nav-item")
+      ? preferredItem
+      : nav.querySelector(".mobile-nav-item.active");
+
+  if (!activeItem) {
+    glider.style.opacity = "0";
+    return;
+  }
+
+  const navRect = nav.getBoundingClientRect();
+  const itemRect = activeItem.getBoundingClientRect();
+  const horizontalInset = 3;
+  const verticalInset = 3;
+  const x = itemRect.left - navRect.left + horizontalInset;
+  const y = itemRect.top - navRect.top + verticalInset;
+  const w = Math.max(0, itemRect.width - horizontalInset * 2);
+  const h = Math.max(0, itemRect.height - verticalInset * 2);
+
+  nav.style.setProperty("--mobile-glider-x", `${x}px`);
+  nav.style.setProperty("--mobile-glider-y", `${y}px`);
+  nav.style.setProperty("--mobile-glider-w", `${w}px`);
+  nav.style.setProperty("--mobile-glider-h", `${h}px`);
+  glider.style.opacity = "1";
+}
+
 function switchTab(tabName, element) {
   document
     .querySelectorAll(".nav-item, .mobile-nav-item")
@@ -2086,6 +2128,12 @@ function switchTab(tabName, element) {
     .querySelectorAll(`[data-tab="${tabName}"]`)
     .forEach((item) => item.classList.add("active"));
   if (element) element.classList.add("active");
+
+  const activeMobileItem = document.querySelector(
+    `.mobile-nav-item[data-tab="${tabName}"]`,
+  );
+  requestAnimationFrame(() => updateMobileNavGlider(activeMobileItem));
+
   document.getElementById(tabName + "Section").classList.add("active");
   closeMobileActionsMenu();
 
@@ -9916,6 +9964,8 @@ window.addEventListener("click", function (e) {
 updateInstallButtonVisibility();
 registerServiceWorker();
 window.addEventListener("hashchange", applyLaunchActionFromHash);
+window.addEventListener("resize", () => updateMobileNavGlider());
+window.addEventListener("orientationchange", () => updateMobileNavGlider());
 
 // Expose public actions for inline handlers used in index.html
 window.app = {
@@ -10085,6 +10135,7 @@ async function checkWatchedSeriesForNewSeasons() {
 sanitizeImportedSystemTags();
 renderItems();
 applyLaunchActionFromHash();
+requestAnimationFrame(() => updateMobileNavGlider());
 repairExistingLetterboxdImports();
 window.addEventListener("load", () => {
   setTimeout(() => {
