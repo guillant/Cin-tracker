@@ -9951,7 +9951,9 @@ header {
   }
 
   .mobile-nav-search {
-    color: rgba(10, 132, 255, 0.86);
+    margin-left: 5px;
+    padding-left: 4px;
+    color: inherit;
   }
 
   .mobile-nav-icon {
