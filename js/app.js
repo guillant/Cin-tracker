@@ -5708,12 +5708,22 @@ function buildCollectionQuickBar(item) {
   return `<div class="detail-action-bar">${buttons.join("")}</div>`;
 }
 
+function buildCollectionMoviePrimaryActionBar(item) {
+  const watchedActionLabel = getWatchedRatingActionLabel(item);
+  const watchedActionIcon = getWatchedRatingActionIcon(item);
+
+  return `
+      <div class="detail-action-bar detail-action-bar-priority detail-action-bar-priority-minimal">
+        <button class="btn btn-primary detail-action-primary-a" onclick="openWatchedFlowForCurrentItem()"><span class="detail-action-primary-icon">${watchedActionIcon}</span><span>${watchedActionLabel}</span></button>
+        <button class="btn detail-action-danger" onclick="deleteItem()">Supprimer</button>
+      </div>`;
+}
+
 function buildTrendingQuickBar(item, type, alreadyAdded) {
   if (alreadyAdded) {
-    return `<div class="detail-action-bar">
-      <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="openCollectionDetailFromTmdbId(${item.id})">Ouvrir dans la collection</button>
-      <button class="btn" style="flex:1;justify-content:center;" onclick="openCollectionEditFromTmdbId(${item.id})">Modifier</button>
-    </div>`;
+    return alreadyAdded.type === "movie"
+      ? buildCollectionMoviePrimaryActionBar(alreadyAdded)
+      : buildCollectionQuickBar(alreadyAdded);
   }
   return `<div class="detail-action-bar">
     <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="quickAddFromTrendingById(${item.id}, 'towatch', '${type}')">+ Ajouter</button>
@@ -5897,9 +5907,6 @@ async function openWatchedFlowFromTrendingById(id, type = null) {
 function buildDetailHTML(item, tmdb) {
   if (item.type === "series") return buildSeriesDetailHTML(item, tmdb);
 
-  const watchedActionLabel = getWatchedRatingActionLabel(item);
-  const watchedActionIcon = getWatchedRatingActionIcon(item);
-
   const backdropUrl = tmdb?.backdrop_path
     ? `https://image.tmdb.org/t/p/w1280${tmdb.backdrop_path}`
     : null;
@@ -5954,10 +5961,7 @@ function buildDetailHTML(item, tmdb) {
         providerLogo: item.providerLogo || null,
         providerName: item.providerName || null,
       })}
-      <div class="detail-action-bar detail-action-bar-priority detail-action-bar-priority-minimal">
-        <button class="btn btn-primary detail-action-primary-a" onclick="openWatchedFlowForCurrentItem()"><span class="detail-action-primary-icon">${watchedActionIcon}</span><span>${watchedActionLabel}</span></button>
-        <button class="btn detail-action-danger" onclick="deleteItem()">Supprimer</button>
-      </div>
+      ${buildCollectionMoviePrimaryActionBar(item)}
       <div class="detail-stream-panel detail-stream-panel-info">
         <div class="sd-section-title">Informations</div>
         ${buildDetailInfoRow("Année", escapeHtml(item.year) || "—")}
@@ -9093,6 +9097,7 @@ function buildTrendingDetailHTML(item, type, tmdb) {
   const alreadyAdded = items.find((i) =>
     isSameTmdbCollectionItem(i, item.id, type),
   );
+  currentItemId = alreadyAdded?.id || null;
 
   const backdropUrl = tmdb?.backdrop_path
     ? `https://image.tmdb.org/t/p/w1280${tmdb.backdrop_path}`
