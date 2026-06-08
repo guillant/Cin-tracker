@@ -2008,6 +2008,646 @@
         grid-template-columns: 1fr;
       }
 
+      .lg-v4-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 18px;
+      }
+
+      .lg-v4-phone {
+        position: relative;
+        height: 390px;
+        border-radius: 30px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.16);
+        background:
+          radial-gradient(circle at 18% 10%, rgba(56,189,248,0.26), transparent 36%),
+          radial-gradient(circle at 80% 0%, rgba(16,185,129,0.2), transparent 32%),
+          linear-gradient(165deg, #0a1222 0%, #05070d 72%);
+      }
+
+      .lg-v4-content {
+        padding: 18px 16px;
+      }
+
+      .lg-v4-dock {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .lg-v4-command {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 10px 10px 12px;
+        border-radius: 20px;
+        border: 1px solid rgba(148,163,184,0.28);
+        background:
+          linear-gradient(180deg, rgba(248,250,252,0.18), rgba(248,250,252,0.06));
+        box-shadow: 0 18px 36px rgba(2,6,23,0.52), inset 0 1px 0 rgba(255,255,255,0.24);
+        backdrop-filter: blur(24px) saturate(1.3);
+      }
+
+      .lg-v4-command strong {
+        display: block;
+        color: #f8fafc;
+        font-size: 12px;
+        line-height: 1.1;
+      }
+
+      .lg-v4-command span {
+        color: rgba(203,213,225,0.82);
+        font-size: 10px;
+      }
+
+      .lg-v4-mini {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(248,250,252,0.12);
+        border: 1px solid rgba(248,250,252,0.2);
+        color: #e2e8f0;
+      }
+
+      .lg-v4-mini.primary {
+        background: #f8fafc;
+        color: #0f172a;
+        font-size: 20px;
+        font-weight: 900;
+      }
+
+      .lg-v4-tabs {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+        padding: 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,0.22);
+        background: rgba(5,7,13,0.72);
+        box-shadow: 0 12px 26px rgba(2,6,23,0.4);
+        backdrop-filter: blur(22px);
+      }
+
+      .lg-v4-tab {
+        padding: 8px 6px;
+        border-radius: 999px;
+        text-align: center;
+        color: rgba(203,213,225,0.82);
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .lg-v4-tab.active {
+        color: #0f172a;
+        background: linear-gradient(135deg, #f8fafc 0%, #dbeafe 100%);
+      }
+
+      .lg-v4-tabs.icons .lg-v4-tab {
+        font-size: 15px;
+        padding: 7px 0;
+      }
+
+      .lg-v4-orbit {
+        position: absolute;
+        left: 50%;
+        bottom: 18px;
+        width: 240px;
+        height: 80px;
+        transform: translateX(-50%);
+      }
+
+      .lg-v4-orbit-core {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 60px;
+        height: 60px;
+        border-radius: 22px;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-size: 28px;
+        background: linear-gradient(145deg, #06b6d4, #2563eb 58%, #0f172a);
+        border: 1px solid rgba(186,230,253,0.38);
+        box-shadow: 0 20px 38px rgba(37,99,235,0.46), inset 0 1px 0 rgba(255,255,255,0.24);
+      }
+
+      .lg-v4-orbit-item {
+        position: absolute;
+        top: 50%;
+        width: 42px;
+        height: 42px;
+        border-radius: 16px;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(226,232,240,0.9);
+        border: 1px solid rgba(148,163,184,0.22);
+        background: rgba(248,250,252,0.1);
+        backdrop-filter: blur(20px);
+      }
+
+      .lg-v4-orbit-item.a { left: 0; }
+      .lg-v4-orbit-item.b { left: 52px; }
+      .lg-v4-orbit-item.c { right: 52px; }
+      .lg-v4-orbit-item.d { right: 0; }
+
+      .lg-v4-rail-wrap {
+        position: absolute;
+        right: 12px;
+        top: 86px;
+        bottom: 18px;
+        width: 60px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 7px;
+        border: 1px solid rgba(148,163,184,0.24);
+        border-radius: 26px;
+        background: rgba(5,7,13,0.7);
+        box-shadow: 0 20px 40px rgba(2,6,23,0.52), inset 0 1px 0 rgba(255,255,255,0.08);
+        backdrop-filter: blur(22px) saturate(1.2);
+      }
+
+      .lg-v4-rail-item {
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(203,213,225,0.82);
+      }
+
+      .lg-v4-rail-item.active {
+        color: #0f172a;
+        background: linear-gradient(145deg, #e0f2fe, #bfdbfe);
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.22) inset;
+      }
+
+      .lg-v4-rail-item.add {
+        color: #ffffff;
+        font-size: 22px;
+        background: linear-gradient(145deg, #2563eb, #0ea5e9);
+        box-shadow: 0 14px 28px rgba(37,99,235,0.42);
+      }
+
+      .lg-v4-rail-spacer {
+        flex: 1;
+      }
+
+      .lg-v5-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 18px;
+      }
+
+      .lg-v5-phone {
+        position: relative;
+        height: 400px;
+        border-radius: 30px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.18);
+      }
+
+      .lg-v5-phone.ios {
+        background:
+          radial-gradient(circle at 20% 8%, rgba(255,255,255,0.52), transparent 38%),
+          radial-gradient(circle at 80% 6%, rgba(186,230,253,0.54), transparent 34%),
+          linear-gradient(165deg, #edf4ff 0%, #dbeafe 54%, #c7d2fe 100%);
+      }
+
+      .lg-v5-phone.cinema {
+        background:
+          radial-gradient(circle at 12% 10%, rgba(15,118,110,0.36), transparent 36%),
+          radial-gradient(circle at 82% 0%, rgba(14,116,144,0.28), transparent 34%),
+          linear-gradient(165deg, #05070f 0%, #020617 54%, #0b1220 100%);
+      }
+
+      .lg-v5-content {
+        padding: 18px 16px;
+      }
+
+      .lg-v5-line {
+        height: 10px;
+        border-radius: 999px;
+        margin-bottom: 10px;
+      }
+
+      .lg-v5-phone.ios .lg-v5-line {
+        background: rgba(15,23,42,0.14);
+      }
+
+      .lg-v5-phone.cinema .lg-v5-line {
+        background: rgba(226,232,240,0.1);
+      }
+
+      .lg-v5-line.short { width: 56%; }
+      .lg-v5-line.mid { width: 74%; }
+
+      .lg-v5-shell {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        padding: 6px;
+        border-radius: 28px;
+        overflow: hidden;
+        isolation: isolate;
+      }
+
+      .lg-v5-phone.ios .lg-v5-shell {
+        border: 1px solid rgba(148,163,184,0.22);
+        background: linear-gradient(180deg, rgba(255,255,255,0.52), rgba(255,255,255,0.3));
+        box-shadow: 0 10px 24px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.72);
+        backdrop-filter: blur(24px) saturate(1.22);
+      }
+
+      .lg-v5-phone.cinema .lg-v5-shell {
+        border: 1px solid rgba(148,163,184,0.2);
+        background: linear-gradient(180deg, rgba(248,250,252,0.13), rgba(248,250,252,0.05));
+        box-shadow: 0 12px 30px rgba(2,6,23,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
+        backdrop-filter: blur(24px) saturate(1.2);
+      }
+
+      .lg-v5-shell::before {
+        content: "";
+        position: absolute;
+        top: -40%;
+        left: -35%;
+        width: 70%;
+        height: 180%;
+        background: linear-gradient(110deg, transparent, rgba(255,255,255,0.5), transparent);
+        transform: rotate(12deg);
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.22;
+      }
+
+      .lg-v5-shell > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .lg-v5-tabs {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 2px;
+        min-height: 62px;
+        padding: 2px;
+        border-radius: 22px;
+      }
+
+      .lg-v5-tab {
+        position: relative;
+        display: grid;
+        place-items: center;
+        gap: 3px;
+        min-width: 0;
+        padding: 7px 4px 6px;
+        border-radius: 14px;
+        font-family: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 10px;
+        font-weight: 590;
+        line-height: 1;
+      }
+
+      .lg-v5-tab-symbol {
+        width: 23px;
+        height: 23px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .lg-v5-tab-symbol svg {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .lg-v5-phone.ios .lg-v5-tab {
+        color: rgba(51,65,85,0.78);
+      }
+
+      .lg-v5-phone.cinema .lg-v5-tab {
+        color: rgba(203,213,225,0.86);
+      }
+
+      .lg-v5-phone.ios .lg-v5-tab.active {
+        color: #0a84ff;
+      }
+
+      .lg-v5-phone.ios .lg-v5-tab.active .lg-v5-tab-symbol {
+        background: rgba(10,132,255,0.14);
+        box-shadow: none;
+      }
+
+      .lg-v5-phone.ios .lg-v5-tab.active .lg-v5-tab-symbol svg {
+        stroke-width: 2.1;
+      }
+
+      .lg-v5-phone.cinema .lg-v5-tab.active {
+        color: #7dd3fc;
+      }
+
+      .lg-v5-phone.cinema .lg-v5-tab.active .lg-v5-tab-symbol {
+        color: #7dd3fc;
+        background: rgba(125,211,252,0.14);
+        box-shadow: none;
+      }
+
+      .lg-v5-phone.cinema .lg-v5-tab.active .lg-v5-tab-symbol svg {
+        stroke-width: 2.1;
+      }
+
+      .lg-v5-tab.search {
+        margin-left: 5px;
+        padding-left: 4px;
+      }
+
+      .lg-v5-tab span:last-child {
+        letter-spacing: 0;
+      }
+
+      .lg-v5-phone.cinema .lg-v5-tab.search {
+        margin-left: 5px;
+      }
+
+      .lg-v5-tab-badge {
+        position: absolute;
+        top: 6px;
+        right: 12px;
+        min-width: 14px;
+        height: 14px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: #ff3b30;
+        color: #fff;
+        font-size: 8px;
+        font-weight: 900;
+        line-height: 14px;
+        text-align: center;
+      }
+
+      .lg-v5-home-indicator {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 5px;
+        width: 116px;
+        height: 4px;
+        border-radius: 999px;
+        opacity: 0.72;
+      }
+
+      .lg-v5-phone.ios .lg-v5-home-indicator {
+        background: rgba(30,41,59,0.34);
+      }
+
+      .lg-v5-phone.cinema .lg-v5-home-indicator {
+        background: rgba(226,232,240,0.64);
+      }
+
+      @keyframes lgSweep {
+        0%, 100% {
+          transform: translateX(-8%) rotate(12deg);
+          opacity: 0.38;
+        }
+        50% {
+          transform: translateX(72%) rotate(12deg);
+          opacity: 0.64;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .lg-v5-shell::before,
+        .lg-v5-shell:hover::before {
+          animation: none;
+        }
+      }
+
+      .lg-strict-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 18px;
+      }
+
+      .lg-strict-phone {
+        position: relative;
+        height: 400px;
+        border-radius: 30px;
+        overflow: hidden;
+        border: 1px solid rgba(148,163,184,0.24);
+      }
+
+      .lg-strict-phone.light {
+        background: linear-gradient(170deg, #f8fafc 0%, #e2e8f0 100%);
+      }
+
+      .lg-strict-phone.dark {
+        background: linear-gradient(170deg, #0b1220 0%, #020617 100%);
+      }
+
+      .lg-strict-content {
+        padding: 18px 16px;
+      }
+
+      .lg-strict-line {
+        height: 10px;
+        border-radius: 999px;
+        margin-bottom: 10px;
+      }
+
+      .lg-strict-phone.light .lg-strict-line {
+        background: rgba(15,23,42,0.14);
+      }
+
+      .lg-strict-phone.dark .lg-strict-line {
+        background: rgba(226,232,240,0.1);
+      }
+
+      .lg-strict-line.short { width: 56%; }
+      .lg-strict-line.mid { width: 74%; }
+
+      .lg-strict-tabbar {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 2px;
+        min-height: 62px;
+        padding: 6px 6px 8px;
+        border-radius: 26px;
+        backdrop-filter: blur(26px) saturate(1.2);
+        -webkit-backdrop-filter: blur(26px) saturate(1.2);
+      }
+
+      .lg-strict-phone.light .lg-strict-tabbar {
+        border: 1px solid rgba(148,163,184,0.24);
+        background: linear-gradient(180deg, rgba(255,255,255,0.58), rgba(255,255,255,0.32));
+        box-shadow: 0 10px 24px rgba(15,23,42,0.16), inset 0 1px 0 rgba(255,255,255,0.7);
+      }
+
+      .lg-strict-phone.dark .lg-strict-tabbar {
+        border: 1px solid rgba(148,163,184,0.22);
+        background: linear-gradient(180deg, rgba(248,250,252,0.14), rgba(248,250,252,0.05));
+        box-shadow: 0 12px 28px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.12);
+      }
+
+      .lg-strict-tabbar.compact {
+        min-height: 58px;
+        padding: 4px 5px 6px;
+      }
+
+      .lg-strict-tabbar.compact .lg-strict-tab {
+        padding: 6px 3px 5px;
+        font-size: 9px;
+      }
+
+      .lg-strict-tabbar.compact .lg-strict-tab-symbol {
+        width: 21px;
+        height: 21px;
+      }
+
+      .lg-strict-tabbar.compact .lg-strict-tab-symbol svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .lg-strict-phone.dark .lg-strict-tabbar.contrast {
+        border-color: rgba(226,232,240,0.34);
+        background: linear-gradient(180deg, rgba(15,23,42,0.72), rgba(15,23,42,0.58));
+      }
+
+      .lg-strict-phone.dark .lg-strict-tabbar.contrast .lg-strict-tab {
+        color: rgba(226,232,240,0.95);
+      }
+
+      .lg-strict-phone.dark .lg-strict-tabbar.contrast .lg-strict-tab.active {
+        color: #38bdf8;
+      }
+
+      .lg-strict-phone.dark .lg-strict-tabbar.contrast .lg-strict-tab.active .lg-strict-tab-symbol {
+        background: rgba(56,189,248,0.2);
+      }
+
+      .lg-strict-tab {
+        position: relative;
+        display: grid;
+        place-items: center;
+        gap: 3px;
+        min-width: 0;
+        padding: 7px 4px 6px;
+        border-radius: 14px;
+        font-family: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 10px;
+        font-weight: 590;
+        line-height: 1;
+      }
+
+      .lg-strict-tab-symbol {
+        width: 23px;
+        height: 23px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .lg-strict-tab-symbol svg {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .lg-strict-phone.light .lg-strict-tab {
+        color: rgba(51,65,85,0.8);
+      }
+
+      .lg-strict-phone.dark .lg-strict-tab {
+        color: rgba(203,213,225,0.84);
+      }
+
+      .lg-strict-phone.light .lg-strict-tab.active {
+        color: #0a84ff;
+      }
+
+      .lg-strict-phone.light .lg-strict-tab.active .lg-strict-tab-symbol {
+        background: rgba(10,132,255,0.14);
+      }
+
+      .lg-strict-phone.dark .lg-strict-tab.active {
+        color: #7dd3fc;
+      }
+
+      .lg-strict-phone.dark .lg-strict-tab.active .lg-strict-tab-symbol {
+        background: rgba(125,211,252,0.14);
+      }
+
+      .lg-strict-tab.search {
+        margin-left: 5px;
+        padding-left: 4px;
+      }
+
+      .lg-strict-tab-badge {
+        position: absolute;
+        top: 6px;
+        right: 12px;
+        min-width: 14px;
+        height: 14px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: #ff3b30;
+        color: #fff;
+        font-size: 8px;
+        font-weight: 900;
+        line-height: 14px;
+        text-align: center;
+      }
+
+      .lg-strict-home {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 5px;
+        width: 116px;
+        height: 4px;
+        border-radius: 999px;
+        opacity: 0.7;
+      }
+
+      .lg-strict-phone.light .lg-strict-home {
+        background: rgba(30,41,59,0.34);
+      }
+
+      .lg-strict-phone.dark .lg-strict-home {
+        background: rgba(226,232,240,0.62);
+      }
+
       .hybrid-actions-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -5568,7 +6208,7 @@
                 <div class="bb-item"><span class="bb-icon">◎</span><span>Stats</span></div>
                 <div class="bb-item add"><span class="bb-icon">+</span><span>Ajouter</span></div>
                 <div class="bb-item"><span class="bb-icon">☰</span><span>Listes</span></div>
-                <div class="bb-item"><span class="bb-icon">⌕</span><span>Explore</span></div>
+                <div class="bb-item"><span class="bb-icon">⌕</span><span>Découvrir</span></div>
               </div>
             </div>
           </div>
@@ -5610,7 +6250,7 @@
                 <div class="bb-item active"><span class="bb-icon">▦</span><span>Collection</span></div>
                 <div class="bb-item"><span class="bb-icon">◎</span><span>Stats</span></div>
                 <div class="bb-item"><span class="bb-icon">☰</span><span>Listes</span></div>
-                <div class="bb-item"><span class="bb-icon">⌕</span><span>Explore</span></div>
+                <div class="bb-item"><span class="bb-icon">⌕</span><span>Découvrir</span></div>
               </div>
             </div>
           </div>
@@ -5639,7 +6279,7 @@
                   <div class="bb-item active"><span class="bb-icon">▦</span><span>Collec.</span></div>
                   <div class="bb-item"><span class="bb-icon">◎</span><span>Stats</span></div>
                   <div class="bb-item"><span class="bb-icon">☰</span><span>Listes</span></div>
-                  <div class="bb-item"><span class="bb-icon">⌕</span><span>Explore</span></div>
+                  <div class="bb-item"><span class="bb-icon">⌕</span><span>Découvrir</span></div>
                 </div>
               </div>
             </div>
@@ -5765,7 +6405,7 @@
                 <div class="scroll-tab active">Collection</div>
                 <div class="scroll-tab">Stats</div>
                 <div class="scroll-tab">Listes</div>
-                <div class="scroll-tab">Explore</div>
+                <div class="scroll-tab">Découvrir</div>
               </div>
             </div>
           </div>
@@ -5809,7 +6449,7 @@
                 <div class="hybrid-tab active">Collection</div>
                 <div class="hybrid-tab">Stats</div>
                 <div class="hybrid-tab">Listes</div>
-                <div class="hybrid-tab">Explore</div>
+                <div class="hybrid-tab">Découvrir</div>
               </div>
             </div>
           </div>
@@ -5865,7 +6505,7 @@
                 <div class="hybrid-tab active">Collection</div>
                 <div class="hybrid-tab">Stats</div>
                 <div class="hybrid-tab">Listes</div>
-                <div class="hybrid-tab">Explore</div>
+                <div class="hybrid-tab">Découvrir</div>
               </div>
             </div>
           </div>
@@ -5885,7 +6525,7 @@
                 <div class="hybrid-tab active">Collection</div>
                 <div class="hybrid-tab">Stats</div>
                 <div class="hybrid-tab">Listes</div>
-                <div class="hybrid-tab">Explore</div>
+                <div class="hybrid-tab">Découvrir</div>
               </div>
               <div class="hybrid-command">
                 <div>
@@ -5899,6 +6539,235 @@
           </div>
           <div class="bb-title">V3 D — Context first</div>
           <p class="bb-copy">La commande change selon l'écran. Plus ambitieux, mais potentiellement très utile.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="mockup-mobile-nav-liquid-glass">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Navigation mobile V4</span>
+        <h3 class="mockup-subsection-title">Direction Liquid Glass pour la barre du bas</h3>
+        <p class="mockup-copy">Maquettes uniquement: reflets, profondeur, matiere translucide et actions plus organiques sans modifier l'app en production.</p>
+      </div>
+
+      <div class="lg-v4-grid">
+        <article class="navnext-card">
+          <div class="lg-v4-phone">
+            <div class="lg-v4-content">
+              <div class="navnext-line short"></div>
+              <div class="navnext-poster-row">
+                <div class="navnext-poster"></div>
+                <div>
+                  <div class="navnext-line"></div>
+                  <div class="navnext-line mid"></div>
+                  <div class="navnext-line short"></div>
+                </div>
+              </div>
+            </div>
+            <div class="lg-v4-dock">
+              <div class="lg-v4-command">
+                <div>
+                  <strong>Collection active</strong>
+                  <span>Ajouter un titre ou lancer une suggestion</span>
+                </div>
+                <div class="lg-v4-mini">⌕</div>
+                <div class="lg-v4-mini primary">+</div>
+              </div>
+              <div class="lg-v4-tabs">
+                <div class="lg-v4-tab active">Collection</div>
+                <div class="lg-v4-tab">Stats</div>
+                <div class="lg-v4-tab">Listes</div>
+                <div class="lg-v4-tab">Découvrir</div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">V4 A — Liquid Dock</div>
+          <p class="bb-copy">La piste la plus exploitable: command bar vitree + tabs lisibles en dessous.</p>
+        </article>
+
+        <article class="navnext-card">
+          <div class="lg-v4-phone">
+            <div class="lg-v4-content">
+              <div class="navnext-line"></div>
+              <div class="navnext-line mid"></div>
+              <div class="navnext-poster"></div>
+            </div>
+            <div class="lg-v4-orbit">
+              <div class="lg-v4-orbit-item a">▦</div>
+              <div class="lg-v4-orbit-item b">◎</div>
+              <div class="lg-v4-orbit-core">+</div>
+              <div class="lg-v4-orbit-item c">☰</div>
+              <div class="lg-v4-orbit-item d">⌕</div>
+            </div>
+          </div>
+          <div class="bb-title">V4 B — Liquid Orbit</div>
+          <p class="bb-copy">Version plus expressive: action centrale lumineuse et destinations en orbite translucide.</p>
+        </article>
+
+        <article class="navnext-card">
+          <div class="lg-v4-phone">
+            <div class="lg-v4-content" style="padding-right:94px;">
+              <div class="navnext-line mid"></div>
+              <div class="navnext-line"></div>
+              <div class="navnext-poster"></div>
+            </div>
+            <div class="lg-v4-rail-wrap">
+              <div class="lg-v4-rail-item active">▦</div>
+              <div class="lg-v4-rail-item">◎</div>
+              <div class="lg-v4-rail-item">☰</div>
+              <div class="lg-v4-rail-item">⌕</div>
+              <div class="lg-v4-rail-spacer"></div>
+              <div class="lg-v4-rail-item add">+</div>
+            </div>
+            <div class="lg-v4-dock">
+              <div class="lg-v4-tabs icons">
+                <div class="lg-v4-tab active">▦</div>
+                <div class="lg-v4-tab">◎</div>
+                <div class="lg-v4-tab">☰</div>
+                <div class="lg-v4-tab">⌕</div>
+              </div>
+            </div>
+          </div>
+          <div class="bb-title">V4 C — Hybrid Rail</div>
+          <p class="bb-copy">Barre basse plus compacte avec rail lateral contextuel pour les grands ecrans mobiles.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="mockup-mobile-nav-liquid-glass-v5">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Navigation mobile V5</span>
+        <h3 class="mockup-subsection-title">Liquid Glass anime: Ultra iOS vs Cine premium</h3>
+        <p class="mockup-copy">Deux directions nettes avec animation: iOS tres clair et soft, ou ambiance cinema plus sombre et dramatique.</p>
+      </div>
+
+      <div class="lg-v5-grid">
+        <article class="navnext-card">
+          <div class="lg-v5-phone ios">
+            <div class="lg-v5-content">
+              <div class="lg-v5-line short"></div>
+              <div class="lg-v5-line"></div>
+              <div class="lg-v5-line mid"></div>
+              <div class="navnext-poster-row">
+                <div class="navnext-poster"></div>
+                <div>
+                  <div class="lg-v5-line"></div>
+                  <div class="lg-v5-line short"></div>
+                </div>
+              </div>
+            </div>
+            <div class="lg-v5-shell">
+              <div class="lg-v5-tabs">
+                <div class="lg-v5-tab active"><span class="lg-v5-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg></span><span>Collection</span></div>
+                <div class="lg-v5-tab"><span class="lg-v5-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9l7.2 4.2"></path><circle cx="12" cy="12" r="8"></circle></svg></span><span>Stats</span></div>
+                <div class="lg-v5-tab"><span class="lg-v5-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12"></path><path d="M6 12h12"></path><path d="M6 17h12"></path></svg></span><span>Listes</span></div>
+                <div class="lg-v5-tab"><span class="lg-v5-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.6 5.4L20 12l-5.4 2.6L12 20l-2.6-5.4L4 12l5.4-2.6z"></path></svg></span><span>Découvrir</span><span class="lg-v5-tab-badge">2</span></div>
+                <div class="lg-v5-tab search"><span class="lg-v5-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.2"></circle><path d="M16 16l4 4"></path></svg></span><span>Recherche</span></div>
+              </div>
+            </div>
+            <div class="lg-v5-home-indicator"></div>
+          </div>
+          <div class="bb-title">V5 A - Ultra iOS</div>
+          <p class="bb-copy">Version plus proche du systeme: une seule couche de verre, contraste doux et selection couleur system.</p>
+        </article>
+
+        <article class="navnext-card">
+          <div class="lg-v5-phone cinema">
+            <div class="lg-v5-content">
+              <div class="lg-v5-line mid"></div>
+              <div class="lg-v5-line"></div>
+              <div class="lg-v5-line short"></div>
+              <div class="navnext-poster-row">
+                <div class="navnext-poster"></div>
+                <div>
+                  <div class="lg-v5-line"></div>
+                  <div class="lg-v5-line mid"></div>
+                </div>
+              </div>
+            </div>
+            <div class="lg-v5-shell">
+              <div class="lg-v5-tabs">
+                <div class="lg-v5-tab"><span class="lg-v5-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg></span><span>Collection</span></div>
+                <div class="lg-v5-tab"><span class="lg-v5-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9l7.2 4.2"></path><circle cx="12" cy="12" r="8"></circle></svg></span><span>Stats</span></div>
+                <div class="lg-v5-tab"><span class="lg-v5-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12"></path><path d="M6 12h12"></path><path d="M6 17h12"></path></svg></span><span>Listes</span></div>
+                <div class="lg-v5-tab active"><span class="lg-v5-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.6 5.4L20 12l-5.4 2.6L12 20l-2.6-5.4L4 12l5.4-2.6z"></path></svg></span><span>Découvrir</span><span class="lg-v5-tab-badge">2</span></div>
+                <div class="lg-v5-tab search"><span class="lg-v5-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.2"></circle><path d="M16 16l4 4"></path></svg></span><span>Recherche</span></div>
+              </div>
+            </div>
+            <div class="lg-v5-home-indicator"></div>
+          </div>
+          <div class="bb-title">V5 B - Cine premium</div>
+          <p class="bb-copy">Meme structure systeme avec une tonalite plus cinema, sans casser la logique native de la tab bar.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="mockup-mobile-nav-liquid-glass-strict">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Navigation mobile V6</span>
+        <h3 class="mockup-subsection-title">Strict clone tab bar iOS Liquid Glass</h3>
+        <p class="mockup-copy">Version de reference ultra stricte: navigation pure, 5 onglets, search trailing, style systeme sans interpretation.</p>
+      </div>
+
+      <div class="lg-strict-grid">
+        <article class="navnext-card">
+          <div class="lg-strict-phone light">
+            <div class="lg-strict-content">
+              <div class="lg-strict-line short"></div>
+              <div class="lg-strict-line"></div>
+              <div class="lg-strict-line mid"></div>
+            </div>
+            <div class="lg-strict-tabbar">
+              <div class="lg-strict-tab active"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg></span><span>Collection</span></div>
+              <div class="lg-strict-tab"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9l7.2 4.2"></path><circle cx="12" cy="12" r="8"></circle></svg></span><span>Stats</span></div>
+              <div class="lg-strict-tab"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12"></path><path d="M6 12h12"></path><path d="M6 17h12"></path></svg></span><span>Listes</span></div>
+              <div class="lg-strict-tab"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.6 5.4L20 12l-5.4 2.6L12 20l-2.6-5.4L4 12l5.4-2.6z"></path></svg></span><span>Découvrir</span><span class="lg-strict-tab-badge">2</span></div>
+              <div class="lg-strict-tab search"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.2"></circle><path d="M16 16l4 4"></path></svg></span><span>Recherche</span></div>
+            </div>
+            <div class="lg-strict-home"></div>
+          </div>
+          <div class="bb-title">V6 A - Strict clone light</div>
+          <p class="bb-copy">Calque proche iOS clair avec accent systeme bleu et separation Search en trailing.</p>
+        </article>
+
+        <article class="navnext-card">
+          <div class="lg-strict-phone dark">
+            <div class="lg-strict-content">
+              <div class="lg-strict-line mid"></div>
+              <div class="lg-strict-line"></div>
+              <div class="lg-strict-line short"></div>
+            </div>
+            <div class="lg-strict-tabbar">
+              <div class="lg-strict-tab"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg></span><span>Collection</span></div>
+              <div class="lg-strict-tab"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9l7.2 4.2"></path><circle cx="12" cy="12" r="8"></circle></svg></span><span>Stats</span></div>
+              <div class="lg-strict-tab"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12"></path><path d="M6 12h12"></path><path d="M6 17h12"></path></svg></span><span>Listes</span></div>
+              <div class="lg-strict-tab active"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.6 5.4L20 12l-5.4 2.6L12 20l-2.6-5.4L4 12l5.4-2.6z"></path></svg></span><span>Découvrir</span><span class="lg-strict-tab-badge">2</span></div>
+              <div class="lg-strict-tab search"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.2"></circle><path d="M16 16l4 4"></path></svg></span><span>Recherche</span></div>
+            </div>
+            <div class="lg-strict-home"></div>
+          </div>
+          <div class="bb-title">V6 B - Strict clone dark</div>
+          <p class="bb-copy">Meme structure systeme en mode sombre, avec contraste et teintes proches du rendu natif.</p>
+        </article>
+
+        <article class="navnext-card">
+          <div class="lg-strict-phone dark">
+            <div class="lg-strict-content">
+              <div class="lg-strict-line"></div>
+              <div class="lg-strict-line mid"></div>
+              <div class="lg-strict-line short"></div>
+            </div>
+            <div class="lg-strict-tabbar compact contrast">
+              <div class="lg-strict-tab"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg></span><span>Collection</span></div>
+              <div class="lg-strict-tab active"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9l7.2 4.2"></path><circle cx="12" cy="12" r="8"></circle></svg></span><span>Stats</span></div>
+              <div class="lg-strict-tab"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12"></path><path d="M6 12h12"></path><path d="M6 17h12"></path></svg></span><span>Listes</span></div>
+              <div class="lg-strict-tab"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.6 5.4L20 12l-5.4 2.6L12 20l-2.6-5.4L4 12l5.4-2.6z"></path></svg></span><span>Découvrir</span><span class="lg-strict-tab-badge">2</span></div>
+              <div class="lg-strict-tab search"><span class="lg-strict-tab-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.2"></circle><path d="M16 16l4 4"></path></svg></span><span>Recherche</span></div>
+            </div>
+            <div class="lg-strict-home"></div>
+          </div>
+          <div class="bb-title">V6 C - Strict clone compact</div>
+          <p class="bb-copy">Version compacte et contraste renforce pour verifier lisibilite et densite sans changer la structure iOS.</p>
         </article>
       </div>
     </section>
