@@ -2654,6 +2654,425 @@
         background: rgba(34,197,94,0.14);
       }
 
+      .browse-mobile-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 28px;
+        margin-top: 24px;
+      }
+
+      .browse-mobile-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
+        padding: 16px;
+      }
+
+      .browse-phone {
+        width: min(100%, 360px);
+        min-height: 680px;
+        margin: 0 auto 14px;
+        border-radius: 34px;
+        background: #07101f;
+        border: 1px solid rgba(148,163,184,0.28);
+        box-shadow: 0 22px 56px rgba(0,0,0,0.36);
+        overflow: hidden;
+      }
+
+      .browse-phone-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 18px 14px;
+        border-bottom: 1px solid rgba(148,163,184,0.14);
+      }
+
+      .browse-phone-logo {
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+
+      .browse-phone-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .browse-phone-actions span,
+      .browse-back {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        background: rgba(148,163,184,0.12);
+        border: 1px solid rgba(148,163,184,0.16);
+        color: #dbeafe;
+        font-size: 15px;
+      }
+
+      .browse-body {
+        padding: 16px 18px 92px;
+      }
+
+      .browse-hero {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 12px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(148,163,184,0.16);
+      }
+
+      .browse-kicker {
+        color: #75849b;
+        font-size: 10px;
+        font-weight: 850;
+        letter-spacing: 0.65px;
+        text-transform: uppercase;
+      }
+
+      .browse-title {
+        color: #f8fafc;
+        font-size: 21px;
+        font-weight: 850;
+        line-height: 1.05;
+        margin: 4px 0 7px;
+      }
+
+      .browse-desc {
+        color: #8ea0ba;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .browse-filter-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 14px 0 12px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(15,23,42,0.72);
+        border: 1px solid rgba(148,163,184,0.16);
+      }
+
+      .browse-filter-toggle strong {
+        color: #e5e7eb;
+        font-size: 13px;
+      }
+
+      .browse-filter-toggle span {
+        color: #8ea0ba;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .browse-chip-rail,
+      .browse-filter-rail {
+        display: flex;
+        gap: 8px;
+        overflow: hidden;
+        margin: 12px -18px 14px 0;
+        padding-right: 18px;
+      }
+
+      .browse-chip,
+      .browse-filter-pill {
+        flex: 0 0 auto;
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(148,163,184,0.26);
+        color: #9fb0c7;
+        font-size: 12px;
+        font-weight: 750;
+        line-height: 1;
+      }
+
+      .browse-chip.on,
+      .browse-filter-pill.on {
+        color: #fff;
+        background: #2563eb;
+        border-color: #2563eb;
+      }
+
+      .browse-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .browse-poster {
+        position: relative;
+        aspect-ratio: 2 / 3;
+        border-radius: 14px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 35% 20%, rgba(255,255,255,0.34), transparent 22%),
+          linear-gradient(145deg, #172554, #111827 58%, #0f172a);
+      }
+
+      .browse-poster:nth-child(2) {
+        background:
+          radial-gradient(circle at 60% 28%, rgba(250,204,21,0.34), transparent 24%),
+          linear-gradient(145deg, #3f2412, #111827 62%, #020617);
+      }
+
+      .browse-poster:nth-child(3) {
+        background:
+          radial-gradient(circle at 70% 22%, rgba(239,68,68,0.4), transparent 24%),
+          linear-gradient(145deg, #4c1d95, #111827 58%, #020617);
+      }
+
+      .browse-poster:nth-child(4) {
+        background:
+          radial-gradient(circle at 40% 20%, rgba(34,211,238,0.4), transparent 24%),
+          linear-gradient(145deg, #064e3b, #111827 62%, #020617);
+      }
+
+      .browse-poster:nth-child(5) {
+        background:
+          radial-gradient(circle at 50% 18%, rgba(96,165,250,0.44), transparent 24%),
+          linear-gradient(145deg, #1e1b4b, #111827 60%, #020617);
+      }
+
+      .browse-poster:nth-child(6) {
+        background:
+          radial-gradient(circle at 50% 18%, rgba(248,113,113,0.36), transparent 24%),
+          linear-gradient(145deg, #451a03, #111827 60%, #020617);
+      }
+
+      .browse-score {
+        position: absolute;
+        top: 7px;
+        left: 7px;
+        padding: 3px 7px;
+        border-radius: 999px;
+        background: rgba(2,6,23,0.78);
+        color: #facc15;
+        font-size: 11px;
+        font-weight: 850;
+      }
+
+      .browse-poster-title {
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        bottom: 9px;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 850;
+        line-height: 1;
+      }
+
+      .browse-bottom-nav {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
+        margin: -76px 14px 0;
+        padding: 8px;
+        border-radius: 24px;
+        background: rgba(15,23,42,0.9);
+        border: 1px solid rgba(255,255,255,0.12);
+        backdrop-filter: blur(18px);
+      }
+
+      .browse-bottom-nav span {
+        color: #9ca3af;
+        font-size: 10px;
+        font-weight: 750;
+        text-align: center;
+      }
+
+      .browse-bottom-nav span.on {
+        color: #38bdf8;
+      }
+
+      .browse-compact-header {
+        padding: 16px 0 10px;
+        border-bottom: 1px solid rgba(148,163,184,0.16);
+      }
+
+      .browse-compact-header .browse-title {
+        font-size: 23px;
+      }
+
+      .browse-inline-filters {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        margin: 12px 0 14px;
+      }
+
+      .browse-filter-button {
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: rgba(37,99,235,0.18);
+        border: 1px solid rgba(96,165,250,0.28);
+        color: #bfdbfe;
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .browse-mobile-card-note {
+        color: rgba(255,255,255,0.58);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .browse-open-title {
+        margin: 42px 0 16px;
+        padding-top: 28px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .browse-open-title h4 {
+        font-size: 20px;
+        margin-bottom: 6px;
+      }
+
+      .browse-open-title p {
+        color: rgba(255,255,255,0.62);
+        font-size: 14px;
+      }
+
+      .browse-filter-panel {
+        margin: 12px 0 14px;
+        border: 1px solid rgba(148,163,184,0.18);
+        border-radius: 18px;
+        background: rgba(15,23,42,0.58);
+        overflow: hidden;
+      }
+
+      .browse-filter-panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 11px 12px;
+        border-bottom: 1px solid rgba(148,163,184,0.14);
+      }
+
+      .browse-filter-panel-head strong {
+        color: #f8fafc;
+        font-size: 13px;
+      }
+
+      .browse-filter-panel-head span {
+        color: #93c5fd;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .browse-filter-group {
+        padding: 11px 12px;
+      }
+
+      .browse-filter-group + .browse-filter-group {
+        border-top: 1px solid rgba(148,163,184,0.1);
+      }
+
+      .browse-filter-group-label {
+        display: block;
+        color: #728299;
+        font-size: 10px;
+        font-weight: 850;
+        letter-spacing: 0.6px;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+      }
+
+      .browse-filter-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+      }
+
+      .browse-filter-accordion {
+        margin: 12px 0 14px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .browse-accordion-row {
+        border: 1px solid rgba(148,163,184,0.16);
+        border-radius: 15px;
+        background: rgba(15,23,42,0.52);
+        overflow: hidden;
+      }
+
+      .browse-accordion-row summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        color: #f8fafc;
+        font-size: 13px;
+        font-weight: 850;
+        list-style: none;
+      }
+
+      .browse-accordion-row summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .browse-accordion-row summary span {
+        color: #8091aa;
+        font-size: 12px;
+        font-weight: 750;
+      }
+
+      .browse-accordion-row .browse-filter-grid {
+        padding: 0 12px 12px;
+      }
+
+      .browse-sheet-preview {
+        position: relative;
+      }
+
+      .browse-sheet-preview .browse-grid {
+        opacity: 0.36;
+      }
+
+      .browse-bottom-sheet {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 76px;
+        margin: 0 10px;
+        padding: 10px 12px 12px;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 24px 24px 18px 18px;
+        background: rgba(7,16,31,0.96);
+        box-shadow: 0 -18px 40px rgba(0,0,0,0.42);
+        backdrop-filter: blur(18px);
+      }
+
+      .browse-sheet-handle {
+        width: 36px;
+        height: 4px;
+        margin: 0 auto 10px;
+        border-radius: 999px;
+        background: rgba(148,163,184,0.42);
+      }
+
+      .browse-sheet-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .browse-sheet-head strong {
+        font-size: 14px;
+      }
+
+      .browse-sheet-head span {
+        color: #93c5fd;
+        font-size: 12px;
+        font-weight: 850;
+      }
+
       .history-mockup-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -3488,6 +3907,7 @@
 
     <div class="mockup-quick-nav">
       <a class="mockup-quick-link" href="#mockup-discover-chips">Chips découvrir</a>
+      <a class="mockup-quick-link target-mobile" href="#mockup-browse-mobile">Browse mobile</a>
       <a class="mockup-quick-link" href="#mockup-icons">Icônes</a>
       <a class="mockup-quick-link" href="#mockup-logos">Logos</a>
       <a class="mockup-quick-link" href="#mockup-mobile-nav">Nav mobile</a>
@@ -3498,6 +3918,260 @@
       <a class="mockup-quick-link" href="#mockup-watched-cta">CTA Vu + note</a>
       <a class="mockup-quick-link" href="#mockup-under-hero">Sous le hero (refait)</a>
     </div>
+
+    <section id="mockup-browse-mobile">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Découvrir mobile</span>
+        <h3 class="mockup-subsection-title">Résultats “À regarder ce soir” — 3 pistes compactes</h3>
+        <p class="mockup-copy">Trois directions pour faire remonter les films plus tôt sur mobile, sans perdre les filtres plateformes / année / tri.</p>
+      </div>
+
+      <div class="browse-mobile-grid">
+        <article class="browse-mobile-card">
+          <div class="browse-phone">
+            <div class="browse-phone-top">
+              <div class="browse-phone-logo">CineTracker</div>
+              <div class="browse-phone-actions"><span>▦</span><span>☼</span><span>⌕</span></div>
+            </div>
+            <div class="browse-body">
+              <div class="browse-hero">
+                <span class="browse-back">←</span>
+                <div>
+                  <div class="browse-kicker">Films • France • Popularité</div>
+                  <div class="browse-title">Films à regarder ce soir</div>
+                  <div class="browse-desc">Films populaires, récents ou incontournables.</div>
+                </div>
+              </div>
+              <div class="browse-filter-toggle">
+                <strong>Filtres</strong>
+                <span>Netflix · 2026 · Popularité ▾</span>
+              </div>
+              <div class="browse-grid">
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Obsession</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Le Réveil</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 3.4</span><span class="browse-poster-title">Mandalorian</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.1</span><span class="browse-poster-title">Mario</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.3</span><span class="browse-poster-title">The Fall</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.2</span><span class="browse-poster-title">Punisher</span></div>
+              </div>
+            </div>
+            <div class="browse-bottom-nav"><span>Collection</span><span>Stats</span><span>Listes</span><span class="on">Découvrir</span><span>Recherche</span></div>
+          </div>
+          <p class="browse-mobile-card-note"><strong>A. Filtres repliés</strong><br>Le plus efficace pour gagner de la hauteur. Les résultats commencent immédiatement après un résumé des filtres actifs.</p>
+        </article>
+
+        <article class="browse-mobile-card">
+          <div class="browse-phone">
+            <div class="browse-phone-top">
+              <div class="browse-phone-logo">CineTracker</div>
+              <div class="browse-phone-actions"><span>▦</span><span>☼</span><span>⌕</span></div>
+            </div>
+            <div class="browse-body">
+              <div class="browse-hero">
+                <span class="browse-back">←</span>
+                <div>
+                  <div class="browse-kicker">Films • France</div>
+                  <div class="browse-title">À regarder ce soir</div>
+                  <div class="browse-desc">Populaires, récents, faciles à lancer.</div>
+                </div>
+              </div>
+              <div class="browse-filter-rail">
+                <span class="browse-filter-pill on">Netflix</span>
+                <span class="browse-filter-pill">Prime</span>
+                <span class="browse-filter-pill">Disney+</span>
+                <span class="browse-filter-pill on">2026</span>
+                <span class="browse-filter-pill on">Popularité</span>
+              </div>
+              <div class="browse-grid">
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Obsession</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Le Réveil</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 3.4</span><span class="browse-poster-title">Mandalorian</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.1</span><span class="browse-poster-title">Mario</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.3</span><span class="browse-poster-title">The Fall</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.2</span><span class="browse-poster-title">Punisher</span></div>
+              </div>
+            </div>
+            <div class="browse-bottom-nav"><span>Collection</span><span>Stats</span><span>Listes</span><span class="on">Découvrir</span><span>Recherche</span></div>
+          </div>
+          <p class="browse-mobile-card-note"><strong>B. Rail horizontal</strong><br>Tout reste visible et tactile, mais sur une seule ligne scrollable. Bon compromis si tu veux garder les filtres toujours accessibles.</p>
+        </article>
+
+        <article class="browse-mobile-card">
+          <div class="browse-phone">
+            <div class="browse-phone-top">
+              <div class="browse-phone-logo">CineTracker</div>
+              <div class="browse-phone-actions"><span>▦</span><span>☼</span><span>⌕</span></div>
+            </div>
+            <div class="browse-body">
+              <div class="browse-compact-header">
+                <div class="browse-kicker">Films • France • Popularité</div>
+                <div class="browse-title">Films à regarder ce soir</div>
+              </div>
+              <div class="browse-inline-filters">
+                <span class="browse-back">←</span>
+                <div class="browse-chip-rail">
+                  <span class="browse-chip on">Filtres</span>
+                  <span class="browse-chip">Netflix</span>
+                  <span class="browse-chip">2026</span>
+                  <span class="browse-chip">Note</span>
+                </div>
+              </div>
+              <div class="browse-grid">
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Obsession</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Le Réveil</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 3.4</span><span class="browse-poster-title">Mandalorian</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.1</span><span class="browse-poster-title">Mario</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.3</span><span class="browse-poster-title">The Fall</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.2</span><span class="browse-poster-title">Punisher</span></div>
+              </div>
+            </div>
+            <div class="browse-bottom-nav"><span>Collection</span><span>Stats</span><span>Listes</span><span class="on">Découvrir</span><span>Recherche</span></div>
+          </div>
+          <p class="browse-mobile-card-note"><strong>C. Header plat</strong><br>Supprime l’effet “carte dans la page”. C’est le plus dense et le plus app native, avec moins de respiration éditoriale.</p>
+        </article>
+      </div>
+
+      <div class="browse-open-title">
+        <h4>Quand les filtres sont dépliés</h4>
+        <p>Trois façons de montrer les options sans recréer l’écran trop haut du départ.</p>
+      </div>
+
+      <div class="browse-mobile-grid">
+        <article class="browse-mobile-card">
+          <div class="browse-phone">
+            <div class="browse-phone-top">
+              <div class="browse-phone-logo">CineTracker</div>
+              <div class="browse-phone-actions"><span>▦</span><span>☼</span><span>⌕</span></div>
+            </div>
+            <div class="browse-body">
+              <div class="browse-hero">
+                <span class="browse-back">←</span>
+                <div>
+                  <div class="browse-kicker">Films • France • Popularité</div>
+                  <div class="browse-title">Films à regarder ce soir</div>
+                  <div class="browse-desc">Films populaires, récents ou incontournables.</div>
+                </div>
+              </div>
+              <div class="browse-filter-panel">
+                <div class="browse-filter-panel-head"><strong>Filtres</strong><span>Masquer</span></div>
+                <div class="browse-filter-group">
+                  <span class="browse-filter-group-label">Où regarder</span>
+                  <div class="browse-filter-grid">
+                    <span class="browse-filter-pill on">Netflix</span><span class="browse-filter-pill">Prime</span><span class="browse-filter-pill">Disney+</span><span class="browse-filter-pill">Canal+</span>
+                  </div>
+                </div>
+                <div class="browse-filter-group">
+                  <span class="browse-filter-group-label">Année</span>
+                  <div class="browse-filter-grid">
+                    <span class="browse-filter-pill on">2026</span><span class="browse-filter-pill">2025</span><span class="browse-filter-pill">2024</span><span class="browse-filter-pill">2023</span>
+                  </div>
+                </div>
+                <div class="browse-filter-group">
+                  <span class="browse-filter-group-label">Tri</span>
+                  <div class="browse-filter-grid">
+                    <span class="browse-filter-pill on">Popularité</span><span class="browse-filter-pill">Note</span><span class="browse-filter-pill">Récent</span>
+                  </div>
+                </div>
+              </div>
+              <div class="browse-grid">
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Obsession</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Le Réveil</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 3.4</span><span class="browse-poster-title">Mandalorian</span></div>
+              </div>
+            </div>
+            <div class="browse-bottom-nav"><span>Collection</span><span>Stats</span><span>Listes</span><span class="on">Découvrir</span><span>Recherche</span></div>
+          </div>
+          <p class="browse-mobile-card-note"><strong>D. Panneau intégré</strong><br>Simple à implémenter. Les groupes sont lisibles, mais les résultats redescendent encore un peu.</p>
+        </article>
+
+        <article class="browse-mobile-card">
+          <div class="browse-phone">
+            <div class="browse-phone-top">
+              <div class="browse-phone-logo">CineTracker</div>
+              <div class="browse-phone-actions"><span>▦</span><span>☼</span><span>⌕</span></div>
+            </div>
+            <div class="browse-body">
+              <div class="browse-hero">
+                <span class="browse-back">←</span>
+                <div>
+                  <div class="browse-kicker">Films • France • Popularité</div>
+                  <div class="browse-title">Films à regarder ce soir</div>
+                  <div class="browse-desc">Films populaires, récents ou incontournables.</div>
+                </div>
+              </div>
+              <div class="browse-filter-accordion">
+                <details class="browse-accordion-row" open>
+                  <summary>Où regarder <span>Netflix</span></summary>
+                  <div class="browse-filter-grid"><span class="browse-filter-pill on">Netflix</span><span class="browse-filter-pill">Prime</span><span class="browse-filter-pill">Disney+</span></div>
+                </details>
+                <details class="browse-accordion-row">
+                  <summary>Année <span>2026</span></summary>
+                </details>
+                <details class="browse-accordion-row">
+                  <summary>Tri <span>Popularité</span></summary>
+                </details>
+              </div>
+              <div class="browse-grid">
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Obsession</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Le Réveil</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 3.4</span><span class="browse-poster-title">Mandalorian</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.1</span><span class="browse-poster-title">Mario</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.3</span><span class="browse-poster-title">The Fall</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.2</span><span class="browse-poster-title">Punisher</span></div>
+              </div>
+            </div>
+            <div class="browse-bottom-nav"><span>Collection</span><span>Stats</span><span>Listes</span><span class="on">Découvrir</span><span>Recherche</span></div>
+          </div>
+          <p class="browse-mobile-card-note"><strong>E. Accordéons</strong><br>Le plus organisé. On n’ouvre qu’un groupe à la fois, donc l’écran reste maîtrisé.</p>
+        </article>
+
+        <article class="browse-mobile-card">
+          <div class="browse-phone browse-sheet-preview">
+            <div class="browse-phone-top">
+              <div class="browse-phone-logo">CineTracker</div>
+              <div class="browse-phone-actions"><span>▦</span><span>☼</span><span>⌕</span></div>
+            </div>
+            <div class="browse-body">
+              <div class="browse-hero">
+                <span class="browse-back">←</span>
+                <div>
+                  <div class="browse-kicker">Films • France • Popularité</div>
+                  <div class="browse-title">Films à regarder ce soir</div>
+                  <div class="browse-desc">Films populaires, récents ou incontournables.</div>
+                </div>
+              </div>
+              <div class="browse-filter-toggle"><strong>Filtres</strong><span>Netflix · 2026 · Popularité ▾</span></div>
+              <div class="browse-grid">
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Obsession</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.0</span><span class="browse-poster-title">Le Réveil</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 3.4</span><span class="browse-poster-title">Mandalorian</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.1</span><span class="browse-poster-title">Mario</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.3</span><span class="browse-poster-title">The Fall</span></div>
+                <div class="browse-poster"><span class="browse-score">★ 4.2</span><span class="browse-poster-title">Punisher</span></div>
+              </div>
+            </div>
+            <div class="browse-bottom-sheet">
+              <div class="browse-sheet-handle"></div>
+              <div class="browse-sheet-head"><strong>Filtres</strong><span>Appliquer</span></div>
+              <div class="browse-filter-group">
+                <span class="browse-filter-group-label">Où regarder</span>
+                <div class="browse-filter-grid"><span class="browse-filter-pill on">Netflix</span><span class="browse-filter-pill">Prime</span><span class="browse-filter-pill">Disney+</span></div>
+              </div>
+              <div class="browse-filter-group">
+                <span class="browse-filter-group-label">Année</span>
+                <div class="browse-filter-grid"><span class="browse-filter-pill on">2026</span><span class="browse-filter-pill">2025</span><span class="browse-filter-pill">2024</span></div>
+              </div>
+              <div class="browse-filter-group">
+                <span class="browse-filter-group-label">Tri</span>
+                <div class="browse-filter-grid"><span class="browse-filter-pill on">Popularité</span><span class="browse-filter-pill">Note</span></div>
+              </div>
+            </div>
+            <div class="browse-bottom-nav"><span>Collection</span><span>Stats</span><span>Listes</span><span class="on">Découvrir</span><span>Recherche</span></div>
+          </div>
+          <p class="browse-mobile-card-note"><strong>F. Bottom sheet</strong><br>Le plus mobile-native. Les résultats restent en place derrière, les filtres deviennent une action temporaire.</p>
+        </article>
+      </div>
+    </section>
 
     <!-- CHIPS DÉCOUVRIR SECTION -->
     <section id="mockup-discover-chips">

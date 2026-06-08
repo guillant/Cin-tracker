@@ -1952,6 +1952,7 @@ let discoverBrowseState = {
   page: 0,
   totalPages: 0,
   loading: false,
+  filtersOpen: false,
 };
 let discoverPendingGenre = null;
 let discoverGenreType = "movie";
@@ -2109,10 +2110,7 @@ function closeMobileActionsMenu() {
 }
 
 function activateTabByName(tabName) {
-  const tabButton = Array.from(document.querySelectorAll(".nav-item")).find(
-    (button) =>
-      button.textContent.trim().toLowerCase() === tabName.toLowerCase(),
-  );
+  const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
 
   if (tabButton) {
     switchTab(tabName, tabButton);
@@ -8639,7 +8637,11 @@ function buildDiscoverFilterFallbackNoticeHTML(year) {
 function renderBrowseFilters(mediaType) {
   const filtersEl = document.getElementById("discoverBrowseFilters");
   if (!filtersEl) return;
-  if (!mediaType) { filtersEl.style.display = "none"; return; }
+  if (!mediaType) {
+    filtersEl.classList.remove("filters-open");
+    filtersEl.style.display = "none";
+    return;
+  }
   const { providers, year, sort } = discoverBrowseState.activeFilters;
   const kicker = document.getElementById("discoverBrowseKicker");
   if (kicker && discoverBrowseState.inlineConfig) {
@@ -8654,24 +8656,37 @@ function renderBrowseFilters(mediaType) {
     { id: "recent", label: "Récent" },
   ];
 
+  filtersEl.classList.toggle("filters-open", Boolean(discoverBrowseState.filtersOpen));
   filtersEl.innerHTML = `
-    <div class="discover-filter-line">
-      <span class="discover-filter-label">Où regarder</span>
-      <div class="discover-filter-row">
-        ${BROWSE_PROVIDERS.map((p) => `<button class="discover-filter-chip${providers.includes(p.id) ? " active" : ""}" onclick="app.toggleBrowseProvider(${p.id})">${escapeHtml(p.name)}</button>`).join("")}
+    <button class="discover-filter-summary" onclick="app.toggleBrowseFiltersPanel()" aria-expanded="${discoverBrowseState.filtersOpen ? "true" : "false"}">
+      <strong>Filtres</strong>
+      <span>${escapeHtml(getBrowseFiltersSummary())}</span>
+      <em>${discoverBrowseState.filtersOpen ? "Masquer" : "Modifier"}</em>
+    </button>
+    <div class="discover-filter-body${discoverBrowseState.filtersOpen ? " open" : ""}">
+      <div class="discover-filter-sheet-head">
+        <span></span>
+        <strong>Filtres</strong>
+        <button type="button" onclick="app.toggleBrowseFiltersPanel()">Appliquer</button>
       </div>
-    </div>
-    <div class="discover-filter-line">
-      <span class="discover-filter-label">Année</span>
-      <div class="discover-filter-row">
-        ${years.map((y) => `<button class="discover-filter-chip${year === y ? " active" : ""}" onclick="app.setBrowseYear(${y})">${y}</button>`).join("")}
+      <div class="discover-filter-line">
+        <span class="discover-filter-label">Où regarder</span>
+        <div class="discover-filter-row">
+          ${BROWSE_PROVIDERS.map((p) => `<button class="discover-filter-chip${providers.includes(p.id) ? " active" : ""}" onclick="app.toggleBrowseProvider(${p.id})">${escapeHtml(p.name)}</button>`).join("")}
+        </div>
       </div>
-    </div>
-    <div class="discover-filter-line">
-      <span class="discover-filter-label">Tri</span>
-      <div class="discover-filter-row">
-        ${sortOptions.map((option) => `<button class="discover-filter-chip${sort === option.id ? " active" : ""}" onclick="app.setBrowseSort('${option.id}')">${escapeHtml(option.label)}</button>`).join("")}
-        ${hasActiveFilters ? `<button class="discover-filter-reset" onclick="app.resetBrowseFilters()">Réinitialiser</button>` : ""}
+      <div class="discover-filter-line">
+        <span class="discover-filter-label">Année</span>
+        <div class="discover-filter-row">
+          ${years.map((y) => `<button class="discover-filter-chip${year === y ? " active" : ""}" onclick="app.setBrowseYear(${y})">${y}</button>`).join("")}
+        </div>
+      </div>
+      <div class="discover-filter-line">
+        <span class="discover-filter-label">Tri</span>
+        <div class="discover-filter-row">
+          ${sortOptions.map((option) => `<button class="discover-filter-chip${sort === option.id ? " active" : ""}" onclick="app.setBrowseSort('${option.id}')">${escapeHtml(option.label)}</button>`).join("")}
+          ${hasActiveFilters ? `<button class="discover-filter-reset" onclick="app.resetBrowseFilters()">Réinitialiser</button>` : ""}
+        </div>
       </div>
     </div>
   `;
@@ -8822,7 +8837,10 @@ function closeDiscoverCollection() {
   panel.classList.remove("active");
   rows.style.display = "block";
   const filtersEl = document.getElementById("discoverBrowseFilters");
-  if (filtersEl) filtersEl.style.display = "none";
+  if (filtersEl) {
+    filtersEl.classList.remove("filters-open");
+    filtersEl.style.display = "none";
+  }
   discoverBrowseState = {
     key: null,
     inlineConfig: null,
@@ -8831,6 +8849,7 @@ function closeDiscoverCollection() {
     page: 0,
     totalPages: 0,
     loading: false,
+    filtersOpen: false,
   };
 }
 
@@ -8848,6 +8867,30 @@ function getBrowseSortLabel(sort = "popular") {
   if (sort === "rating") return "Note";
   if (sort === "recent") return "Récent";
   return "Popularité";
+}
+
+function getBrowseFiltersSummary() {
+  const { providers, year, sort } = discoverBrowseState.activeFilters;
+  const providerLabel =
+    providers.length > 0
+      ? providers
+          .map(
+            (providerId) =>
+              BROWSE_PROVIDERS.find((provider) => provider.id === providerId)
+                ?.name,
+          )
+          .filter(Boolean)
+          .slice(0, 2)
+          .join(", ")
+      : "Toutes plateformes";
+  const providerSuffix = providers.length > 2 ? ` +${providers.length - 2}` : "";
+  const yearLabel = year || "Toutes années";
+  return `${providerLabel}${providerSuffix} · ${yearLabel} · ${getBrowseSortLabel(sort)}`;
+}
+
+function toggleBrowseFiltersPanel() {
+  discoverBrowseState.filtersOpen = !discoverBrowseState.filtersOpen;
+  renderBrowseFilters(discoverBrowseState.inlineConfig?.mediaType);
 }
 
 function buildDiscoverBrowseDescription(config) {
@@ -8877,6 +8920,7 @@ async function openDiscoverWithConfig(config) {
     page: 0,
     totalPages: 0,
     loading: false,
+    filtersOpen: false,
   };
 
   title.textContent = config.title;
@@ -8910,6 +8954,7 @@ async function openDiscoverCollection(key) {
     page: 0,
     totalPages: 0,
     loading: false,
+    filtersOpen: false,
   };
 
   title.textContent = config.title;
@@ -9917,6 +9962,7 @@ window.app = {
   setDiscoverGenreType,
   switchGenreTab,
   toggleBrowseProvider,
+  toggleBrowseFiltersPanel,
   setBrowseYear,
   setBrowseSort,
   resetBrowseFilters,

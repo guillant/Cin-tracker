@@ -10043,6 +10043,39 @@ header {
     font-weight: 700;
   }
 
+  .discover-mood-row {
+    margin-bottom: 24px;
+  }
+
+  .discover-mood-grid {
+    display: flex;
+    gap: 10px;
+    margin-right: calc(-18px - var(--safe-right));
+    overflow-x: auto;
+    padding: 0 calc(18px + var(--safe-right)) 8px 0;
+    scroll-padding-right: calc(18px + var(--safe-right));
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .discover-mood-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .discover-mood-chip {
+    flex: 0 0 168px;
+    min-height: 72px;
+    padding: 12px;
+  }
+
+  .discover-mood-chip span {
+    font-size: 13px;
+  }
+
+  .discover-mood-chip small {
+    font-size: 10px;
+  }
+
   .nav {
     display: none;
   }
@@ -10751,6 +10784,20 @@ header {
   margin-bottom: 18px;
 }
 
+.discover-filter-summary {
+  display: none;
+}
+
+.discover-filter-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.discover-filter-sheet-head {
+  display: none;
+}
+
 .discover-filter-line {
   display: grid;
   grid-template-columns: 104px minmax(0, 1fr);
@@ -11301,9 +11348,135 @@ header {
     border-radius: 12px;
   }
 
+  .discover-browse-filters {
+    gap: 0;
+    padding: 0 0 14px;
+    border-top: 0;
+  }
+
+  .discover-browse-filters.filters-open::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgba(2, 6, 23, 0.48);
+    backdrop-filter: blur(2px);
+  }
+
+  .discover-filter-summary {
+    appearance: none;
+    -webkit-appearance: none;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.56);
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+  }
+
+  .discover-filter-summary strong {
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  .discover-filter-summary span {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .discover-filter-summary em {
+    color: #93c5fd;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 800;
+  }
+
+  .discover-filter-body {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .discover-filter-body.open {
+    display: flex;
+    position: fixed;
+    left: calc(10px + var(--safe-left));
+    right: calc(10px + var(--safe-right));
+    bottom: calc(10px + var(--safe-bottom));
+    z-index: 72;
+    max-height: min(72dvh, 520px);
+    overflow-y: auto;
+    padding: 10px 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px 24px 20px 20px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
+      rgba(7, 16, 31, 0.97);
+    box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+  }
+
+  .discover-filter-sheet-head {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 2px 0 6px;
+  }
+
+  .discover-filter-sheet-head::before {
+    content: "";
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 38px;
+    height: 4px;
+    margin-bottom: 5px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.42);
+  }
+
+  .discover-filter-sheet-head strong {
+    color: #f8fafc;
+    font-size: 15px;
+    font-weight: 850;
+    text-align: center;
+  }
+
+  .discover-filter-sheet-head button {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.2);
+    color: #bfdbfe;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
   .discover-filter-line {
     grid-template-columns: 1fr;
     gap: 7px;
+    padding: 10px 0 0;
+  }
+
+  .discover-filter-line + .discover-filter-line {
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
   }
 
   .discover-control-bar {
@@ -11321,7 +11494,33 @@ header {
   }
 
   .discover-mood-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    grid-template-columns: none;
+    gap: 10px;
+    margin-right: calc(-18px - var(--safe-right));
+    overflow-x: auto;
+    padding: 0 calc(18px + var(--safe-right)) 8px 0;
+    scroll-padding-right: calc(18px + var(--safe-right));
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .discover-mood-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .discover-mood-chip {
+    flex: 0 0 168px;
+    min-height: 72px;
+    padding: 12px;
+  }
+
+  .discover-mood-chip span {
+    font-size: 13px;
+  }
+
+  .discover-mood-chip small {
+    font-size: 10px;
   }
 
   .mockup-strip-gallery {
@@ -11399,7 +11598,7 @@ header {
   }
 
   .discover-mood-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: none;
   }
 
   .detail-stream-dock-actions,
