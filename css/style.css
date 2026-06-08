@@ -9821,118 +9821,63 @@ header {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 2px;
     min-height: 62px;
-    padding: 7px 7px 9px;
-    border: 1px solid rgba(255, 255, 255, 0.38);
-    border-radius: 24px;
+    padding: 6px 6px 8px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 26px;
     isolation: isolate;
     overflow: hidden;
-    background:
-      radial-gradient(
-        circle at 20% -30%,
-        rgba(255, 255, 255, 0.5),
-        transparent 38%
-      ),
-      radial-gradient(
-        circle at 82% 130%,
-        rgba(37, 99, 235, 0.14),
-        transparent 44%
-      ),
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.62),
-        rgba(255, 255, 255, 0.26)
-      ),
-      rgba(248, 250, 252, 0.28);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.58),
+      rgba(255, 255, 255, 0.32)
+    );
     box-shadow:
-      0 18px 34px rgba(15, 23, 42, 0.2),
-      0 4px 14px rgba(15, 23, 42, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.74);
-    backdrop-filter: blur(32px) saturate(190%) brightness(108%);
-    -webkit-backdrop-filter: blur(32px) saturate(190%) brightness(108%);
+      0 10px 24px rgba(15, 23, 42, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(26px) saturate(120%);
+    -webkit-backdrop-filter: blur(26px) saturate(120%);
   }
 
   [data-theme="dark"] .mobile-bottom-nav,
   [data-theme="dark"] .mobile-bottom-nav.h2 {
-    background:
-      radial-gradient(
-        circle at 20% -30%,
-        rgba(255, 255, 255, 0.04),
-        transparent 38%
-      ),
-      radial-gradient(
-        circle at 82% 130%,
-        rgba(148, 163, 184, 0.03),
-        transparent 44%
-      ),
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.04),
-        rgba(255, 255, 255, 0.01)
-      ),
-      rgba(14, 18, 28, 0.96);
-    border-color: rgba(255, 255, 255, 0.14);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(32px) saturate(160%);
-    -webkit-backdrop-filter: blur(32px) saturate(160%);
+    background: linear-gradient(
+      180deg,
+      rgba(248, 250, 252, 0.14),
+      rgba(248, 250, 252, 0.05)
+    );
+    border-color: rgba(148, 163, 184, 0.22);
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.42),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(26px) saturate(120%);
+    -webkit-backdrop-filter: blur(26px) saturate(120%);
   }
 
   .mobile-bottom-nav::before {
-    z-index: -1;
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.56),
-      rgba(255, 255, 255, 0.14) 44%,
-      rgba(255, 255, 255, 0)
-    );
+    content: none;
   }
 
   [data-theme="dark"] .mobile-bottom-nav::before {
-    z-index: -1;
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.06),
-      rgba(255, 255, 255, 0.02) 44%,
-      rgba(255, 255, 255, 0)
-    );
+    content: none;
   }
 
   .mobile-bottom-nav::after {
-    content: "";
-    position: absolute;
-    inset: 1px;
-    z-index: -1;
-    border-radius: 23px;
-    background: linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.36),
-      rgba(255, 255, 255, 0.06) 48%,
-      rgba(15, 23, 42, 0.08)
-    );
-    box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.16),
-      inset 0 -14px 24px rgba(15, 23, 42, 0.08);
-    pointer-events: none;
+    content: none;
   }
 
   [data-theme="dark"] .mobile-bottom-nav::after {
-    background: linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.05),
-      rgba(255, 255, 255, 0.01) 48%,
-      rgba(0, 0, 0, 0.18)
-    );
-    box-shadow: inset 0 -14px 24px rgba(0, 0, 0, 0.12);
+    content: none;
   }
 
   .mobile-nav-item,
   .mobile-bottom-nav.h2 .mobile-nav-item {
     gap: 3px;
     min-height: 46px;
-    padding: 4px 1px;
-    border-radius: 16px;
-    color: rgba(60, 60, 67, 0.68);
+    padding: 6px 3px 5px;
+    border-radius: 14px;
+    color: rgba(60, 60, 67, 0.74);
     font-size: 10px;
-    font-weight: 650;
+    font-weight: 590;
   }
 
   [data-theme="dark"] .mobile-bottom-nav.h2 .mobile-nav-item,
@@ -9957,20 +9902,20 @@ header {
   }
 
   .mobile-nav-icon {
-    width: 28px;
-    height: 27px;
-    border-radius: 13px;
+    width: 23px;
+    height: 23px;
+    border-radius: 10px;
     font-size: 0;
   }
 
   .mobile-nav-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     fill: none;
     stroke: currentColor;
     stroke-linecap: round;
     stroke-linejoin: round;
-    stroke-width: 2;
+    stroke-width: 1.9;
   }
 
   .mobile-nav-item.active .mobile-nav-icon svg {
@@ -9981,16 +9926,12 @@ header {
   .mobile-bottom-nav.h2 .mobile-nav-item.active .mobile-nav-icon,
   [data-theme="dark"] .mobile-nav-item.active .mobile-nav-icon {
     background: rgba(10, 132, 255, 0.13);
-    box-shadow:
-      inset 0 0 0 1px rgba(10, 132, 255, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    box-shadow: none;
   }
 
   [data-theme="dark"] .mobile-nav-item.active .mobile-nav-icon {
     background: rgba(122, 183, 255, 0.12);
-    box-shadow:
-      inset 0 0 0 1px rgba(122, 183, 255, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    box-shadow: none;
   }
 
   .collection-type-switch {
