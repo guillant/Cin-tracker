@@ -78,6 +78,22 @@ encore dans la collection. Le modèle utilise cette recherche comme un outil et
 Après exposition accidentelle d'une clé dans une version client, révoquez-la
 depuis le tableau de bord du fournisseur avant d'en créer une nouvelle.
 
+### Modèle open source local avec Ollama
+
+Le backend accepte aussi l'API OpenAI-compatible d'Ollama. Copiez
+`.env.example` vers `.env`, puis utilisez :
+
+```env
+OPENAI_API_URL=http://127.0.0.1:11434/v1/chat/completions
+OPENAI_MODEL=qwen3:8b
+AI_REQUEST_TIMEOUT_MS=300000
+TMDB_API_KEY=votre_cle_tmdb
+```
+
+La clé OpenAI n'est alors pas nécessaire. Lancez `ollama serve`, puis
+`npm start`. Ollama reste derrière le backend CinéTracker et ne doit pas être
+exposé directement sur Internet.
+
 ## 🎯 Lancer l'application
 
 **Live Server (recommandé)** : clic droit sur `index.html` → "Open with Live Server"

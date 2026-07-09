@@ -2,7 +2,11 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { sanitizeAssistantPayload, searchTmdbCatalog } = require("../server");
+const {
+  sanitizeAssistantPayload,
+  searchTmdbCatalog,
+  parseToolArguments,
+} = require("../server");
 
 test("assistant payload keeps one bounded conversation ending with the user", () => {
   const payload = sanitizeAssistantPayload({
@@ -40,4 +44,10 @@ test("catalog search fails safely when TMDB is not configured", async () => {
   assert.deepEqual(result.results, []);
   assert.match(result.error, /TMDB/i);
   if (previousKey) process.env.TMDB_API_KEY = previousKey;
+});
+
+test("tool arguments support both OpenAI JSON strings and Ollama objects", () => {
+  const args = { query: "", media_type: "movie", genre: "science_fiction" };
+  assert.deepEqual(parseToolArguments(JSON.stringify(args)), args);
+  assert.deepEqual(parseToolArguments(args), args);
 });

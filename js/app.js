@@ -15,7 +15,7 @@ const AI_ASSISTANT_API_URL = String(
 const AI_ASSISTANT_REMOTE_ENABLED = CONFIG.AI_ASSISTANT_REMOTE_ENABLED !== false;
 const AI_ASSISTANT_TIMEOUT_MS = Math.max(
   3000,
-  Math.min(30000, Number(CONFIG.AI_ASSISTANT_TIMEOUT_MS) || 15000),
+  Math.min(300000, Number(CONFIG.AI_ASSISTANT_TIMEOUT_MS) || 300000),
 );
 const AVAILABILITY_SOURCE = String(CONFIG.AVAILABILITY_SOURCE || "tmdb").toLowerCase();
 const FRESH_AVAILABILITY_URL_TEMPLATE =
@@ -6891,7 +6891,7 @@ async function refreshAssistantModeStatus() {
     const response = await fetch(statusUrl, { cache: "no-store" });
     const data = response.ok ? await response.json() : null;
     status.textContent = data?.configured
-      ? `IA distante active · ${data.model || "modèle configuré"}${data.catalogConfigured ? " · découverte TMDB" : " · TMDB serveur manquant"}`
+      ? `${data.provider || "IA"} active · ${data.model || "modèle configuré"}${data.catalogConfigured ? " · découverte TMDB" : " · TMDB serveur manquant"}`
       : "Mode local · clé IA absente du serveur";
     status.className = `assistant-mode-status ${data?.configured ? "remote" : "local"}`;
   } catch {

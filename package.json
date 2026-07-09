@@ -4,7 +4,7 @@
   "description": "Application mobile et PWA pour suivre films et series.",
   "private": true,
   "scripts": {
-    "start": "node server.js",
+    "start": "node --env-file-if-exists=.env server.js",
     "test": "node --test",
     "mobile:prepare": "node scripts/prepare-mobile.js",
     "cap:add:android": "cap add android",

@@ -9,7 +9,17 @@ const PORT = Number(process.env.PORT) || 4173;
 const OPENAI_API_URL =
   process.env.OPENAI_API_URL || "https://api.openai.com/v1/chat/completions";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
-const REQUEST_TIMEOUT_MS = 15000;
+const IS_LOCAL_MODEL =
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(OPENAI_API_URL);
+const AI_API_KEY = process.env.OPENAI_API_KEY || (IS_LOCAL_MODEL ? "ollama" : "");
+const AI_PROVIDER_LABEL = IS_LOCAL_MODEL ? "Ollama" : "OpenAI-compatible";
+const REQUEST_TIMEOUT_MS = Math.max(
+  15000,
+  Math.min(
+    300000,
+    Number(process.env.AI_REQUEST_TIMEOUT_MS) || (IS_LOCAL_MODEL ? 300000 : 30000),
+  ),
+);
 const MAX_BODY_BYTES = 64 * 1024;
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
@@ -212,34 +222,59 @@ async function searchTmdbCatalog(args, signal) {
   };
 }
 
+function parseToolArguments(rawArguments) {
+  return typeof rawArguments === "string"
+    ? JSON.parse(rawArguments || "{}")
+    : rawArguments || {};
+}
+
 async function callChatCompletion(messages, options, signal) {
-  const upstream = await fetch(OPENAI_API_URL, {
+  const requestUrl = IS_LOCAL_MODEL
+    ? new URL("/api/chat", OPENAI_API_URL).toString()
+    : OPENAI_API_URL;
+  const requestBody = IS_LOCAL_MODEL
+    ? {
+        model: OPENAI_MODEL,
+        messages,
+        stream: false,
+        think: false,
+        options: {
+          temperature: 0.4,
+          num_predict: 650,
+        },
+        ...(options?.tool_choice !== "none" && options?.tools
+          ? { tools: options.tools }
+          : {}),
+      }
+    : {
+        model: OPENAI_MODEL,
+        temperature: 0.4,
+        max_tokens: 650,
+        messages,
+        parallel_tool_calls: false,
+        ...options,
+      };
+  const upstream = await fetch(requestUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      Authorization: `Bearer ${AI_API_KEY}`,
     },
     signal,
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      temperature: 0.4,
-      max_tokens: 650,
-      messages,
-      ...options,
-    }),
+    body: JSON.stringify(requestBody),
   });
   if (!upstream.ok) {
     console.error("Assistant upstream error:", upstream.status);
     throw Object.assign(new Error("AI provider error"), { status: 502 });
   }
   const data = await upstream.json();
-  const message = data?.choices?.[0]?.message;
+  const message = IS_LOCAL_MODEL ? data?.message : data?.choices?.[0]?.message;
   if (!message) throw Object.assign(new Error("Empty AI response"), { status: 502 });
   return message;
 }
 
 async function handleAssistant(req, res) {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!AI_API_KEY) {
     return sendJson(res, 503, { error: "Remote assistant is not configured" });
   }
 
@@ -271,7 +306,7 @@ async function handleAssistant(req, res) {
         let result = { error: "Outil inconnu.", results: [] };
         if (toolCall?.function?.name === "search_catalog") {
           try {
-            const args = JSON.parse(toolCall.function.arguments || "{}");
+            const args = parseToolArguments(toolCall.function.arguments);
             result = await searchTmdbCatalog(args, controller.signal);
           } catch (error) {
             result = { error: error.message, results: [] };
@@ -368,8 +403,9 @@ async function requestHandler(req, res) {
   try {
     if (req.method === "GET" && url.pathname === "/api/assistant/status") {
       return sendJson(res, 200, {
-        configured: Boolean(process.env.OPENAI_API_KEY),
-        model: process.env.OPENAI_API_KEY ? OPENAI_MODEL : null,
+        configured: Boolean(AI_API_KEY),
+        model: AI_API_KEY ? OPENAI_MODEL : null,
+        provider: AI_API_KEY ? AI_PROVIDER_LABEL : null,
         catalogConfigured: Boolean(process.env.TMDB_API_KEY),
       });
     }
@@ -398,4 +434,5 @@ module.exports = {
   requestHandler,
   sanitizeAssistantPayload,
   searchTmdbCatalog,
+  parseToolArguments,
 };

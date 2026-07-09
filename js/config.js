@@ -14,7 +14,7 @@ const CONFIG = {
   // Optional secure backend proxy (never put an AI provider key in this file).
   AI_ASSISTANT_API_URL: "/api/assistant",
   AI_ASSISTANT_REMOTE_ENABLED: true,
-  AI_ASSISTANT_TIMEOUT_MS: 15000,
+  AI_ASSISTANT_TIMEOUT_MS: 300000,
   // Availability source: "tmdb" | "hybrid" | "fresh"
   AVAILABILITY_SOURCE: "tmdb",
   // Optional endpoint template for fresher availability provider.
