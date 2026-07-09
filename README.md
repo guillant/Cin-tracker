@@ -70,6 +70,11 @@ Ouvrez ensuite `http://localhost:4173`. L'assistant distant nécessite le
 consentement explicite de l'utilisateur dans sa fenêtre. Sans consentement ou
 si le backend n'est pas configuré, il utilise automatiquement le mode local.
 
+Ajoutez aussi `TMDB_API_KEY` à l'environnement du serveur pour permettre à
+l'assistant de rechercher et recommander des films ou séries qui ne sont pas
+encore dans la collection. Le modèle utilise cette recherche comme un outil et
+évite autant que possible les titres déjà vus.
+
 Après exposition accidentelle d'une clé dans une version client, révoquez-la
 depuis le tableau de bord du fournisseur avant d'en créer une nouvelle.
 

@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { sanitizeAssistantPayload } = require("../server");
+const { sanitizeAssistantPayload, searchTmdbCatalog } = require("../server");
 
 test("assistant payload keeps one bounded conversation ending with the user", () => {
   const payload = sanitizeAssistantPayload({
@@ -28,4 +28,16 @@ test("assistant payload rejects a conversation not ending with a user", () => {
       }),
     /final user message/i,
   );
+});
+
+test("catalog search fails safely when TMDB is not configured", async () => {
+  const previousKey = process.env.TMDB_API_KEY;
+  delete process.env.TMDB_API_KEY;
+  const result = await searchTmdbCatalog(
+    { query: "science fiction", media_type: "movie" },
+    undefined,
+  );
+  assert.deepEqual(result.results, []);
+  assert.match(result.error, /TMDB/i);
+  if (previousKey) process.env.TMDB_API_KEY = previousKey;
 });

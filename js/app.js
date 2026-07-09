@@ -6891,7 +6891,7 @@ async function refreshAssistantModeStatus() {
     const response = await fetch(statusUrl, { cache: "no-store" });
     const data = response.ok ? await response.json() : null;
     status.textContent = data?.configured
-      ? `IA distante active · ${data.model || "modèle configuré"}`
+      ? `IA distante active · ${data.model || "modèle configuré"}${data.catalogConfigured ? " · découverte TMDB" : " · TMDB serveur manquant"}`
       : "Mode local · clé IA absente du serveur";
     status.className = `assistant-mode-status ${data?.configured ? "remote" : "local"}`;
   } catch {
@@ -6912,7 +6912,7 @@ function ensureAssistantWelcomeMessage() {
   assistantMessages.push({
     role: "assistant",
     content:
-      "Salut ! Je peux t'aider sur ta collection: suggestions a regarder, priorites, resume des stats, et idees selon tes genres.",
+      "Salut ! Parlons cinéma et séries. Je peux analyser ta collection, chercher de nouvelles découvertes et affiner mes idées selon ton humeur, ton temps ou tes goûts.",
   });
   persistAssistantHistory();
 }
@@ -6956,11 +6956,24 @@ function getAssistantCollectionSnapshot() {
     .slice(0, 8)
     .map((item) => `- ${formatAssistantItem(item)}`)
     .join("\n");
+  const watchedTitles = items
+    .filter((item) => item.status === "watched")
+    .slice(-60)
+    .map((item) => item.title)
+    .join(", ");
+  const ratedTitles = items
+    .filter((item) => Number(item.rating) > 0)
+    .sort((a, b) => Number(b.rating) - Number(a.rating))
+    .slice(0, 30)
+    .map((item) => `${item.title} (${item.rating}/5)`)
+    .join(", ");
 
   return [
     `Collection: ${items.length} titres (${movies} films, ${series} series).`,
     `Statuts: ${watched} vus, ${watching} en cours, ${towatch} a voir.`,
     `Genres frequents: ${topGenres || "aucun"}.`,
+    `Titres deja vus: ${watchedTitles || "aucun"}.`,
+    `Titres notes: ${ratedTitles || "aucun"}.`,
     "Candidats rapides:",
     quickCandidates || "- Aucun candidat disponible.",
   ].join("\n");
