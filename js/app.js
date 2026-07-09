@@ -9,6 +9,11 @@
 const TMDB_API_KEY = CONFIG.TMDB_API_KEY;
 const TMDB_BASE_URL = CONFIG.TMDB_BASE_URL;
 const TMDB_IMAGE_BASE = CONFIG.TMDB_IMAGE_BASE;
+const AI_ASSISTANT_API_URL = String(
+  CONFIG.AI_ASSISTANT_API_URL || "https://api.openai.com/v1/chat/completions",
+).trim();
+const AI_ASSISTANT_MODEL = String(CONFIG.AI_ASSISTANT_MODEL || "gpt-4o-mini").trim();
+const AI_ASSISTANT_API_KEY = String(CONFIG.AI_ASSISTANT_API_KEY || "").trim();
 const AVAILABILITY_SOURCE = String(CONFIG.AVAILABILITY_SOURCE || "tmdb").toLowerCase();
 const FRESH_AVAILABILITY_URL_TEMPLATE =
   CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE || "";
@@ -44,6 +49,8 @@ const USER_PROVIDERS_STORAGE_KEY = "cinetrackerUserProviders";
 const GROUP_PROFILES_STORAGE_KEY = "cinetrackerGroupProfiles";
 const GROUP_ACTIVE_PROFILES_STORAGE_KEY = "cinetrackerGroupActiveProfiles";
 const SUGGESTION_RECENT_HISTORY_STORAGE_KEY = "cinetrackerSuggestionRecentHistory";
+const AI_ASSISTANT_HISTORY_STORAGE_KEY = "cinetrackerAssistantHistory";
+const AI_ASSISTANT_MAX_HISTORY = 12;
 const SUGGESTION_RECENT_HISTORY_LIMIT = 8;
 const SUGGESTION_PROVIDER_CACHE_VERSION = 3;
 const USER_PROVIDER_OPTIONS = [
@@ -1684,6 +1691,30 @@ function loadStoredItems() {
   }
 }
 
+function loadAssistantHistory() {
+  try {
+    const stored = JSON.parse(
+      localStorage.getItem(AI_ASSISTANT_HISTORY_STORAGE_KEY) || "[]",
+    );
+    if (!Array.isArray(stored)) return [];
+    return stored
+      .filter(
+        (entry) =>
+          entry &&
+          (entry.role === "user" || entry.role === "assistant") &&
+          typeof entry.content === "string" &&
+          entry.content.trim(),
+      )
+      .slice(-AI_ASSISTANT_MAX_HISTORY * 2)
+      .map((entry) => ({
+        role: entry.role,
+        content: String(entry.content).trim().slice(0, 4000),
+      }));
+  } catch {
+    return [];
+  }
+}
+
 function normalizeTmdbMediaType(type) {
   return type === "tv" || type === "series" ? "tv" : "movie";
 }
@@ -1726,6 +1757,9 @@ function isSameTmdbCollectionItem(item, tmdbId, type) {
 }
 
 let items = loadStoredItems();
+let assistantMessages = loadAssistantHistory();
+let assistantRequestPending = false;
+let assistantConfigTipShown = false;
 let currentFilter = "movie";
 let currentStatus = null;
 let currentSort = "date-desc";
@@ -6835,6 +6869,259 @@ function hasConfiguredTmdbApiKey() {
   return Boolean(TMDB_API_KEY && TMDB_API_KEY !== "VOTRE_CLE_API_ICI");
 }
 
+function hasConfiguredAssistantApiKey() {
+  return Boolean(
+    AI_ASSISTANT_API_KEY && AI_ASSISTANT_API_KEY !== "VOTRE_CLE_API_IA_ICI",
+  );
+}
+
+function persistAssistantHistory() {
+  localStorage.setItem(
+    AI_ASSISTANT_HISTORY_STORAGE_KEY,
+    JSON.stringify(assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY * 2)),
+  );
+}
+
+function ensureAssistantWelcomeMessage() {
+  if (assistantMessages.length > 0) return;
+  assistantMessages.push({
+    role: "assistant",
+    content:
+      "Salut ! Je peux t'aider sur ta collection: suggestions a regarder, priorites, resume des stats, et idees selon tes genres.",
+  });
+  persistAssistantHistory();
+}
+
+function formatAssistantItem(item) {
+  if (!item) return "";
+  const typeLabel = item.type === "series" ? "Serie" : "Film";
+  const statusLabel = getStatusLabel(item.status);
+  const yearPart = item.year ? `, ${item.year}` : "";
+  const genrePart = item.genre ? `, ${item.genre.split(",")[0].trim()}` : "";
+  return `${item.title} (${typeLabel}, ${statusLabel}${yearPart}${genrePart})`;
+}
+
+function getAssistantCollectionSnapshot() {
+  const watched = items.filter((item) => item.status === "watched").length;
+  const watching = items.filter((item) => item.status === "watching").length;
+  const towatch = items.filter((item) => item.status === "towatch").length;
+  const movies = items.filter((item) => item.type === "movie").length;
+  const series = items.filter((item) => item.type === "series").length;
+
+  const topGenres = Object.entries(
+    items.reduce((acc, item) => {
+      String(item.genre || "")
+        .split(",")
+        .map((genre) => genre.trim())
+        .filter(Boolean)
+        .forEach((genre) => {
+          acc[genre] = (acc[genre] || 0) + 1;
+        });
+      return acc;
+    }, {}),
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([genre, count]) => `${genre} (${count})`)
+    .join(", ");
+
+  const quickCandidates = items
+    .filter((item) => item.status === "towatch" || item.status === "watching")
+    .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
+    .slice(0, 8)
+    .map((item) => `- ${formatAssistantItem(item)}`)
+    .join("\n");
+
+  return [
+    `Collection: ${items.length} titres (${movies} films, ${series} series).`,
+    `Statuts: ${watched} vus, ${watching} en cours, ${towatch} a voir.`,
+    `Genres frequents: ${topGenres || "aucun"}.`,
+    "Candidats rapides:",
+    quickCandidates || "- Aucun candidat disponible.",
+  ].join("\n");
+}
+
+function buildLocalAssistantReply(prompt) {
+  const normalizedPrompt = String(prompt || "").toLowerCase();
+  const watched = items.filter((item) => item.status === "watched").length;
+  const watching = items.filter((item) => item.status === "watching").length;
+  const towatchItems = items.filter((item) => item.status === "towatch");
+  const towatch = towatchItems.length;
+
+  const suggestionPool = items
+    .filter((item) => item.status === "towatch" || item.status === "watching")
+    .filter((item) => {
+      if (normalizedPrompt.includes("film")) return item.type === "movie";
+      if (normalizedPrompt.includes("serie") || normalizedPrompt.includes("série")) {
+        return item.type === "series";
+      }
+      return true;
+    })
+    .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
+    .slice(0, 3);
+
+  if (
+    normalizedPrompt.includes("stat") ||
+    normalizedPrompt.includes("bilan") ||
+    normalizedPrompt.includes("resume") ||
+    normalizedPrompt.includes("résumé")
+  ) {
+    return `Tu as ${items.length} titres: ${watched} vus, ${watching} en cours et ${towatch} a voir. Veux-tu un plan de visionnage sur 7 jours ?`;
+  }
+
+  if (
+    normalizedPrompt.includes("regarder") ||
+    normalizedPrompt.includes("suggest") ||
+    normalizedPrompt.includes("conseil") ||
+    normalizedPrompt.includes("soir")
+  ) {
+    if (suggestionPool.length === 0) {
+      return "Ta file a voir est vide pour ce filtre. Ajoute des titres via TMDB, puis je te proposerai une selection intelligente.";
+    }
+
+    return [
+      "Voici 3 suggestions de ta collection:",
+      ...suggestionPool.map((item, index) => `${index + 1}. ${formatAssistantItem(item)}`),
+      "Si tu veux, je peux te faire une version: rapide (<2h), detente, ou intense.",
+    ].join("\n");
+  }
+
+  if (
+    normalizedPrompt.includes("prior") ||
+    normalizedPrompt.includes("organis") ||
+    normalizedPrompt.includes("plan")
+  ) {
+    const priority = towatchItems
+      .slice()
+      .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
+      .slice(0, 5)
+      .map((item, index) => `${index + 1}. ${formatAssistantItem(item)}`)
+      .join("\n");
+
+    return priority
+      ? `Plan prioritaire propose:\n${priority}`
+      : "Aucune priorite a proposer pour le moment. Ajoute des titres a voir pour generer un plan.";
+  }
+
+  return "Je peux t'aider avec des suggestions, un bilan de progression, un plan de visionnage, ou des priorites par film/serie. Dis-moi ton objectif.";
+}
+
+function renderAssistantMessages({ pending = false } = {}) {
+  const thread = document.getElementById("assistantMessages");
+  if (!thread) return;
+
+  ensureAssistantWelcomeMessage();
+
+  const rows = assistantMessages.map((message) => {
+    const cssClass = message.role === "user" ? "user" : "assistant";
+    return `<div class="assistant-msg ${cssClass}">${escapeHtml(message.content)}</div>`;
+  });
+
+  if (pending) {
+    rows.push(
+      '<div class="assistant-msg assistant pending">En train de reflechir...</div>',
+    );
+  }
+
+  thread.innerHTML = rows.join("");
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function openAssistant() {
+  const modal = document.getElementById("assistantModal");
+  if (!modal) return;
+  modal.classList.add("active");
+  renderAssistantMessages();
+  const input = document.getElementById("assistantInput");
+  if (input) input.focus();
+}
+
+function closeAssistant() {
+  document.getElementById("assistantModal")?.classList.remove("active");
+}
+
+async function queryAssistantApi(prompt) {
+  if (!hasConfiguredAssistantApiKey()) return null;
+
+  const response = await fetch(AI_ASSISTANT_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${AI_ASSISTANT_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: AI_ASSISTANT_MODEL,
+      temperature: 0.5,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Tu es l'assistant de CineTracker. Reponds en francais, de facon concise et actionnable, avec des recommandations basees uniquement sur la collection fournie.",
+        },
+        {
+          role: "system",
+          content: `Contexte collection utilisateur:\n${getAssistantCollectionSnapshot()}`,
+        },
+        ...assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY),
+        { role: "user", content: prompt },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Assistant API error ${response.status}`);
+  }
+
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error("Assistant API response is empty");
+  return String(content).trim();
+}
+
+async function submitAssistantPrompt() {
+  if (assistantRequestPending) return;
+
+  const input = document.getElementById("assistantInput");
+  const sendBtn = document.getElementById("assistantSendBtn");
+  const prompt = String(input?.value || "").trim();
+  if (!prompt) return;
+
+  ensureAssistantWelcomeMessage();
+  assistantMessages.push({ role: "user", content: prompt });
+  assistantMessages = assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY * 2);
+  persistAssistantHistory();
+
+  if (input) input.value = "";
+  assistantRequestPending = true;
+  if (sendBtn) sendBtn.disabled = true;
+  renderAssistantMessages({ pending: true });
+
+  try {
+    const remoteReply = await queryAssistantApi(prompt);
+    const reply = remoteReply || buildLocalAssistantReply(prompt);
+    assistantMessages.push({ role: "assistant", content: reply });
+
+    if (!remoteReply && !assistantConfigTipShown && !hasConfiguredAssistantApiKey()) {
+      assistantConfigTipShown = true;
+      showToast("Mode local actif. Ajoute une cle IA dans config.local.js pour des reponses LLM.");
+    }
+  } catch (error) {
+    console.error("Assistant error:", error);
+    assistantMessages.push({
+      role: "assistant",
+      content:
+        `${buildLocalAssistantReply(prompt)}\n\n(Mode local utilise suite a un probleme de connexion IA.)`,
+    });
+  } finally {
+    assistantMessages = assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY * 2);
+    persistAssistantHistory();
+    assistantRequestPending = false;
+    if (sendBtn) sendBtn.disabled = false;
+    renderAssistantMessages();
+    if (input) input.focus();
+  }
+}
+
 function loadRecentSuggestionHistory() {
   try {
     const stored = JSON.parse(
@@ -9872,6 +10159,13 @@ document
     if (e.target === this) closeSearch();
   });
 
+document.getElementById("assistantInput")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    submitAssistantPrompt();
+  }
+});
+
 document.addEventListener("keydown", function (e) {
   if (
     e.key === "Escape" &&
@@ -9982,6 +10276,9 @@ window.app = {
   loadTrailer,
   openImportExport,
   closeImportExport,
+  openAssistant,
+  closeAssistant,
+  submitAssistantPrompt,
   exportData,
   importData,
   toggleDarkMode,

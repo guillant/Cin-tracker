@@ -49,6 +49,11 @@ if (typeof CONFIG !== "undefined") {
   // CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE = "https://votre-proxy.example.com/availability/{mediaType}/{tmdbId}?country={country}";
   // CONFIG.FRESH_AVAILABILITY_API_KEY = "votre_cle_api";
   // CONFIG.FRESH_AVAILABILITY_API_KEY_HEADER = "x-api-key";
+
+  // Optionnel: activer l'assistant IA distant (sinon mode local intelligent)
+  // CONFIG.AI_ASSISTANT_API_KEY = "votre_cle_api_ia";
+  // CONFIG.AI_ASSISTANT_MODEL = "gpt-4o-mini";
+  // CONFIG.AI_ASSISTANT_API_URL = "https://api.openai.com/v1/chat/completions";
 }
 ```
 
@@ -143,6 +148,7 @@ if (typeof CONFIG !== "undefined") {
 
 - ✅ Import/Export JSON (sauvegarde complète)
 - ✅ Import Letterboxd CSV (diary, watchlist, ratings avec déduplication)
+- ✅ Assistant IA intégré (conseils, suggestions et résumés de collection)
 - ✅ PWA — installable comme application native
 - ✅ Build Android natif via Capacitor
 - ✅ Stockage local (localStorage, aucun compte nécessaire)
