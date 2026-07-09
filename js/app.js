@@ -10,16 +10,16 @@ const TMDB_API_KEY = CONFIG.TMDB_API_KEY;
 const TMDB_BASE_URL = CONFIG.TMDB_BASE_URL;
 const TMDB_IMAGE_BASE = CONFIG.TMDB_IMAGE_BASE;
 const AI_ASSISTANT_API_URL = String(
-  CONFIG.AI_ASSISTANT_API_URL || "https://api.openai.com/v1/chat/completions",
+  CONFIG.AI_ASSISTANT_API_URL || "/api/assistant",
 ).trim();
-const AI_ASSISTANT_MODEL = String(CONFIG.AI_ASSISTANT_MODEL || "gpt-4o-mini").trim();
-const AI_ASSISTANT_API_KEY = String(CONFIG.AI_ASSISTANT_API_KEY || "").trim();
+const AI_ASSISTANT_REMOTE_ENABLED = CONFIG.AI_ASSISTANT_REMOTE_ENABLED !== false;
+const AI_ASSISTANT_TIMEOUT_MS = Math.max(
+  3000,
+  Math.min(30000, Number(CONFIG.AI_ASSISTANT_TIMEOUT_MS) || 15000),
+);
 const AVAILABILITY_SOURCE = String(CONFIG.AVAILABILITY_SOURCE || "tmdb").toLowerCase();
 const FRESH_AVAILABILITY_URL_TEMPLATE =
   CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE || "";
-const FRESH_AVAILABILITY_API_KEY = CONFIG.FRESH_AVAILABILITY_API_KEY || "";
-const FRESH_AVAILABILITY_API_KEY_HEADER =
-  CONFIG.FRESH_AVAILABILITY_API_KEY_HEADER || "x-api-key";
 const TMDB_WATCH_REGION = "FR";
 const TMDB_IMAGE_LANGUAGE_PREFERENCE = "fr,null,en";
 const TMDB_MOVIE_LOCALIZATION_VERSION = 1;
@@ -50,6 +50,7 @@ const GROUP_PROFILES_STORAGE_KEY = "cinetrackerGroupProfiles";
 const GROUP_ACTIVE_PROFILES_STORAGE_KEY = "cinetrackerGroupActiveProfiles";
 const SUGGESTION_RECENT_HISTORY_STORAGE_KEY = "cinetrackerSuggestionRecentHistory";
 const AI_ASSISTANT_HISTORY_STORAGE_KEY = "cinetrackerAssistantHistory";
+const AI_ASSISTANT_CONSENT_STORAGE_KEY = "cinetrackerAssistantRemoteConsent";
 const AI_ASSISTANT_MAX_HISTORY = 12;
 const SUGGESTION_RECENT_HISTORY_LIMIT = 8;
 const SUGGESTION_PROVIDER_CACHE_VERSION = 3;
@@ -4780,14 +4781,8 @@ async function fetchFreshWatchProviders(endpoint, tmdbId) {
   if (!url) return null;
 
   try {
-    const headers = {};
-    if (FRESH_AVAILABILITY_API_KEY) {
-      headers[FRESH_AVAILABILITY_API_KEY_HEADER] = FRESH_AVAILABILITY_API_KEY;
-    }
-
     const res = await fetch(url, {
       method: "GET",
-      headers,
     });
     if (!res.ok) return null;
 
@@ -6869,10 +6864,40 @@ function hasConfiguredTmdbApiKey() {
   return Boolean(TMDB_API_KEY && TMDB_API_KEY !== "VOTRE_CLE_API_ICI");
 }
 
-function hasConfiguredAssistantApiKey() {
-  return Boolean(
-    AI_ASSISTANT_API_KEY && AI_ASSISTANT_API_KEY !== "VOTRE_CLE_API_IA_ICI",
-  );
+function hasAssistantRemoteConsent() {
+  return localStorage.getItem(AI_ASSISTANT_CONSENT_STORAGE_KEY) === "true";
+}
+
+function setAssistantRemoteConsent(enabled) {
+  localStorage.setItem(AI_ASSISTANT_CONSENT_STORAGE_KEY, String(Boolean(enabled)));
+}
+
+async function refreshAssistantModeStatus() {
+  const status = document.getElementById("assistantModeStatus");
+  if (!status) return;
+  if (!AI_ASSISTANT_REMOTE_ENABLED || !hasAssistantRemoteConsent()) {
+    status.textContent = !AI_ASSISTANT_REMOTE_ENABLED
+      ? "Mode local · IA distante désactivée"
+      : "Mode local · autorisation IA non cochée";
+    status.className = "assistant-mode-status local";
+    return;
+  }
+
+  status.textContent = "Connexion au modèle…";
+  status.className = "assistant-mode-status";
+  try {
+    const statusUrl = new URL(AI_ASSISTANT_API_URL, window.location.href);
+    statusUrl.pathname = statusUrl.pathname.replace(/\/assistant\/?$/, "/assistant/status");
+    const response = await fetch(statusUrl, { cache: "no-store" });
+    const data = response.ok ? await response.json() : null;
+    status.textContent = data?.configured
+      ? `IA distante active · ${data.model || "modèle configuré"}`
+      : "Mode local · clé IA absente du serveur";
+    status.className = `assistant-mode-status ${data?.configured ? "remote" : "local"}`;
+  } catch {
+    status.textContent = "Mode local · backend IA inaccessible";
+    status.className = "assistant-mode-status local";
+  }
 }
 
 function persistAssistantHistory() {
@@ -6942,17 +6967,80 @@ function getAssistantCollectionSnapshot() {
 }
 
 function buildLocalAssistantReply(prompt) {
-  const normalizedPrompt = String(prompt || "").toLowerCase();
+  const normalizeText = (value) =>
+    String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  const normalizedPrompt = normalizeText(prompt);
   const watched = items.filter((item) => item.status === "watched").length;
   const watching = items.filter((item) => item.status === "watching").length;
   const towatchItems = items.filter((item) => item.status === "towatch");
   const towatch = towatchItems.length;
 
+  const mentionedItem = items.find((item) => {
+    const title = normalizeText(item.title);
+    return title.length >= 3 && normalizedPrompt.includes(title);
+  });
+  if (mentionedItem) {
+    return [
+      formatAssistantItem(mentionedItem),
+      mentionedItem.rating ? `ta note : ${mentionedItem.rating}/5` : "",
+      mentionedItem.platform ? `plateforme : ${mentionedItem.platform}` : "",
+      mentionedItem.comment ? `ton avis : ${mentionedItem.comment}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+
+  const genreCounts = Object.entries(
+    items.reduce((counts, item) => {
+      String(item.genre || "")
+        .split(",")
+        .map((genre) => genre.trim())
+        .filter(Boolean)
+        .forEach((genre) => {
+          counts[genre] = (counts[genre] || 0) + 1;
+        });
+      return counts;
+    }, {}),
+  ).sort((left, right) => right[1] - left[1]);
+
+  if (
+    normalizedPrompt.includes("genre") ||
+    normalizedPrompt.includes("gout") ||
+    normalizedPrompt.includes("preference")
+  ) {
+    return genreCounts.length
+      ? `Tes genres les plus présents sont ${genreCounts
+          .slice(0, 5)
+          .map(([genre, count]) => `${genre} (${count})`)
+          .join(", ")}.`
+      : "Je n'ai pas encore assez de genres renseignés pour décrire tes goûts.";
+  }
+
+  if (
+    normalizedPrompt.includes("meilleur") ||
+    normalizedPrompt.includes("prefere") ||
+    normalizedPrompt.includes("mieux note") ||
+    normalizedPrompt.includes("favori")
+  ) {
+    const favorites = items
+      .filter((item) => Number(item.rating) > 0)
+      .sort((a, b) => Number(b.rating) - Number(a.rating))
+      .slice(0, 5);
+    return favorites.length
+      ? `Tes titres les mieux notés :\n${favorites
+          .map((item, index) => `${index + 1}. ${item.title} · ${item.rating}/5`)
+          .join("\n")}`
+      : "Tu n'as pas encore noté de titre dans ta collection.";
+  }
+
   const suggestionPool = items
     .filter((item) => item.status === "towatch" || item.status === "watching")
     .filter((item) => {
       if (normalizedPrompt.includes("film")) return item.type === "movie";
-      if (normalizedPrompt.includes("serie") || normalizedPrompt.includes("série")) {
+      if (normalizedPrompt.includes("serie")) {
         return item.type === "series";
       }
       return true;
@@ -6961,19 +7049,24 @@ function buildLocalAssistantReply(prompt) {
     .slice(0, 3);
 
   if (
+    normalizedPrompt.includes("combien") ||
+    normalizedPrompt.includes("nombre") ||
     normalizedPrompt.includes("stat") ||
     normalizedPrompt.includes("bilan") ||
-    normalizedPrompt.includes("resume") ||
-    normalizedPrompt.includes("résumé")
+    normalizedPrompt.includes("resume")
   ) {
-    return `Tu as ${items.length} titres: ${watched} vus, ${watching} en cours et ${towatch} a voir. Veux-tu un plan de visionnage sur 7 jours ?`;
+    const movies = items.filter((item) => item.type === "movie").length;
+    const series = items.filter((item) => item.type === "series").length;
+    return `Tu as ${items.length} titres : ${movies} films et ${series} séries. ${watched} sont vus, ${watching} en cours et ${towatch} à voir.`;
   }
 
   if (
     normalizedPrompt.includes("regarder") ||
     normalizedPrompt.includes("suggest") ||
     normalizedPrompt.includes("conseil") ||
-    normalizedPrompt.includes("soir")
+    normalizedPrompt.includes("soir") ||
+    normalizedPrompt.includes("propose") ||
+    normalizedPrompt.includes("choisis")
   ) {
     if (suggestionPool.length === 0) {
       return "Ta file a voir est vide pour ce filtre. Ajoute des titres via TMDB, puis je te proposerai une selection intelligente.";
@@ -7003,7 +7096,11 @@ function buildLocalAssistantReply(prompt) {
       : "Aucune priorite a proposer pour le moment. Ajoute des titres a voir pour generer un plan.";
   }
 
-  return "Je peux t'aider avec des suggestions, un bilan de progression, un plan de visionnage, ou des priorites par film/serie. Dis-moi ton objectif.";
+  return [
+    "Je suis actuellement en mode local : je peux répondre aux questions portant sur ta collection, mais pas aux questions générales.",
+    "Essaie par exemple : « combien de séries ai-je ? », « quels sont mes genres préférés ? », « parle-moi de [titre] » ou « que regarder ce soir ? ».",
+    "Pour une conversation libre, active l’IA distante et vérifie que le badge indique « IA distante active ».",
+  ].join("\n");
 }
 
 function renderAssistantMessages({ pending = false } = {}) {
@@ -7032,6 +7129,9 @@ function openAssistant() {
   if (!modal) return;
   modal.classList.add("active");
   renderAssistantMessages();
+  const consent = document.getElementById("assistantRemoteConsent");
+  if (consent) consent.checked = hasAssistantRemoteConsent();
+  refreshAssistantModeStatus();
   const input = document.getElementById("assistantInput");
   if (input) input.focus();
 }
@@ -7041,39 +7141,32 @@ function closeAssistant() {
 }
 
 async function queryAssistantApi(prompt) {
-  if (!hasConfiguredAssistantApiKey()) return null;
+  if (!AI_ASSISTANT_REMOTE_ENABLED || !hasAssistantRemoteConsent()) return null;
 
-  const response = await fetch(AI_ASSISTANT_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${AI_ASSISTANT_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: AI_ASSISTANT_MODEL,
-      temperature: 0.5,
-      messages: [
-        {
-          role: "system",
-          content:
-            "Tu es l'assistant de CineTracker. Reponds en francais, de facon concise et actionnable, avec des recommandations basees uniquement sur la collection fournie.",
-        },
-        {
-          role: "system",
-          content: `Contexte collection utilisateur:\n${getAssistantCollectionSnapshot()}`,
-        },
-        ...assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY),
-        { role: "user", content: prompt },
-      ],
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), AI_ASSISTANT_TIMEOUT_MS);
+  let response;
+  try {
+    response = await fetch(AI_ASSISTANT_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        collection: getAssistantCollectionSnapshot(),
+        // The current prompt is already the final entry: do not append it twice.
+        messages: assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY),
+      }),
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error(`Assistant API error ${response.status}`);
   }
 
   const data = await response.json();
-  const content = data?.choices?.[0]?.message?.content;
+  const content = data?.reply;
   if (!content) throw new Error("Assistant API response is empty");
   return String(content).trim();
 }
@@ -7101,16 +7194,17 @@ async function submitAssistantPrompt() {
     const reply = remoteReply || buildLocalAssistantReply(prompt);
     assistantMessages.push({ role: "assistant", content: reply });
 
-    if (!remoteReply && !assistantConfigTipShown && !hasConfiguredAssistantApiKey()) {
+    if (!remoteReply && !assistantConfigTipShown && !hasAssistantRemoteConsent()) {
       assistantConfigTipShown = true;
-      showToast("Mode local actif. Ajoute une cle IA dans config.local.js pour des reponses LLM.");
+      showToast("Mode local actif. Autorise le partage pour utiliser l'assistant distant.");
     }
   } catch (error) {
     console.error("Assistant error:", error);
+    refreshAssistantModeStatus();
     assistantMessages.push({
       role: "assistant",
       content:
-        `${buildLocalAssistantReply(prompt)}\n\n(Mode local utilise suite a un probleme de connexion IA.)`,
+        `${buildLocalAssistantReply(prompt)}\n\nL’IA distante n’a pas répondu : vérifie le badge d’état en haut de la fenêtre.`,
     });
   } finally {
     assistantMessages = assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY * 2);
@@ -10279,6 +10373,8 @@ window.app = {
   openAssistant,
   closeAssistant,
   submitAssistantPrompt,
+  setAssistantRemoteConsent,
+  refreshAssistantModeStatus,
   exportData,
   importData,
   toggleDarkMode,

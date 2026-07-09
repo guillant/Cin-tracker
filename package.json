@@ -4,6 +4,8 @@
   "description": "Application mobile et PWA pour suivre films et series.",
   "private": true,
   "scripts": {
+    "start": "node server.js",
+    "test": "node --test",
     "mobile:prepare": "node scripts/prepare-mobile.js",
     "cap:add:android": "cap add android",
     "cap:add:ios": "cap add ios",
@@ -13,7 +15,7 @@
     "cap:run:android": "cap run android",
     "cap:run:ios": "cap run ios",
     "android:build:debug": "npm run cap:sync && android\\gradlew.bat -p android assembleDebug",
-    "check:js": "node --check js/app.js && node --check js/config.js && node --check service-worker.js"
+    "check:js": "node --check js/app.js && node --check js/config.js && node --check service-worker.js && node --check server.js"
   },
   "devDependencies": {
     "@capacitor/android": "^8.3.1",

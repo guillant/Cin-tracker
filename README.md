@@ -46,18 +46,32 @@ if (typeof CONFIG !== "undefined") {
   // Optionnel: source plus fraîche pour les disponibilités plateformes.
   // "tmdb" (défaut) | "hybrid" (TMDB + fallback externe) | "fresh" (externe prioritaire)
   // CONFIG.AVAILABILITY_SOURCE = "hybrid";
-  // CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE = "https://votre-proxy.example.com/availability/{mediaType}/{tmdbId}?country={country}";
-  // CONFIG.FRESH_AVAILABILITY_API_KEY = "votre_cle_api";
-  // CONFIG.FRESH_AVAILABILITY_API_KEY_HEADER = "x-api-key";
+  // CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE = "/api/availability/{mediaType}/{tmdbId}?country={country}";
 
-  // Optionnel: activer l'assistant IA distant (sinon mode local intelligent)
-  // CONFIG.AI_ASSISTANT_API_KEY = "votre_cle_api_ia";
-  // CONFIG.AI_ASSISTANT_MODEL = "gpt-4o-mini";
-  // CONFIG.AI_ASSISTANT_API_URL = "https://api.openai.com/v1/chat/completions";
+  // Pour une app mobile, indiquez l'URL HTTPS de votre backend.
+  // CONFIG.AI_ASSISTANT_API_URL = "https://api.example.com/api/assistant";
 }
 ```
 
 `FRESH_AVAILABILITY_URL_TEMPLATE` accepte les placeholders `{mediaType}`, `{tmdbId}` et `{country}`.
+
+### Backend sécurisé pour l'assistant
+
+Les clés OpenAI et RapidAPI ne doivent jamais être placées dans `js/config.local.js`.
+Définissez-les comme variables d'environnement du serveur :
+
+```powershell
+$env:OPENAI_API_KEY="..."
+$env:RAPIDAPI_KEY="..."
+npm start
+```
+
+Ouvrez ensuite `http://localhost:4173`. L'assistant distant nécessite le
+consentement explicite de l'utilisateur dans sa fenêtre. Sans consentement ou
+si le backend n'est pas configuré, il utilise automatiquement le mode local.
+
+Après exposition accidentelle d'une clé dans une version client, révoquez-la
+depuis le tableau de bord du fournisseur avant d'en créer une nouvelle.
 
 ## 🎯 Lancer l'application
 

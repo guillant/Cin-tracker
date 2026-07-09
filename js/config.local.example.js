@@ -4,16 +4,13 @@
 if (typeof CONFIG !== "undefined") {
   CONFIG.TMDB_API_KEY = "votre_vraie_cle_ici";
 
-  // Optional: enable remote AI assistant replies (kept local only).
-  // CONFIG.AI_ASSISTANT_API_KEY = "votre_cle_api_ia";
-  // CONFIG.AI_ASSISTANT_MODEL = "gpt-4o-mini";
-  // CONFIG.AI_ASSISTANT_API_URL = "https://api.openai.com/v1/chat/completions";
+  // Optional: backend URL. Use an HTTPS URL for the Android application.
+  // Provider keys belong to the backend environment, never in this file.
+  // CONFIG.AI_ASSISTANT_API_URL = "https://votre-backend.example.com/api/assistant";
 
   // Optional: fresher availability source for streaming platforms.
   // "tmdb" (default) | "hybrid" (TMDB + external fallback) | "fresh" (external first)
   // CONFIG.AVAILABILITY_SOURCE = "hybrid";
   // CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE =
-  //   "https://votre-proxy.example.com/availability/{mediaType}/{tmdbId}?country={country}";
-  // CONFIG.FRESH_AVAILABILITY_API_KEY = "votre_cle_api";
-  // CONFIG.FRESH_AVAILABILITY_API_KEY_HEADER = "x-api-key";
+  //   "https://votre-backend.example.com/api/availability/{mediaType}/{tmdbId}?country={country}";
 }

@@ -1180,11 +1180,23 @@
             <p class="mockup-modal-subtitle">
               Pose une question sur ta collection ou demande une suggestion.
             </p>
+            <div id="assistantModeStatus" class="assistant-mode-status">
+              Vérification du mode…
+            </div>
           </div>
           <button class="close-btn" onclick="app.closeAssistant()">&times;</button>
         </div>
         <div class="modal-body assistant-modal-body">
           <div id="assistantMessages" class="assistant-thread" aria-live="polite"></div>
+          <label class="assistant-consent">
+            <input
+              id="assistantRemoteConsent"
+              type="checkbox"
+              onchange="app.setAssistantRemoteConsent(this.checked); app.refreshAssistantModeStatus()"
+            >
+            Autoriser l’envoi du résumé de ma collection et de cette conversation
+            au fournisseur IA. Sinon, le mode local reste actif.
+          </label>
           <div class="assistant-composer">
             <textarea
               id="assistantInput"

@@ -2412,6 +2412,39 @@ header {
   align-items: end;
 }
 
+.assistant-consent {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.assistant-consent input {
+  margin-top: 0.15rem;
+}
+
+.assistant-mode-status {
+  display: inline-flex;
+  margin-top: 0.35rem;
+  padding: 0.22rem 0.55rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.assistant-mode-status.remote {
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #22c55e;
+}
+
+.assistant-mode-status.local {
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #f59e0b;
+}
+
 .assistant-input {
   min-height: 88px;
   margin: 0;

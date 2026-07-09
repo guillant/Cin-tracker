@@ -26,6 +26,8 @@ npm-debug.log*
 # Environment variables (if you add them)
 .env
 .env.local
+.env.*
+!.env.example
 js/config.local.js
 
 # Temporary files
