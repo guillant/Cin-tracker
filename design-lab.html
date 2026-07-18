@@ -4941,6 +4941,270 @@
         letter-spacing: 0.5px;
       }
 
+      .ai-answer-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        align-items: start;
+      }
+
+      .ai-answer-card {
+        background: #111827;
+        border: 1px solid rgba(148,163,184,0.18);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 18px 50px rgba(0,0,0,0.28);
+      }
+
+      .ai-answer-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px 18px;
+        border-bottom: 1px solid rgba(148,163,184,0.14);
+      }
+
+      .ai-answer-head strong {
+        display: block;
+        font-size: 14px;
+        color: #f8fafc;
+      }
+
+      .ai-answer-head span {
+        color: rgba(203,213,225,0.52);
+        font-size: 12px;
+      }
+
+      .ai-answer-preview {
+        padding: 18px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .ai-bubble {
+        background: #1f2937;
+        border: 1px solid rgba(148,163,184,0.16);
+        border-radius: 16px;
+        padding: 16px;
+        color: #e5e7eb;
+      }
+
+      .ai-bubble-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        color: #93c5fd;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .ai-bubble-label small {
+        color: rgba(203,213,225,0.58);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+
+      .ai-result-stack {
+        display: grid;
+        gap: 10px;
+      }
+
+      .ai-result-stack.ai-flow-gap {
+        margin-top: 12px;
+      }
+
+      .ai-result-row {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        gap: 12px;
+        align-items: center;
+        padding: 10px;
+        background: rgba(15,23,42,0.72);
+        border: 1px solid rgba(148,163,184,0.12);
+        border-radius: 12px;
+      }
+
+      .ai-rank {
+        width: 44px;
+        height: 58px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(145deg, #1d4ed8, #0891b2);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 900;
+      }
+
+      .ai-rank.red { background: linear-gradient(145deg, #991b1b, #db2777); }
+      .ai-rank.green { background: linear-gradient(145deg, #166534, #0f766e); }
+      .ai-rank.gold { background: linear-gradient(145deg, #92400e, #ca8a04); }
+
+      .ai-result-title {
+        color: #f8fafc;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+
+      .ai-result-meta {
+        margin-top: 4px;
+        color: rgba(203,213,225,0.66);
+        font-size: 12px;
+      }
+
+      .ai-result-reason {
+        margin-top: 7px;
+        color: rgba(226,232,240,0.86);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .ai-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+      }
+
+      .ai-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 26px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: rgba(37,99,235,0.14);
+        color: #bfdbfe;
+        border: 1px solid rgba(96,165,250,0.22);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .ai-action-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .ai-action {
+        border: 0;
+        border-radius: 10px;
+        padding: 8px 11px;
+        background: rgba(148,163,184,0.12);
+        color: #e5e7eb;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .ai-action.primary {
+        background: #2563eb;
+        color: #fff;
+      }
+
+      .ai-summary-panel {
+        background: linear-gradient(180deg, rgba(15,23,42,0.72), rgba(2,6,23,0.78));
+        border: 1px solid rgba(148,163,184,0.16);
+        border-radius: 14px;
+        padding: 14px;
+      }
+
+      .ai-summary-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 0;
+        border-top: 1px solid rgba(148,163,184,0.12);
+      }
+
+      .ai-summary-line:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .ai-summary-line:last-child {
+        padding-bottom: 0;
+      }
+
+      .ai-summary-line strong {
+        color: #f8fafc;
+        font-size: 13px;
+      }
+
+      .ai-summary-line span {
+        color: rgba(203,213,225,0.62);
+        font-size: 12px;
+        text-align: right;
+      }
+
+      .ai-ticket {
+        position: relative;
+        overflow: hidden;
+        border-radius: 16px;
+        padding: 18px;
+        background:
+          linear-gradient(120deg, rgba(37,99,235,0.24), transparent 48%),
+          linear-gradient(180deg, #1e293b, #0f172a);
+        border: 1px solid rgba(96,165,250,0.2);
+      }
+
+      .ai-ticket::before,
+      .ai-ticket::after {
+        content: "";
+        position: absolute;
+        right: 78px;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: #111827;
+        border: 1px solid rgba(96,165,250,0.2);
+      }
+
+      .ai-ticket::before { top: -12px; }
+      .ai-ticket::after { bottom: -12px; }
+
+      .ai-ticket-kicker {
+        color: #93c5fd;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 10px;
+      }
+
+      .ai-ticket-title {
+        color: #fff;
+        font-size: 23px;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .ai-ticket-meta {
+        margin-top: 8px;
+        color: rgba(226,232,240,0.74);
+        font-size: 12px;
+      }
+
+      .ai-ticket-reason {
+        margin-top: 14px;
+        color: rgba(248,250,252,0.88);
+        font-size: 13px;
+        line-height: 1.45;
+        max-width: 80%;
+      }
+
+      .ai-card-note {
+        padding: 0 18px 18px;
+        color: rgba(203,213,225,0.56);
+        font-size: 12px;
+      }
+
     </style>
   </head>
   <body>
@@ -4950,6 +5214,7 @@
     </div>
 
     <div class="mockup-quick-nav">
+      <a class="mockup-quick-link target-mobile" href="#mockup-ai-answers">Reponses IA</a>
       <a class="mockup-quick-link" href="#mockup-discover-chips">Chips découvrir</a>
       <a class="mockup-quick-link target-mobile" href="#mockup-browse-mobile">Browse mobile</a>
       <a class="mockup-quick-link target-mobile" href="#mockup-social-friends">Social</a>
@@ -4964,6 +5229,186 @@
       <a class="mockup-quick-link" href="#mockup-watched-cta">CTA Vu + note</a>
       <a class="mockup-quick-link" href="#mockup-under-hero">Sous le hero (refait)</a>
     </div>
+
+    <section id="mockup-ai-answers">
+      <div class="premium-buttons-copy">
+        <span class="mockup-chip">Assistant IA</span>
+        <h3 class="mockup-subsection-title">Reponses de recommandation - 4 directions</h3>
+        <p class="mockup-copy">Des formats plus lisibles pour transformer les reponses texte en recommandations scannables, avec plateformes, raisons et actions rapides.</p>
+      </div>
+
+      <div class="ai-answer-grid">
+        <article class="ai-answer-card">
+          <div class="ai-answer-head">
+            <div>
+              <strong>A - Liste enrichie</strong>
+              <span>Le plus proche de l'interface actuelle</span>
+            </div>
+            <span>sobre</span>
+          </div>
+          <div class="ai-answer-preview">
+            <div class="ai-bubble">
+              <div class="ai-bubble-label">
+                Recherche TMDB
+                <small>Action - Netflix - FR</small>
+              </div>
+              <div class="ai-result-stack">
+                <div class="ai-result-row">
+                  <div class="ai-rank">1</div>
+                  <div>
+                    <div class="ai-result-title">The Old Guard</div>
+                    <div class="ai-result-meta">Film - 2020 - TMDB 7.1/10</div>
+                    <div class="ai-result-reason">Action lisible, rythme direct, disponible dans l'esprit de ta demande.</div>
+                  </div>
+                </div>
+                <div class="ai-result-row">
+                  <div class="ai-rank red">2</div>
+                  <div>
+                    <div class="ai-result-title">Extraction</div>
+                    <div class="ai-result-meta">Film - 2020 - TMDB 7.3/10</div>
+                    <div class="ai-result-reason">Plus nerveux, parfait si tu veux une seance sans temps mort.</div>
+                  </div>
+                </div>
+                <div class="ai-result-row">
+                  <div class="ai-rank gold">3</div>
+                  <div>
+                    <div class="ai-result-title">Triple Frontier</div>
+                    <div class="ai-result-meta">Film - 2019 - TMDB 6.3/10</div>
+                    <div class="ai-result-reason">Action plus tactique, avec un cote braquage militaire.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="ai-chip-row">
+              <span class="ai-chip">Netflix</span>
+              <span class="ai-chip">Action</span>
+              <span class="ai-chip">Pas dans ta collection</span>
+            </div>
+          </div>
+          <div class="ai-card-note">Bonne option si on veut juste rendre la reponse actuelle propre, sans changer la logique du chat.</div>
+        </article>
+
+        <article class="ai-answer-card">
+          <div class="ai-answer-head">
+            <div>
+              <strong>B - Cartes compactes</strong>
+              <span>Plus mobile, tres rapide a scanner</span>
+            </div>
+            <span>dense</span>
+          </div>
+          <div class="ai-answer-preview">
+            <div class="ai-bubble">
+              <div class="ai-bubble-label">
+                4 suggestions
+                <small>triees par popularite</small>
+              </div>
+              <div class="ai-summary-panel">
+                <div class="ai-summary-line">
+                  <strong>Extraction 2</strong>
+                  <span>Action pure - Netflix</span>
+                </div>
+                <div class="ai-summary-line">
+                  <strong>The Gray Man</strong>
+                  <span>Espionnage - rythme rapide</span>
+                </div>
+                <div class="ai-summary-line">
+                  <strong>Baby Driver</strong>
+                  <span>Course - musique - fun</span>
+                </div>
+                <div class="ai-summary-line">
+                  <strong>Kate</strong>
+                  <span>Vengeance - stylise</span>
+                </div>
+              </div>
+            </div>
+            <div class="ai-action-row">
+              <button class="ai-action primary">Ouvrir le 1er</button>
+              <button class="ai-action">Autres idees</button>
+            </div>
+          </div>
+          <div class="ai-card-note">Ideal pour eviter les gros paragraphes. Moins cinema, mais tres efficace sur mobile.</div>
+        </article>
+
+        <article class="ai-answer-card">
+          <div class="ai-answer-head">
+            <div>
+              <strong>C - Ticket cinema</strong>
+              <span>Une recommandation forte, puis alternatives</span>
+            </div>
+            <span>premium</span>
+          </div>
+          <div class="ai-answer-preview">
+            <div class="ai-ticket">
+              <div class="ai-ticket-kicker">Meilleur choix</div>
+              <div class="ai-ticket-title">Extraction</div>
+              <div class="ai-ticket-meta">Film - 2020 - Action - Netflix - TMDB 7.3</div>
+              <div class="ai-ticket-reason">Je partirais la-dessus si tu veux un film d'action immediat, lisible et nerveux, sans entrer dans un univers complique.</div>
+            </div>
+            <div class="ai-result-stack">
+              <div class="ai-result-row">
+                <div class="ai-rank green">+</div>
+                <div>
+                  <div class="ai-result-title">Si tu veux plus fun : Baby Driver</div>
+                  <div class="ai-result-meta">Action - course - musique</div>
+                </div>
+              </div>
+              <div class="ai-result-row">
+                <div class="ai-rank red">+</div>
+                <div>
+                  <div class="ai-result-title">Si tu veux plus brutal : Kate</div>
+                  <div class="ai-result-meta">Vengeance - urbain - stylise</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ai-card-note">Direction la plus editoriale: l'assistant prend position au lieu de lister quatre titres equivalents.</div>
+        </article>
+
+        <article class="ai-answer-card">
+          <div class="ai-answer-head">
+            <div>
+              <strong>D - Diagnostic + reponse</strong>
+              <span>Transparence quand le backend est absent</span>
+            </div>
+            <span>clair</span>
+          </div>
+          <div class="ai-answer-preview">
+            <div class="ai-bubble">
+              <div class="ai-bubble-label">
+                Mode secours
+                <small>backend IA indisponible</small>
+              </div>
+              <div class="ai-chip-row">
+                <span class="ai-chip">TMDB local</span>
+                <span class="ai-chip">Netflix FR</span>
+                <span class="ai-chip">Action</span>
+              </div>
+              <div class="ai-result-stack ai-flow-gap">
+                <div class="ai-result-row">
+                  <div class="ai-rank">1</div>
+                  <div>
+                    <div class="ai-result-title">Je peux quand meme chercher</div>
+                    <div class="ai-result-reason">L'IA distante ne repond pas, donc je filtre directement le catalogue TMDB avec ta demande.</div>
+                  </div>
+                </div>
+                <div class="ai-result-row">
+                  <div class="ai-rank gold">2</div>
+                  <div>
+                    <div class="ai-result-title">Resultats limites mais utiles</div>
+                    <div class="ai-result-reason">Je ne promets pas la disponibilite parfaite, mais je respecte plateforme, genre et date de sortie.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="ai-action-row">
+              <button class="ai-action primary">Voir les films</button>
+              <button class="ai-action">Reessayer l'IA</button>
+            </div>
+          </div>
+          <div class="ai-card-note">Utile tant que le site est statique: on explique le mode secours sans donner l'impression que l'app est cassee.</div>
+        </article>
+      </div>
+    </section>
 
     <section id="mockup-social-friends">
       <div class="premium-buttons-copy">
