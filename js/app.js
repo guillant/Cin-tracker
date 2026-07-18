@@ -7495,11 +7495,32 @@ function parseAssistantCatalogIntent(prompt) {
   const genreEntry = Object.entries(genreMap).find(([term]) =>
     text.includes(term),
   )?.[1];
+  const providerAliases = [
+    { terms: ["netflix"], key: "netflix" },
+    { terms: ["prime video", "prime", "amazon"], key: "prime-video" },
+    { terms: ["disney+", "disney plus", "disney"], key: "disney+" },
+    { terms: ["canal+", "canal plus", "canal"], key: "canal+" },
+    { terms: ["apple tv+", "apple tv", "apple"], key: "apple-tv+" },
+    { terms: ["arte"], key: "arte" },
+    { terms: ["france tv", "france.tv"], key: "france-tv" },
+    { terms: ["max", "hbo"], key: "max" },
+    { terms: ["paramount+", "paramount plus", "paramount"], key: "paramount+" },
+    { terms: ["crunchyroll"], key: "crunchyroll" },
+    { terms: ["mubi"], key: "mubi" },
+  ];
+  const providerMatch = providerAliases.find((entry) =>
+    entry.terms.some((term) => text.includes(term)),
+  );
+  const provider = providerMatch
+    ? USER_PROVIDER_OPTIONS.find((option) => option.key === providerMatch.key)
+    : null;
 
   return {
     mediaType,
     genreId: genreEntry?.[mediaType] || null,
     genreLabel: genreEntry?.label || null,
+    providerId: provider?.tmdbId || null,
+    providerLabel: provider?.label || null,
   };
 }
 
@@ -7515,7 +7536,15 @@ async function buildLocalCatalogSuggestionReply(prompt) {
   url.searchParams.set("sort_by", "popularity.desc");
   url.searchParams.set("vote_count.gte", endpoint === "movie" ? "150" : "80");
   url.searchParams.set("watch_region", TMDB_WATCH_REGION);
+  url.searchParams.set(
+    endpoint === "movie" ? "primary_release_date.lte" : "first_air_date.lte",
+    getTodayDateInputValue(),
+  );
   if (intent.genreId) url.searchParams.set("with_genres", String(intent.genreId));
+  if (intent.providerId) {
+    url.searchParams.set("with_watch_providers", String(intent.providerId));
+    url.searchParams.set("with_watch_monetization_types", "flatrate|free|ads");
+  }
 
   const response = await fetch(url.toString());
   if (!response.ok) return null;
@@ -7533,8 +7562,9 @@ async function buildLocalCatalogSuggestionReply(prompt) {
 
   const typeLabel = endpoint === "tv" ? "series" : "films";
   const genreLabel = intent.genreLabel ? ` ${intent.genreLabel}` : "";
+  const providerLabel = intent.providerLabel ? ` sur ${intent.providerLabel}` : "";
   const lines = [
-    `Le backend IA est inaccessible, mais j'ai quand meme cherche dans TMDB. Voici ${candidates.length} ${typeLabel}${genreLabel} a tenter :`,
+    `Le backend IA est inaccessible, mais j'ai quand meme cherche dans TMDB. Voici ${candidates.length} ${typeLabel}${genreLabel}${providerLabel} a tenter :`,
     ...candidates.map((item, index) => {
       const title = item.title || item.name || "Titre inconnu";
       const year = String(item.release_date || item.first_air_date || "").slice(
