@@ -90,6 +90,14 @@ test("recommendation intent parser detects find phrasing", () => {
   assert.equal(intent.type, "movie");
 });
 
+test("recommendation intent parser detects compact genre platform requests", () => {
+  const intent = parseRecommendationIntent("film d'action sur netflix");
+  assert.equal(intent.wantsRecommendation, true);
+  assert.equal(intent.type, "movie");
+  assert.equal(intent.genreLabel, "action");
+  assert.equal(intent.platformLabel, "Netflix");
+});
+
 test("catalog search can discover popular movies without query or genre", async () => {
   const previousKey = process.env.TMDB_API_KEY;
   const previousFetch = global.fetch;

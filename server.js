@@ -172,13 +172,14 @@ function parseRecommendationIntent(userPrompt) {
     { key: "max", label: "Max" },
   ];
   const matchedPlatform = platformMap.find((entry) => text.includes(entry.key));
+  const hasRecommendationFilter = Boolean(matchedGenre || matchedPlatform);
 
   let type = null;
   if (text.includes("serie") && !text.includes("film")) type = "series";
   if (text.includes("film") && !text.includes("serie")) type = "movie";
 
   return {
-    wantsRecommendation,
+    wantsRecommendation: wantsRecommendation || hasRecommendationFilter,
     genreLabel: matchedGenre?.label || null,
     platformLabel: matchedPlatform?.label || null,
     type,

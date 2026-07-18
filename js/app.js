@@ -7485,6 +7485,7 @@ function parseAssistantCatalogIntent(prompt) {
   const text = normalizeAssistantText(prompt);
   const wantsSuggestion = [
     "trouve",
+    "trouves",
     "cherche",
     "decouvre",
     "recommande",
@@ -7494,8 +7495,6 @@ function parseAssistantCatalogIntent(prompt) {
     "quoi regarder",
     "idee",
   ].some((term) => text.includes(term));
-
-  if (!wantsSuggestion) return null;
 
   const mediaType =
     text.includes("serie") && !text.includes("film")
@@ -7542,6 +7541,9 @@ function parseAssistantCatalogIntent(prompt) {
   const provider = providerMatch
     ? USER_PROVIDER_OPTIONS.find((option) => option.key === providerMatch.key)
     : null;
+  const hasCatalogFilter = Boolean(genreEntry || provider);
+
+  if (!wantsSuggestion && !hasCatalogFilter) return null;
 
   return {
     mediaType,
