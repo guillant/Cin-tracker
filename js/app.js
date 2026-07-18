@@ -9,10 +9,44 @@
 const TMDB_API_KEY = CONFIG.TMDB_API_KEY;
 const TMDB_BASE_URL = CONFIG.TMDB_BASE_URL;
 const TMDB_IMAGE_BASE = CONFIG.TMDB_IMAGE_BASE;
-const AI_ASSISTANT_API_URL = String(
-  CONFIG.AI_ASSISTANT_API_URL || "/api/assistant",
-).trim();
+const AI_ASSISTANT_API_URL = (() => {
+  const configuredUrl = String(CONFIG.AI_ASSISTANT_API_URL || "/api/assistant").trim();
+  if (
+    typeof window === "undefined" ||
+    /^https?:\/\//i.test(configuredUrl) ||
+    !configuredUrl.startsWith("/")
+  ) {
+    return configuredUrl;
+  }
+
+  const hasExplicitDevPort = Boolean(window.location.port);
+  const isBackendOrigin = window.location.port === "4173";
+  if (isBackendOrigin) {
+    return configuredUrl;
+  }
+
+  if (!hasExplicitDevPort) {
+    return configuredUrl;
+  }
+
+  // Live Server runs on another port and does not proxy /api by default.
+  return `${window.location.protocol}//${window.location.hostname}:4173${configuredUrl}`;
+})();
+const AI_ASSISTANT_NEEDS_ABSOLUTE_URL =
+  typeof window !== "undefined" &&
+  /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname) &&
+  !window.location.port &&
+  AI_ASSISTANT_API_URL.startsWith("/");
 const AI_ASSISTANT_REMOTE_ENABLED = CONFIG.AI_ASSISTANT_REMOTE_ENABLED !== false;
+const AI_ASSISTANT_PERSIST_HISTORY = CONFIG.AI_ASSISTANT_PERSIST_HISTORY === true;
+const AI_ASSISTANT_REMOTE_HISTORY_LIMIT = Math.max(
+  2,
+  Math.min(10, Number(CONFIG.AI_ASSISTANT_REMOTE_HISTORY_LIMIT) || 6),
+);
+const AI_ASSISTANT_REMOTE_COLLECTION_MAX_CHARS = Math.max(
+  1200,
+  Math.min(12000, Number(CONFIG.AI_ASSISTANT_REMOTE_COLLECTION_MAX_CHARS) || 3200),
+);
 const AI_ASSISTANT_TIMEOUT_MS = Math.max(
   3000,
   Math.min(300000, Number(CONFIG.AI_ASSISTANT_TIMEOUT_MS) || 300000),
@@ -1121,6 +1155,70 @@ function isSeasonAired(item, season) {
   return d <= today;
 }
 
+function getSeasonEpisodeCount(item, season, fallback = 0) {
+  const fromSeasonData = Number(
+    item?.seasonData?.[season] || item?.seasonData?.[String(season)],
+  );
+  if (Number.isFinite(fromSeasonData) && fromSeasonData > 0) {
+    return fromSeasonData;
+  }
+
+  const fromFallback = Number(fallback);
+  if (Number.isFinite(fromFallback) && fromFallback > 0) {
+    return fromFallback;
+  }
+
+  return 0;
+}
+
+function getAiredEpisodeCountForSeason(item, season, episodeCount = 0) {
+  const seasonTotal = getSeasonEpisodeCount(item, season, episodeCount);
+  if (!isSeasonAired(item, season)) return 0;
+
+  const storedAired = Number(
+    item?.seasonAiredCounts?.[season] || item?.seasonAiredCounts?.[String(season)],
+  );
+  if (Number.isFinite(storedAired) && storedAired >= 0) {
+    return seasonTotal > 0 ? Math.min(storedAired, seasonTotal) : storedAired;
+  }
+
+  if (item?.tmdbId) {
+    const cached = seasonEpisodesCache[`${item.tmdbId}-${season}`];
+    if (Array.isArray(cached) && cached.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const airedInCache = cached.filter((ep) => {
+        if (!ep?.air_date) return true;
+        const d = new Date(ep.air_date);
+        d.setHours(0, 0, 0, 0);
+        return d <= today;
+      }).length;
+
+      return seasonTotal > 0
+        ? Math.min(airedInCache, seasonTotal)
+        : airedInCache;
+    }
+  }
+
+  const lastAiredSeason = Number(item?.lastAiredSeason || 0);
+  const lastAiredEpisode = Number(item?.lastAiredEpisode || 0);
+
+  if (Number.isFinite(lastAiredSeason) && lastAiredSeason > 0) {
+    if (season < lastAiredSeason) {
+      return seasonTotal;
+    }
+    if (season > lastAiredSeason) {
+      return 0;
+    }
+    if (seasonTotal > 0) {
+      return Math.min(Math.max(lastAiredEpisode, 0), seasonTotal);
+    }
+    return Math.max(lastAiredEpisode, 0);
+  }
+
+  return seasonTotal;
+}
+
 function hasWatchableEpisode(item) {
   if (!item?.seasonData) return true;
   const currentSeason = item.currentSeason || 1;
@@ -1134,24 +1232,12 @@ function hasWatchableEpisode(item) {
 
   if (currentEpisode <= currentSeasonTotal) {
     if (!isSeasonAired(item, currentSeason)) return false;
-    // Si les épisodes de la saison sont en cache, vérifier qu'au moins un a été diffusé
-    if (item.tmdbId) {
-      const cached = seasonEpisodesCache[`${item.tmdbId}-${currentSeason}`];
-      if (cached?.length > 0) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const hasAired = cached.some((ep) => {
-          const epNum = ep.episode_number || 0;
-          if (epNum > 0 && epNum < currentEpisode) return false; // déjà vu
-          if (!ep.air_date) return true;
-          const d = new Date(ep.air_date);
-          d.setHours(0, 0, 0, 0);
-          return d <= today;
-        });
-        if (!hasAired) return false;
-      }
-    }
-    return true;
+    const airedInCurrentSeason = getAiredEpisodeCountForSeason(
+      item,
+      currentSeason,
+      currentSeasonTotal,
+    );
+    return airedInCurrentSeason >= currentEpisode;
   }
 
   // Current season exhausted — check next season
@@ -1602,24 +1688,44 @@ function getSeriesEpisodeProgress(item) {
     totalEpisodesFromSeasons ||
     CONSTANTS.DEFAULT_EPISODES_PER_SEASON;
 
-  let watchedBeforeCurrentSeason = 0;
+  let watchedEpisodes = 0;
   if (normalizedSeasonData.length > 0) {
-    watchedBeforeCurrentSeason = normalizedSeasonData
-      .filter(([seasonNumber]) => seasonNumber < currentSeason)
-      .reduce((sum, [, episodeCount]) => sum + episodeCount, 0);
+    watchedEpisodes = normalizedSeasonData.reduce(
+      (sum, [seasonNumber, episodeCount]) => {
+        const airedCount = getAiredEpisodeCountForSeason(
+          item,
+          seasonNumber,
+          episodeCount,
+        );
+
+        if (seasonNumber < currentSeason) {
+          return sum + Math.min(episodeCount, airedCount);
+        }
+
+        if (seasonNumber > currentSeason) {
+          return sum;
+        }
+
+        const canCountFullSeasonAsWatched =
+          item.status === "watched" &&
+          currentEpisode >= episodeCount &&
+          airedCount >= episodeCount;
+        if (canCountFullSeasonAsWatched) {
+          return sum + airedCount;
+        }
+
+        return sum + Math.max(0, Math.min(currentEpisode - 1, airedCount));
+      },
+      0,
+    );
   } else {
-    watchedBeforeCurrentSeason =
-      (currentSeason - 1) * CONSTANTS.DEFAULT_EPISODES_PER_SEASON;
+    watchedEpisodes =
+      item.status === "watched"
+        ? totalEpisodes
+        : Math.max(0, Math.min(currentEpisode - 1, totalEpisodes));
   }
 
-  let watchedEpisodes =
-    watchedBeforeCurrentSeason + Math.max(0, currentEpisode - 1);
-
-  if (item.status === "watched") {
-    watchedEpisodes = totalEpisodes;
-  } else {
-    watchedEpisodes = Math.min(watchedEpisodes, totalEpisodes);
-  }
+  watchedEpisodes = Math.min(watchedEpisodes, totalEpisodes);
 
   const remainingEpisodes = Math.max(0, totalEpisodes - watchedEpisodes);
 
@@ -1644,24 +1750,30 @@ function getNextEpisodeDisplay(item, mode = "short") {
 function getSeasonProgressState(item, seasonNumber, episodeCount = 0) {
   const currentSeason = Math.max(1, item.currentSeason || 1);
   const currentEpisode = Math.max(1, item.currentEpisode || 1);
-  const isSeriesWatched = item.status === "watched";
+  const availableEpisodes = getAiredEpisodeCountForSeason(
+    item,
+    seasonNumber,
+    episodeCount,
+  );
 
   let watchedEpisodes =
     seasonNumber < currentSeason
-      ? episodeCount
+      ? availableEpisodes
       : seasonNumber === currentSeason
-        ? isSeriesWatched
-          ? episodeCount
+        ? item.status === "watched" &&
+          currentEpisode >= episodeCount &&
+          availableEpisodes >= episodeCount
+          ? availableEpisodes
           : Math.max(0, currentEpisode - 1)
         : 0;
 
-  if (episodeCount > 0) {
-    watchedEpisodes = Math.min(watchedEpisodes, episodeCount);
-  }
+  watchedEpisodes = Math.min(watchedEpisodes, availableEpisodes);
 
   const isDone = episodeCount > 0 && watchedEpisodes >= episodeCount;
+  const isCaughtUp =
+    availableEpisodes > 0 && watchedEpisodes >= availableEpisodes && !isDone;
   const isCurrent =
-    !isSeriesWatched && seasonNumber === currentSeason && !isDone;
+    item.status !== "watched" && seasonNumber === currentSeason && !isDone;
   const pct =
     episodeCount > 0
       ? Math.min(100, Math.round((watchedEpisodes / episodeCount) * 100))
@@ -1669,7 +1781,9 @@ function getSeasonProgressState(item, seasonNumber, episodeCount = 0) {
 
   return {
     watchedEpisodes,
+    availableEpisodes,
     isDone,
+    isCaughtUp,
     isCurrent,
     pct,
   };
@@ -1693,6 +1807,10 @@ function loadStoredItems() {
 }
 
 function loadAssistantHistory() {
+  if (!AI_ASSISTANT_PERSIST_HISTORY) {
+    localStorage.removeItem(AI_ASSISTANT_HISTORY_STORAGE_KEY);
+    return [];
+  }
   try {
     const stored = JSON.parse(
       localStorage.getItem(AI_ASSISTANT_HISTORY_STORAGE_KEY) || "[]",
@@ -1710,6 +1828,10 @@ function loadAssistantHistory() {
       .map((entry) => ({
         role: entry.role,
         content: String(entry.content).trim().slice(0, 4000),
+        source:
+          entry.source === "remote" || entry.source === "local"
+            ? entry.source
+            : undefined,
       }));
   } catch {
     return [];
@@ -2228,6 +2350,12 @@ function quickNextEpisode(id, event) {
     item.seasonData?.[season] ||
     item.seasonData?.[String(season)] ||
     CONSTANTS.DEFAULT_EPISODES_PER_SEASON;
+  const airedInSeason = getAiredEpisodeCountForSeason(item, season, maxEp);
+  if (episode > airedInSeason) {
+    showToast("Prochain épisode pas encore sorti");
+    return;
+  }
+
   episode++;
   if (episode > maxEp) {
     episode = 1;
@@ -5058,11 +5186,34 @@ function markSeasonDone(itemId, season, event) {
     item.seasonData?.[season] ||
     item.seasonData?.[String(season)] ||
     CONSTANTS.DEFAULT_EPISODES_PER_SEASON;
+  const airedCount = getAiredEpisodeCountForSeason(item, season, epCount);
   const seasonState = getSeasonProgressState(item, season, epCount);
   if (seasonState.isDone) {
     unmarkSeasonDone(itemId, season, event);
     return;
   }
+
+  if (airedCount <= 0) {
+    showToast("Aucun épisode diffusé pour cette saison");
+    return;
+  }
+
+  if (airedCount < epCount) {
+    items[idx] = {
+      ...item,
+      currentSeason: season,
+      currentEpisode: Math.min(epCount, airedCount) + 1,
+      status: "watching",
+      watchedAt: null,
+      lastWatchedAt: new Date().toISOString(),
+    };
+    localStorage.setItem("watchlist", JSON.stringify(items));
+    renderItems();
+    reopenDetailAtSeason(itemId, season, viewState);
+    showToast(`Saison ${season} à jour · En attente du prochain épisode`);
+    return;
+  }
+
   const nextSeason = season + 1;
   const hasNextSeason = item.seasonData ? !!item.seasonData[nextSeason] : false;
 
@@ -5140,6 +5291,12 @@ function markEpisodeSeen(itemId, season, episode, event) {
     item.seasonData?.[season] ||
     item.seasonData?.[String(season)] ||
     CONSTANTS.DEFAULT_EPISODES_PER_SEASON;
+  const airedInSeason = getAiredEpisodeCountForSeason(item, season, seasonTotal);
+
+  if (episode > airedInSeason) {
+    showToast("Episode pas encore sorti");
+    return;
+  }
 
   const nextSeason = season + 1;
   const hasNextSeason =
@@ -5173,11 +5330,19 @@ function markEpisodeSeen(itemId, season, episode, event) {
       updated.currentEpisode = seasonTotal + 1;
       showToast(`Saison ${season} terminée · En attente de la saison ${nextSeason}`);
     } else {
-      updated.currentSeason = season;
-      updated.currentEpisode = seasonTotal;
-      updated.status = "watched";
-      updated.watchedAt = new Date().toISOString();
-      showToast("Série terminée ✓");
+      if (airedInSeason < seasonTotal) {
+        updated.currentSeason = season;
+        updated.currentEpisode = Math.min(seasonTotal, airedInSeason) + 1;
+        updated.status = "watching";
+        updated.watchedAt = null;
+        showToast("Saison à jour · En attente du prochain épisode");
+      } else {
+        updated.currentSeason = season;
+        updated.currentEpisode = seasonTotal;
+        updated.status = "watched";
+        updated.watchedAt = new Date().toISOString();
+        showToast("Série terminée ✓");
+      }
     }
   } else {
     updated.currentSeason = season;
@@ -5534,16 +5699,37 @@ function getSeriesCompletionPoint(item) {
     return {
       currentSeason: item.currentSeason || 1,
       currentEpisode: item.currentEpisode || 1,
+      isFullyReleased: false,
     };
   }
 
   seasonEntries.sort((a, b) => a[0] - b[0]);
-  const [lastSeason, lastEpisodeCount] =
-    seasonEntries[seasonEntries.length - 1];
+
+  let completionSeason = item.currentSeason || 1;
+  let completionEpisode = Math.max(1, (item.currentEpisode || 1) - 1);
+  let isFullyReleased = true;
+
+  seasonEntries.forEach(([seasonNumber, episodeCount]) => {
+    const airedCount = getAiredEpisodeCountForSeason(
+      item,
+      seasonNumber,
+      episodeCount,
+    );
+
+    if (airedCount < episodeCount) {
+      isFullyReleased = false;
+    }
+
+    if (airedCount > 0) {
+      completionSeason = seasonNumber;
+      completionEpisode = airedCount;
+    }
+  });
 
   return {
-    currentSeason: lastSeason,
-    currentEpisode: lastEpisodeCount || 1,
+    currentSeason: completionSeason,
+    currentEpisode: Math.max(1, completionEpisode),
+    isFullyReleased,
   };
 }
 
@@ -5553,6 +5739,7 @@ function setItemStatusFromDetail(status) {
 
   const currentItem = items[index];
   const updatedItem = { ...currentItem, status };
+  let wasDowngradedToWatching = false;
 
   if (status === "watched") {
     updatedItem.watchedAt = currentItem.watchedAt || new Date().toISOString();
@@ -5560,6 +5747,11 @@ function setItemStatusFromDetail(status) {
       const completion = getSeriesCompletionPoint(currentItem);
       updatedItem.currentSeason = completion.currentSeason;
       updatedItem.currentEpisode = completion.currentEpisode;
+      if (!completion.isFullyReleased) {
+        updatedItem.status = "watching";
+        updatedItem.watchedAt = null;
+        wasDowngradedToWatching = true;
+      }
     }
   } else {
     updatedItem.watchedAt = null;
@@ -5574,7 +5766,12 @@ function setItemStatusFromDetail(status) {
   renderItems();
   openDetail(updatedItem.id);
 
-  const statusLabel = STATUS_LABELS[status] || status;
+  if (wasDowngradedToWatching) {
+    showToast("Série encore en cours · Statut En cours");
+    return;
+  }
+
+  const statusLabel = STATUS_LABELS[updatedItem.status] || updatedItem.status;
   showToast(`Statut mis à jour · ${statusLabel}`);
 }
 
@@ -6477,6 +6674,12 @@ async function openDetail(id) {
             : null);
         const canonicalReleaseDate =
           item.type === "movie" ? tmdb.release_date : tmdb.first_air_date;
+        const lastAiredSeason = Number(
+          tmdb?.last_episode_to_air?.season_number,
+        ) || 0;
+        const lastAiredEpisode = Number(
+          tmdb?.last_episode_to_air?.episode_number,
+        ) || 0;
 
         // Enrichir l'item en localStorage si seasonData manque
         if (item.type === "series" && tmdb.seasons && !item.seasonData) {
@@ -6506,6 +6709,10 @@ async function openDetail(id) {
                 canonicalReleaseDate || items[idx].releaseDate || null,
               year:
                 (canonicalReleaseDate || "").substring(0, 4) || items[idx].year,
+              lastAiredSeason:
+                lastAiredSeason || items[idx].lastAiredSeason || 0,
+              lastAiredEpisode:
+                lastAiredEpisode || items[idx].lastAiredEpisode || 0,
             };
             item = items[idx];
             localStorage.setItem("watchlist", JSON.stringify(items));
@@ -6523,6 +6730,10 @@ async function openDetail(id) {
                 canonicalReleaseDate || items[idx].releaseDate || null,
               year:
                 (canonicalReleaseDate || "").substring(0, 4) || items[idx].year,
+              lastAiredSeason:
+                lastAiredSeason || items[idx].lastAiredSeason || 0,
+              lastAiredEpisode:
+                lastAiredEpisode || items[idx].lastAiredEpisode || 0,
             };
             item = items[idx];
             localStorage.setItem("watchlist", JSON.stringify(items));
@@ -6537,14 +6748,22 @@ async function openDetail(id) {
             .forEach((s) => {
               newAirDates[String(s.season_number)] = s.air_date;
             });
-          if (Object.keys(newAirDates).length > 0) {
-            const idx2 = items.findIndex((i) => i.id === item.id);
-            if (idx2 !== -1) {
-              items[idx2] = { ...items[idx2], seasonAirDates: newAirDates };
-              item = items[idx2];
-              localStorage.setItem("watchlist", JSON.stringify(items));
-              renderWatchingStrip();
-            }
+          const idx2 = items.findIndex((i) => i.id === item.id);
+          if (idx2 !== -1) {
+            items[idx2] = {
+              ...items[idx2],
+              seasonAirDates:
+                Object.keys(newAirDates).length > 0
+                  ? newAirDates
+                  : items[idx2].seasonAirDates,
+              lastAiredSeason:
+                lastAiredSeason || items[idx2].lastAiredSeason || 0,
+              lastAiredEpisode:
+                lastAiredEpisode || items[idx2].lastAiredEpisode || 0,
+            };
+            item = items[idx2];
+            localStorage.setItem("watchlist", JSON.stringify(items));
+            renderWatchingStrip();
           }
         }
 
@@ -6883,6 +7102,13 @@ async function refreshAssistantModeStatus() {
     return;
   }
 
+  if (AI_ASSISTANT_NEEDS_ABSOLUTE_URL) {
+    status.textContent =
+      "Mode local · app mobile: configure CONFIG.AI_ASSISTANT_API_URL en HTTPS";
+    status.className = "assistant-mode-status local";
+    return;
+  }
+
   status.textContent = "Connexion au modèle…";
   status.className = "assistant-mode-status";
   try {
@@ -6892,7 +7118,7 @@ async function refreshAssistantModeStatus() {
     const data = response.ok ? await response.json() : null;
     status.textContent = data?.configured
       ? `${data.provider || "IA"} active · ${data.model || "modèle configuré"}${data.catalogConfigured ? " · découverte TMDB" : " · TMDB serveur manquant"}`
-      : "Mode local · clé IA absente du serveur";
+      : "Mode local · backend IA lancé sans configuration (utilise npm start + .env)";
     status.className = `assistant-mode-status ${data?.configured ? "remote" : "local"}`;
   } catch {
     status.textContent = "Mode local · backend IA inaccessible";
@@ -6901,6 +7127,7 @@ async function refreshAssistantModeStatus() {
 }
 
 function persistAssistantHistory() {
+  if (!AI_ASSISTANT_PERSIST_HISTORY) return;
   localStorage.setItem(
     AI_ASSISTANT_HISTORY_STORAGE_KEY,
     JSON.stringify(assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY * 2)),
@@ -6911,6 +7138,7 @@ function ensureAssistantWelcomeMessage() {
   if (assistantMessages.length > 0) return;
   assistantMessages.push({
     role: "assistant",
+    source: "local",
     content:
       "Salut ! Parlons cinéma et séries. Je peux analyser ta collection, chercher de nouvelles découvertes et affiner mes idées selon ton humeur, ton temps ou tes goûts.",
   });
@@ -6953,18 +7181,18 @@ function getAssistantCollectionSnapshot() {
   const quickCandidates = items
     .filter((item) => item.status === "towatch" || item.status === "watching")
     .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
-    .slice(0, 8)
+    .slice(0, 5)
     .map((item) => `- ${formatAssistantItem(item)}`)
     .join("\n");
   const watchedTitles = items
     .filter((item) => item.status === "watched")
-    .slice(-60)
+    .slice(-20)
     .map((item) => item.title)
     .join(", ");
   const ratedTitles = items
     .filter((item) => Number(item.rating) > 0)
     .sort((a, b) => Number(b.rating) - Number(a.rating))
-    .slice(0, 30)
+    .slice(0, 12)
     .map((item) => `${item.title} (${item.rating}/5)`)
     .join(", ");
 
@@ -6977,6 +7205,73 @@ function getAssistantCollectionSnapshot() {
     "Candidats rapides:",
     quickCandidates || "- Aucun candidat disponible.",
   ].join("\n");
+}
+
+function getAssistantRemoteCollectionSnapshot(maxChars = AI_ASSISTANT_REMOTE_COLLECTION_MAX_CHARS) {
+  return getAssistantCollectionSnapshot().slice(0, Math.max(400, Number(maxChars) || 0));
+}
+
+function shouldSendFullCollectionSnapshot(prompt) {
+  const text = String(prompt || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  const fullContextHints = [
+    "ma collection",
+    "mes films",
+    "mes series",
+    "deja vu",
+    "deja vus",
+    "favori",
+    "mieux notes",
+    "stat",
+    "bilan",
+    "resume",
+    "prior",
+    "plan",
+    "que regarder",
+  ];
+  return fullContextHints.some((hint) => text.includes(hint));
+}
+
+function getAssistantRemoteCollectionContext(prompt, maxChars) {
+  if (shouldSendFullCollectionSnapshot(prompt)) {
+    return getAssistantRemoteCollectionSnapshot(maxChars);
+  }
+
+  const watched = items.filter((item) => item.status === "watched").length;
+  const watching = items.filter((item) => item.status === "watching").length;
+  const towatch = items.filter((item) => item.status === "towatch").length;
+  return `Collection: ${items.length} titres. Statuts: ${watched} vus, ${watching} en cours, ${towatch} a voir.`;
+}
+
+function getAssistantRemoteCollectionItems(limit = 160) {
+  return items
+    .slice(-Math.max(20, Math.min(400, Number(limit) || 0)))
+    .map((item) => ({
+      title: String(item.title || "").slice(0, 120),
+      type: item.type === "series" ? "series" : "movie",
+      status: String(item.status || "towatch"),
+      genre: String(item.genre || "").slice(0, 120),
+      platform: String(item.platform || "").slice(0, 80),
+      year: String(item.year || "").slice(0, 4),
+      rating: Number(item.rating) || 0,
+    }))
+    .filter((item) => item.title);
+}
+
+function getAssistantRemoteMessages(
+  limit = AI_ASSISTANT_REMOTE_HISTORY_LIMIT,
+  contentMaxChars = 1200,
+) {
+  return assistantMessages
+    .slice(-Math.max(1, Number(limit) || 1))
+    .filter((entry) => entry.role === "user" || entry.source === "remote")
+    .map((entry) => ({
+      role: entry.role,
+      content: String(entry.content || "").trim().slice(0, Math.max(120, Number(contentMaxChars) || 0)),
+    }))
+    .filter((entry) => entry.content);
 }
 
 function buildLocalAssistantReply(prompt) {
@@ -7155,33 +7450,70 @@ function closeAssistant() {
 
 async function queryAssistantApi(prompt) {
   if (!AI_ASSISTANT_REMOTE_ENABLED || !hasAssistantRemoteConsent()) return null;
+  if (AI_ASSISTANT_NEEDS_ABSOLUTE_URL) return null;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), AI_ASSISTANT_TIMEOUT_MS);
-  let response;
-  try {
-    response = await fetch(AI_ASSISTANT_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: controller.signal,
-      body: JSON.stringify({
-        collection: getAssistantCollectionSnapshot(),
-        // The current prompt is already the final entry: do not append it twice.
-        messages: assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY),
-      }),
-    });
-  } finally {
-    clearTimeout(timeoutId);
+  const attempts = [
+    {
+      timeoutMs: AI_ASSISTANT_TIMEOUT_MS,
+      collectionMaxChars: AI_ASSISTANT_REMOTE_COLLECTION_MAX_CHARS,
+      historyLimit: AI_ASSISTANT_REMOTE_HISTORY_LIMIT,
+      messageMaxChars: 1200,
+    },
+    {
+      timeoutMs: Math.max(5000, Math.min(10000, AI_ASSISTANT_TIMEOUT_MS)),
+      collectionMaxChars: 1400,
+      historyLimit: 2,
+      messageMaxChars: 450,
+    },
+  ];
+
+  let lastError = null;
+  for (const attempt of attempts) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), attempt.timeoutMs);
+    try {
+      const response = await fetch(AI_ASSISTANT_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          collection: getAssistantRemoteCollectionContext(prompt, attempt.collectionMaxChars),
+          collectionItems: getAssistantRemoteCollectionItems(
+            attempt.historyLimit <= 2 ? 80 : 180,
+          ),
+          // The current prompt is already the final entry: do not append it twice.
+          messages: getAssistantRemoteMessages(attempt.historyLimit, attempt.messageMaxChars),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = new Error(`Assistant API error ${response.status}`);
+        const retryable = response.status === 408 || response.status === 429 || response.status >= 500;
+        if (!retryable) throw error;
+        lastError = error;
+        continue;
+      }
+
+      const data = await response.json();
+      const content = data?.reply;
+      if (!content) throw new Error("Assistant API response is empty");
+      return String(content).trim();
+    } catch (error) {
+      lastError = error;
+      const message = String(error?.message || "").toLowerCase();
+      const retryable =
+        error?.name === "AbortError" ||
+        message.includes("network") ||
+        message.includes("fetch") ||
+        message.includes("timeout");
+      if (!retryable) throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
-  if (!response.ok) {
-    throw new Error(`Assistant API error ${response.status}`);
-  }
-
-  const data = await response.json();
-  const content = data?.reply;
-  if (!content) throw new Error("Assistant API response is empty");
-  return String(content).trim();
+  if (lastError) throw lastError;
+  throw new Error("Assistant API unavailable");
 }
 
 async function submitAssistantPrompt() {
@@ -7205,7 +7537,11 @@ async function submitAssistantPrompt() {
   try {
     const remoteReply = await queryAssistantApi(prompt);
     const reply = remoteReply || buildLocalAssistantReply(prompt);
-    assistantMessages.push({ role: "assistant", content: reply });
+    assistantMessages.push({
+      role: "assistant",
+      source: remoteReply ? "remote" : "local",
+      content: reply,
+    });
 
     if (!remoteReply && !assistantConfigTipShown && !hasAssistantRemoteConsent()) {
       assistantConfigTipShown = true;
@@ -7214,10 +7550,15 @@ async function submitAssistantPrompt() {
   } catch (error) {
     console.error("Assistant error:", error);
     refreshAssistantModeStatus();
+    const errorLabel =
+      error?.name === "AbortError"
+        ? "timeout"
+        : String(error?.message || "erreur inconnue").slice(0, 120);
     assistantMessages.push({
       role: "assistant",
+      source: "local",
       content:
-        `${buildLocalAssistantReply(prompt)}\n\nL’IA distante n’a pas répondu : vérifie le badge d’état en haut de la fenêtre.`,
+        `Réponse locale temporaire (assistant distant indisponible : ${errorLabel}).\n\n${buildLocalAssistantReply(prompt)}`,
     });
   } finally {
     assistantMessages = assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY * 2);
@@ -10448,6 +10789,14 @@ async function checkSeriesForNewSeason(item) {
         currentEpisode: 1,
         seasonData,
         seasonAirDates,
+        lastAiredSeason:
+          Number(tmdb?.last_episode_to_air?.season_number) ||
+          items[idx].lastAiredSeason ||
+          0,
+        lastAiredEpisode:
+          Number(tmdb?.last_episode_to_air?.episode_number) ||
+          items[idx].lastAiredEpisode ||
+          0,
         watchedAt: null,
         seasonCheckedAt: now,
         totalEpisodes: tmdb.number_of_episodes || items[idx].totalEpisodes,
@@ -10456,7 +10805,18 @@ async function checkSeriesForNewSeason(item) {
       renderItems();
       showToast(`${item.title} · Saison ${newSeason.season_number} disponible !`);
     } else {
-      items[idx] = { ...items[idx], seasonCheckedAt: now };
+      items[idx] = {
+        ...items[idx],
+        seasonCheckedAt: now,
+        lastAiredSeason:
+          Number(tmdb?.last_episode_to_air?.season_number) ||
+          items[idx].lastAiredSeason ||
+          0,
+        lastAiredEpisode:
+          Number(tmdb?.last_episode_to_air?.episode_number) ||
+          items[idx].lastAiredEpisode ||
+          0,
+      };
       localStorage.setItem("watchlist", JSON.stringify(items));
     }
   } catch (e) {
