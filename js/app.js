@@ -1175,29 +1175,22 @@ function getAiredEpisodeCountForSeason(item, season, episodeCount = 0) {
   const seasonTotal = getSeasonEpisodeCount(item, season, episodeCount);
   if (!isSeasonAired(item, season)) return 0;
 
-  const storedAired = Number(
-    item?.seasonAiredCounts?.[season] || item?.seasonAiredCounts?.[String(season)],
-  );
-  if (Number.isFinite(storedAired) && storedAired >= 0) {
-    return seasonTotal > 0 ? Math.min(storedAired, seasonTotal) : storedAired;
-  }
-
   if (item?.tmdbId) {
     const cached = seasonEpisodesCache[`${item.tmdbId}-${season}`];
     if (Array.isArray(cached) && cached.length > 0) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const airedInCache = cached.filter((ep) => {
-        if (!ep?.air_date) return true;
-        const d = new Date(ep.air_date);
-        d.setHours(0, 0, 0, 0);
-        return d <= today;
-      }).length;
+      const airedInCache = countAiredEpisodes(cached);
 
       return seasonTotal > 0
         ? Math.min(airedInCache, seasonTotal)
         : airedInCache;
     }
+  }
+
+  const storedAired = Number(
+    item?.seasonAiredCounts?.[season] || item?.seasonAiredCounts?.[String(season)],
+  );
+  if (Number.isFinite(storedAired) && storedAired >= 0) {
+    return seasonTotal > 0 ? Math.min(storedAired, seasonTotal) : storedAired;
   }
 
   const lastAiredSeason = Number(item?.lastAiredSeason || 0);
