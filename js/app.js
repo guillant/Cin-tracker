@@ -1915,10 +1915,38 @@ function loadAssistantHistory() {
           entry.source === "remote" || entry.source === "local"
             ? entry.source
             : undefined,
+        recommendations: normalizeAssistantRecommendations(entry.recommendations),
       }));
   } catch {
     return [];
   }
+}
+
+function normalizeAssistantRecommendations(recommendations) {
+  if (!recommendations || typeof recommendations !== "object") return null;
+  const rawItems = Array.isArray(recommendations.items)
+    ? recommendations.items
+    : [];
+  const items = rawItems
+    .map((item, index) => ({
+      rank: String(item?.rank || index + 1).slice(0, 3),
+      title: String(item?.title || "").trim().slice(0, 120),
+      meta: String(item?.meta || "").trim().slice(0, 120),
+      reason: String(item?.reason || "").trim().slice(0, 220),
+    }))
+    .filter((item) => item.title);
+  if (!items.length) return null;
+
+  return {
+    eyebrow: String(recommendations.eyebrow || "Suggestion").trim().slice(0, 80),
+    context: String(recommendations.context || "").trim().slice(0, 120),
+    chips: (Array.isArray(recommendations.chips) ? recommendations.chips : [])
+      .map((chip) => String(chip || "").trim().slice(0, 40))
+      .filter(Boolean)
+      .slice(0, 4),
+    items: items.slice(0, 4),
+    note: String(recommendations.note || "").trim().slice(0, 220),
+  };
 }
 
 function normalizeTmdbMediaType(type) {
@@ -7563,29 +7591,56 @@ async function buildLocalCatalogSuggestionReply(prompt) {
   const typeLabel = endpoint === "tv" ? "series" : "films";
   const genreLabel = intent.genreLabel ? ` ${intent.genreLabel}` : "";
   const providerLabel = intent.providerLabel ? ` sur ${intent.providerLabel}` : "";
+  const recommendationItems = candidates.map((item, index) => {
+    const title = item.title || item.name || "Titre inconnu";
+    const year = String(item.release_date || item.first_air_date || "").slice(
+      0,
+      4,
+    );
+    const rating = Number(item.vote_average || 0);
+    const meta = [
+      endpoint === "tv" ? "Serie" : "Film",
+      year || null,
+      rating > 0 ? `TMDB ${rating.toFixed(1)}/10` : null,
+    ]
+      .filter(Boolean)
+      .join(" - ");
+    const overview = String(item.overview || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 150);
+    return {
+      rank: String(index + 1),
+      title,
+      meta,
+      reason:
+        overview ||
+        "Suggestion populaire qui correspond aux filtres de ta demande.",
+    };
+  });
   const lines = [
     `Le backend IA est inaccessible, mais j'ai quand meme cherche dans TMDB. Voici ${candidates.length} ${typeLabel}${genreLabel}${providerLabel} a tenter :`,
-    ...candidates.map((item, index) => {
-      const title = item.title || item.name || "Titre inconnu";
-      const year = String(item.release_date || item.first_air_date || "").slice(
-        0,
-        4,
-      );
-      const rating = Number(item.vote_average || 0);
-      const meta = [
-        year || null,
-        rating > 0 ? `TMDB ${rating.toFixed(1)}/10` : null,
-      ]
-        .filter(Boolean)
-        .join(", ");
-      const overview = String(item.overview || "")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 120);
-      return `${index + 1}. ${title}${meta ? ` (${meta})` : ""}${overview ? ` - ${overview}` : ""}`;
-    }),
+    ...recommendationItems.map(
+      (item) =>
+        `${item.rank}. ${item.title}${item.meta ? ` (${item.meta})` : ""} - ${item.reason}`,
+    ),
   ];
-  return lines.join("\n");
+  return {
+    content: lines.join("\n"),
+    recommendations: {
+      eyebrow: "Recherche TMDB",
+      context: `${intent.genreLabel || "Suggestions"}${intent.providerLabel ? ` - ${intent.providerLabel}` : ""} - ${TMDB_WATCH_REGION}`,
+      chips: [
+        intent.providerLabel || null,
+        intent.genreLabel || null,
+        endpoint === "tv" ? "Series" : "Films",
+        "Pas dans ta collection",
+      ].filter(Boolean),
+      items: recommendationItems,
+      note:
+        "Mode secours: l'IA distante est indisponible, donc CineTracker filtre TMDB avec ta demande.",
+    },
+  };
 }
 
 async function buildAssistantFallbackReply(prompt) {
@@ -7730,6 +7785,53 @@ function buildLocalAssistantReply(prompt) {
   ].join("\n");
 }
 
+function renderAssistantRecommendations(recommendations) {
+  const safeRecommendations = normalizeAssistantRecommendations(recommendations);
+  if (!safeRecommendations) return "";
+
+  const chips = safeRecommendations.chips.length
+    ? `<div class="assistant-rec-chips">${safeRecommendations.chips
+        .map((chip) => `<span>${escapeHtml(chip)}</span>`)
+        .join("")}</div>`
+    : "";
+  const rows = safeRecommendations.items
+    .map(
+      (item) => `
+        <div class="assistant-rec-row">
+          <div class="assistant-rec-rank">${escapeHtml(item.rank)}</div>
+          <div class="assistant-rec-copy">
+            <div class="assistant-rec-title">${escapeHtml(item.title)}</div>
+            ${item.meta ? `<div class="assistant-rec-meta">${escapeHtml(item.meta)}</div>` : ""}
+            ${item.reason ? `<div class="assistant-rec-reason">${escapeHtml(item.reason)}</div>` : ""}
+          </div>
+        </div>
+      `,
+    )
+    .join("");
+
+  return `
+    <div class="assistant-rec">
+      <div class="assistant-rec-head">
+        <span>${escapeHtml(safeRecommendations.eyebrow)}</span>
+        ${safeRecommendations.context ? `<small>${escapeHtml(safeRecommendations.context)}</small>` : ""}
+      </div>
+      ${chips}
+      <div class="assistant-rec-list">${rows}</div>
+      ${safeRecommendations.note ? `<div class="assistant-rec-note">${escapeHtml(safeRecommendations.note)}</div>` : ""}
+    </div>
+  `;
+}
+
+function renderAssistantMessageContent(message) {
+  const recommendationsHtml = renderAssistantRecommendations(
+    message.recommendations,
+  );
+  if (!recommendationsHtml) return escapeHtml(message.content);
+
+  const intro = String(message.content || "").split("\n")[0] || "";
+  return `${intro ? `<div class="assistant-msg-intro">${escapeHtml(intro)}</div>` : ""}${recommendationsHtml}`;
+}
+
 function renderAssistantMessages({ pending = false } = {}) {
   const thread = document.getElementById("assistantMessages");
   if (!thread) return;
@@ -7738,7 +7840,7 @@ function renderAssistantMessages({ pending = false } = {}) {
 
   const rows = assistantMessages.map((message) => {
     const cssClass = message.role === "user" ? "user" : "assistant";
-    return `<div class="assistant-msg ${cssClass}">${escapeHtml(message.content)}</div>`;
+    return `<div class="assistant-msg ${cssClass}">${renderAssistantMessageContent(message)}</div>`;
   });
 
   if (pending) {
@@ -7856,10 +7958,16 @@ async function submitAssistantPrompt() {
   try {
     const remoteReply = await queryAssistantApi(prompt);
     const reply = remoteReply || (await buildAssistantFallbackReply(prompt));
+    const replyContent =
+      reply && typeof reply === "object" ? reply.content : reply;
     assistantMessages.push({
       role: "assistant",
       source: remoteReply ? "remote" : "local",
-      content: reply,
+      content: String(replyContent || ""),
+      recommendations:
+        reply && typeof reply === "object"
+          ? normalizeAssistantRecommendations(reply.recommendations)
+          : null,
     });
 
     if (!remoteReply && !assistantConfigTipShown && !hasAssistantRemoteConsent()) {
@@ -7873,11 +7981,20 @@ async function submitAssistantPrompt() {
       error?.name === "AbortError"
         ? "timeout"
         : String(error?.message || "erreur inconnue").slice(0, 120);
+    const fallbackReply = await buildAssistantFallbackReply(prompt);
+    const fallbackContent =
+      fallbackReply && typeof fallbackReply === "object"
+        ? fallbackReply.content
+        : fallbackReply;
     assistantMessages.push({
       role: "assistant",
       source: "local",
       content:
-        `Réponse locale temporaire (assistant distant indisponible : ${errorLabel}).\n\n${await buildAssistantFallbackReply(prompt)}`,
+        `Réponse locale temporaire (assistant distant indisponible : ${errorLabel}).\n\n${String(fallbackContent || "")}`,
+      recommendations:
+        fallbackReply && typeof fallbackReply === "object"
+          ? normalizeAssistantRecommendations(fallbackReply.recommendations)
+          : null,
     });
   } finally {
     assistantMessages = assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY * 2);
