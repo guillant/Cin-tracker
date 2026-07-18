@@ -1311,6 +1311,11 @@ function updateStoredAiredCountForSeason(itemId, season, episodes) {
 
 function hasWatchableEpisode(item) {
   if (!item?.seasonData) return true;
+  const progress = getSeriesEpisodeProgress(item);
+  if (progress.availableEpisodes > 0) {
+    return progress.remainingAvailableEpisodes > 0;
+  }
+
   const currentSeason = item.currentSeason || 1;
   const currentEpisode = item.currentEpisode || 1;
   const currentSeasonTotal =
@@ -1748,8 +1753,10 @@ function getSeriesEpisodeProgress(item) {
   if (!item || item.type !== "series") {
     return {
       totalEpisodes: 0,
+      availableEpisodes: 0,
       watchedEpisodes: 0,
       remainingEpisodes: 0,
+      remainingAvailableEpisodes: 0,
     };
   }
 
@@ -1779,7 +1786,13 @@ function getSeriesEpisodeProgress(item) {
     CONSTANTS.DEFAULT_EPISODES_PER_SEASON;
 
   let watchedEpisodes = 0;
+  let availableEpisodes = 0;
   if (normalizedSeasonData.length > 0) {
+    availableEpisodes = normalizedSeasonData.reduce(
+      (sum, [seasonNumber, episodeCount]) =>
+        sum + getAiredEpisodeCountForSeason(item, seasonNumber, episodeCount),
+      0,
+    );
     watchedEpisodes = normalizedSeasonData.reduce(
       (sum, [seasonNumber, episodeCount]) => {
         return (
@@ -1790,6 +1803,7 @@ function getSeriesEpisodeProgress(item) {
       0,
     );
   } else {
+    availableEpisodes = totalEpisodes;
     watchedEpisodes =
       item.status === "watched"
         ? totalEpisodes
@@ -1797,13 +1811,20 @@ function getSeriesEpisodeProgress(item) {
   }
 
   watchedEpisodes = Math.min(watchedEpisodes, totalEpisodes);
+  availableEpisodes = Math.min(availableEpisodes, totalEpisodes);
 
   const remainingEpisodes = Math.max(0, totalEpisodes - watchedEpisodes);
+  const remainingAvailableEpisodes = Math.max(
+    0,
+    availableEpisodes - watchedEpisodes,
+  );
 
   return {
     totalEpisodes,
+    availableEpisodes,
     watchedEpisodes,
     remainingEpisodes,
+    remainingAvailableEpisodes,
   };
 }
 
@@ -3162,10 +3183,10 @@ function renderWatchingStrip() {
       const season = item.currentSeason || 1;
       const episode = item.currentEpisode || 1;
       const progress = getSeriesEpisodeProgress(item);
-      const remaining = progress.remainingEpisodes;
+      const remaining = progress.remainingAvailableEpisodes;
       const ring = buildCircularProgress(
         progress.watchedEpisodes,
-        progress.totalEpisodes,
+        progress.availableEpisodes || progress.totalEpisodes,
         remaining,
       );
       const episodeLabel = getNextEpisodeDisplay(item, "compact");
