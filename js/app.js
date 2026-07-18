@@ -5297,7 +5297,7 @@ function quickNextEpisodeInDetail(itemId, event) {
   setTimeout(() => openDetail(itemId), 50);
 }
 
-function markEpisodeSeen(itemId, season, episode, event) {
+function markEpisodeSeen(itemId, season, episode, event, episodeIsAired = false) {
   event?.stopPropagation();
   const viewState = getSeriesProgressViewState(itemId, season);
 
@@ -5323,7 +5323,7 @@ function markEpisodeSeen(itemId, season, episode, event) {
     CONSTANTS.DEFAULT_EPISODES_PER_SEASON;
   const airedInSeason = getAiredEpisodeCountForSeason(item, season, seasonTotal);
 
-  if (episode > airedInSeason) {
+  if (!episodeIsAired && episode > airedInSeason) {
     showToast("Episode pas encore sorti");
     return;
   }
@@ -5406,11 +5406,18 @@ function unmarkEpisodeSeen(itemId, season, episode, event) {
   showToast(`S${season} E${episode} remis en non vu`);
 }
 
-function toggleEpisodeSeen(itemId, season, episode, isDone, event) {
+function toggleEpisodeSeen(
+  itemId,
+  season,
+  episode,
+  isDone,
+  event,
+  episodeIsAired = false,
+) {
   if (isDone) {
     unmarkEpisodeSeen(itemId, season, episode, event);
   } else {
-    markEpisodeSeen(itemId, season, episode, event);
+    markEpisodeSeen(itemId, season, episode, event, episodeIsAired);
   }
 }
 
@@ -5460,7 +5467,7 @@ function refreshOpenSeasonProgressInPlace(itemId, season, viewState = {}) {
       button.removeAttribute("disabled");
       button.setAttribute(
         "onclick",
-        `toggleEpisodeSeen(${JSON.stringify(String(itemId ?? ""))}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event)`,
+        `toggleEpisodeSeen(${JSON.stringify(String(itemId ?? ""))}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event, true)`,
       );
     }
   });
@@ -6580,7 +6587,7 @@ async function toggleSeasonEpisodes(itemId, season, event) {
                 : `<button
                   type="button"
                   class="sd-ep-mark ${isDone ? "sd-ep-mark-done" : ""} ${isCurrent ? "sd-ep-mark-current" : ""}"
-                  onclick="toggleEpisodeSeen(${inlineJsString(itemId)}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event)">
+                  onclick="toggleEpisodeSeen(${inlineJsString(itemId)}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event, true)">
                   ${isDone ? "✓ Vu" : "Pas vu"}
                 </button>`
             }
