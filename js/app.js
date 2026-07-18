@@ -7305,7 +7305,8 @@ function formatAssistantItem(item) {
   const statusLabel = getStatusLabel(item.status);
   const yearPart = item.year ? `, ${item.year}` : "";
   const genrePart = item.genre ? `, ${item.genre.split(",")[0].trim()}` : "";
-  return `${item.title} (${typeLabel}, ${statusLabel}${yearPart}${genrePart})`;
+  const providerPart = item.providerName ? `, ${item.providerName}` : "";
+  return `${item.title} (${typeLabel}, ${statusLabel}${yearPart}${genrePart}${providerPart})`;
 }
 
 function getAssistantCollectionSnapshot() {
@@ -7384,6 +7385,13 @@ function shouldSendFullCollectionSnapshot(prompt) {
     "prior",
     "plan",
     "que regarder",
+    "trouve",
+    "cherche",
+    "decouvre",
+    "recommande",
+    "suggest",
+    "film",
+    "serie",
   ];
   return fullContextHints.some((hint) => text.includes(hint));
 }
@@ -7401,13 +7409,23 @@ function getAssistantRemoteCollectionContext(prompt, maxChars) {
 
 function getAssistantRemoteCollectionItems(limit = 160) {
   return items
-    .slice(-Math.max(20, Math.min(400, Number(limit) || 0)))
+    .slice()
+    .sort((left, right) => {
+      const leftScore =
+        (left.status === "watched" ? 4 : left.status === "towatch" ? 3 : 1) +
+        Number(left.rating || 0);
+      const rightScore =
+        (right.status === "watched" ? 4 : right.status === "towatch" ? 3 : 1) +
+        Number(right.rating || 0);
+      return rightScore - leftScore;
+    })
+    .slice(0, Math.max(20, Math.min(400, Number(limit) || 0)))
     .map((item) => ({
       title: String(item.title || "").slice(0, 120),
       type: item.type === "series" ? "series" : "movie",
       status: String(item.status || "towatch"),
       genre: String(item.genre || "").slice(0, 120),
-      platform: String(item.platform || "").slice(0, 80),
+      platform: String(item.providerName || item.platform || "").slice(0, 80),
       year: String(item.year || "").slice(0, 4),
       rating: Number(item.rating) || 0,
     }))
@@ -7426,6 +7444,123 @@ function getAssistantRemoteMessages(
       content: String(entry.content || "").trim().slice(0, Math.max(120, Number(contentMaxChars) || 0)),
     }))
     .filter((entry) => entry.content);
+}
+
+function normalizeAssistantText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function parseAssistantCatalogIntent(prompt) {
+  const text = normalizeAssistantText(prompt);
+  const wantsSuggestion = [
+    "trouve",
+    "cherche",
+    "decouvre",
+    "recommande",
+    "suggest",
+    "propose",
+    "que regarder",
+    "quoi regarder",
+    "idee",
+  ].some((term) => text.includes(term));
+
+  if (!wantsSuggestion) return null;
+
+  const mediaType =
+    text.includes("serie") && !text.includes("film")
+      ? "tv"
+      : text.includes("film") && !text.includes("serie")
+        ? "movie"
+        : "movie";
+  const genreMap = {
+    action: { movie: 28, tv: 10759, label: "action" },
+    animation: { movie: 16, tv: 16, label: "animation" },
+    comedie: { movie: 35, tv: 35, label: "comedie" },
+    comedy: { movie: 35, tv: 35, label: "comedie" },
+    crime: { movie: 80, tv: 80, label: "crime" },
+    documentaire: { movie: 99, tv: 99, label: "documentaire" },
+    drame: { movie: 18, tv: 18, label: "drame" },
+    drama: { movie: 18, tv: 18, label: "drame" },
+    fantasy: { movie: 14, tv: 10765, label: "fantasy" },
+    horreur: { movie: 27, tv: 9648, label: "horreur" },
+    horror: { movie: 27, tv: 9648, label: "horreur" },
+    romance: { movie: 10749, tv: 10766, label: "romance" },
+    "science fiction": { movie: 878, tv: 10765, label: "science-fiction" },
+    "sci fi": { movie: 878, tv: 10765, label: "science-fiction" },
+    thriller: { movie: 53, tv: 9648, label: "thriller" },
+  };
+  const genreEntry = Object.entries(genreMap).find(([term]) =>
+    text.includes(term),
+  )?.[1];
+
+  return {
+    mediaType,
+    genreId: genreEntry?.[mediaType] || null,
+    genreLabel: genreEntry?.label || null,
+  };
+}
+
+async function buildLocalCatalogSuggestionReply(prompt) {
+  const intent = parseAssistantCatalogIntent(prompt);
+  if (!intent || !hasConfiguredTmdbApiKey()) return null;
+
+  const endpoint = intent.mediaType === "tv" ? "tv" : "movie";
+  const url = new URL(`${TMDB_BASE_URL}/discover/${endpoint}`);
+  url.searchParams.set("api_key", TMDB_API_KEY);
+  url.searchParams.set("language", "fr-FR");
+  url.searchParams.set("include_adult", "false");
+  url.searchParams.set("sort_by", "popularity.desc");
+  url.searchParams.set("vote_count.gte", endpoint === "movie" ? "150" : "80");
+  url.searchParams.set("watch_region", TMDB_WATCH_REGION);
+  if (intent.genreId) url.searchParams.set("with_genres", String(intent.genreId));
+
+  const response = await fetch(url.toString());
+  if (!response.ok) return null;
+  const data = await response.json();
+  const candidates = (data.results || [])
+    .filter((tmdbItem) => {
+      const mediaType = endpoint === "tv" ? "tv" : "movie";
+      return !items.some((item) =>
+        isSameTmdbCollectionItem(item, tmdbItem.id, mediaType),
+      );
+    })
+    .slice(0, 4);
+
+  if (!candidates.length) return null;
+
+  const typeLabel = endpoint === "tv" ? "series" : "films";
+  const genreLabel = intent.genreLabel ? ` ${intent.genreLabel}` : "";
+  const lines = [
+    `Le backend IA est inaccessible, mais j'ai quand meme cherche dans TMDB. Voici ${candidates.length} ${typeLabel}${genreLabel} a tenter :`,
+    ...candidates.map((item, index) => {
+      const title = item.title || item.name || "Titre inconnu";
+      const year = String(item.release_date || item.first_air_date || "").slice(
+        0,
+        4,
+      );
+      const rating = Number(item.vote_average || 0);
+      const meta = [
+        year || null,
+        rating > 0 ? `TMDB ${rating.toFixed(1)}/10` : null,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      const overview = String(item.overview || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 120);
+      return `${index + 1}. ${title}${meta ? ` (${meta})` : ""}${overview ? ` - ${overview}` : ""}`;
+    }),
+  ];
+  return lines.join("\n");
+}
+
+async function buildAssistantFallbackReply(prompt) {
+  const catalogReply = await buildLocalCatalogSuggestionReply(prompt);
+  return catalogReply || buildLocalAssistantReply(prompt);
 }
 
 function buildLocalAssistantReply(prompt) {
@@ -7448,8 +7583,8 @@ function buildLocalAssistantReply(prompt) {
     return [
       formatAssistantItem(mentionedItem),
       mentionedItem.rating ? `ta note : ${mentionedItem.rating}/5` : "",
-      mentionedItem.platform ? `plateforme : ${mentionedItem.platform}` : "",
-      mentionedItem.comment ? `ton avis : ${mentionedItem.comment}` : "",
+      mentionedItem.providerName ? `plateforme : ${mentionedItem.providerName}` : "",
+      mentionedItem.notes ? `ton avis : ${mentionedItem.notes}` : "",
     ]
       .filter(Boolean)
       .join(" · ");
@@ -7690,7 +7825,7 @@ async function submitAssistantPrompt() {
 
   try {
     const remoteReply = await queryAssistantApi(prompt);
-    const reply = remoteReply || buildLocalAssistantReply(prompt);
+    const reply = remoteReply || (await buildAssistantFallbackReply(prompt));
     assistantMessages.push({
       role: "assistant",
       source: remoteReply ? "remote" : "local",
@@ -7712,7 +7847,7 @@ async function submitAssistantPrompt() {
       role: "assistant",
       source: "local",
       content:
-        `Réponse locale temporaire (assistant distant indisponible : ${errorLabel}).\n\n${buildLocalAssistantReply(prompt)}`,
+        `Réponse locale temporaire (assistant distant indisponible : ${errorLabel}).\n\n${await buildAssistantFallbackReply(prompt)}`,
     });
   } finally {
     assistantMessages = assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY * 2);
