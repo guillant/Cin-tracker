@@ -1212,6 +1212,49 @@ function getAiredEpisodeCountForSeason(item, season, episodeCount = 0) {
   return seasonTotal;
 }
 
+function getStoredWatchedEpisodeCountForSeason(item, season) {
+  const watchedCount = Number(
+    item?.seasonWatchedCounts?.[season] ||
+      item?.seasonWatchedCounts?.[String(season)],
+  );
+  return Number.isFinite(watchedCount) && watchedCount >= 0
+    ? watchedCount
+    : null;
+}
+
+function getWatchedEpisodeCountForSeason(item, season, episodeCount = 0) {
+  const currentSeason = Math.max(1, item?.currentSeason || 1);
+  const currentEpisode = Math.max(1, item?.currentEpisode || 1);
+  const seasonTotal = getSeasonEpisodeCount(item, season, episodeCount);
+  const availableEpisodes = getAiredEpisodeCountForSeason(
+    item,
+    season,
+    seasonTotal,
+  );
+  const storedWatched = getStoredWatchedEpisodeCountForSeason(item, season);
+
+  let inferredWatched = 0;
+  if (season < currentSeason) {
+    inferredWatched = availableEpisodes;
+  } else if (season === currentSeason) {
+    const fullSeasonWatched =
+      item?.status === "watched" &&
+      seasonTotal > 0 &&
+      currentEpisode > seasonTotal &&
+      availableEpisodes >= seasonTotal;
+    inferredWatched = fullSeasonWatched
+      ? seasonTotal
+      : Math.max(0, currentEpisode - 1);
+  }
+
+  const watchedEpisodes =
+    storedWatched === null
+      ? inferredWatched
+      : Math.max(storedWatched, inferredWatched);
+  const cap = seasonTotal > 0 ? seasonTotal : availableEpisodes;
+  return cap > 0 ? Math.min(watchedEpisodes, cap) : watchedEpisodes;
+}
+
 function countAiredEpisodes(episodes) {
   if (!Array.isArray(episodes) || episodes.length === 0) return 0;
 
@@ -1231,15 +1274,32 @@ function updateStoredAiredCountForSeason(itemId, season, episodes) {
   if (idx === -1) return null;
 
   const airedCount = countAiredEpisodes(episodes);
+  const episodeCount = Array.isArray(episodes) ? episodes.length : 0;
   const currentCounts = items[idx].seasonAiredCounts || {};
+  const currentSeasonData = items[idx].seasonData || {};
   const previousCount = Number(
     currentCounts[season] || currentCounts[String(season)] || 0,
   );
+  const previousEpisodeCount = Number(
+    currentSeasonData[season] || currentSeasonData[String(season)] || 0,
+  );
 
-  if (previousCount === airedCount) return items[idx];
+  if (
+    previousCount === airedCount &&
+    (!episodeCount || previousEpisodeCount >= episodeCount)
+  ) {
+    return items[idx];
+  }
 
   items[idx] = {
     ...items[idx],
+    seasonData:
+      episodeCount && episodeCount > previousEpisodeCount
+        ? {
+            ...currentSeasonData,
+            [String(season)]: episodeCount,
+          }
+        : items[idx].seasonData,
     seasonAiredCounts: {
       ...currentCounts,
       [String(season)]: airedCount,
@@ -1722,29 +1782,10 @@ function getSeriesEpisodeProgress(item) {
   if (normalizedSeasonData.length > 0) {
     watchedEpisodes = normalizedSeasonData.reduce(
       (sum, [seasonNumber, episodeCount]) => {
-        const airedCount = getAiredEpisodeCountForSeason(
-          item,
-          seasonNumber,
-          episodeCount,
+        return (
+          sum +
+          getWatchedEpisodeCountForSeason(item, seasonNumber, episodeCount)
         );
-
-        if (seasonNumber < currentSeason) {
-          return sum + Math.min(episodeCount, airedCount);
-        }
-
-        if (seasonNumber > currentSeason) {
-          return sum;
-        }
-
-        const canCountFullSeasonAsWatched =
-          item.status === "watched" &&
-          currentEpisode >= episodeCount &&
-          airedCount >= episodeCount;
-        if (canCountFullSeasonAsWatched) {
-          return sum + airedCount;
-        }
-
-        return sum + Math.max(0, Math.min(currentEpisode - 1, airedCount));
       },
       0,
     );
@@ -1779,25 +1820,16 @@ function getNextEpisodeDisplay(item, mode = "short") {
 
 function getSeasonProgressState(item, seasonNumber, episodeCount = 0) {
   const currentSeason = Math.max(1, item.currentSeason || 1);
-  const currentEpisode = Math.max(1, item.currentEpisode || 1);
   const availableEpisodes = getAiredEpisodeCountForSeason(
     item,
     seasonNumber,
     episodeCount,
   );
 
-  let watchedEpisodes =
-    seasonNumber < currentSeason
-      ? availableEpisodes
-      : seasonNumber === currentSeason
-        ? item.status === "watched" &&
-          currentEpisode >= episodeCount &&
-          availableEpisodes >= episodeCount
-          ? availableEpisodes
-          : Math.max(0, currentEpisode - 1)
-        : 0;
-
-  watchedEpisodes = Math.min(watchedEpisodes, availableEpisodes);
+  const watchedEpisodes = Math.min(
+    getWatchedEpisodeCountForSeason(item, seasonNumber, episodeCount),
+    availableEpisodes || episodeCount,
+  );
 
   const isDone = episodeCount > 0 && watchedEpisodes >= episodeCount;
   const isCaughtUp =
@@ -5236,6 +5268,10 @@ function markSeasonDone(itemId, season, event) {
       status: "watching",
       watchedAt: null,
       lastWatchedAt: new Date().toISOString(),
+      seasonWatchedCounts: {
+        ...(item.seasonWatchedCounts || {}),
+        [String(season)]: Math.min(epCount, airedCount),
+      },
     };
     localStorage.setItem("watchlist", JSON.stringify(items));
     renderItems();
@@ -5253,6 +5289,10 @@ function markSeasonDone(itemId, season, event) {
       currentSeason: nextSeason,
       currentEpisode: 1,
       status: "watching",
+      seasonWatchedCounts: {
+        ...(item.seasonWatchedCounts || {}),
+        [String(season)]: epCount,
+      },
     };
     showToast(`Saison ${season} terminée · Saison ${nextSeason} en cours`);
   } else {
@@ -5262,6 +5302,10 @@ function markSeasonDone(itemId, season, event) {
       currentEpisode: epCount + 1,
       status: "watched",
       watchedAt: new Date().toISOString(),
+      seasonWatchedCounts: {
+        ...(item.seasonWatchedCounts || {}),
+        [String(season)]: epCount,
+      },
     };
     showToast(`Série terminée ✓`);
   }
@@ -5297,7 +5341,15 @@ function quickNextEpisodeInDetail(itemId, event) {
   setTimeout(() => openDetail(itemId), 50);
 }
 
-function markEpisodeSeen(itemId, season, episode, event, episodeIsAired = false) {
+function markEpisodeSeen(
+  itemId,
+  season,
+  episode,
+  event,
+  episodeIsAired = false,
+  airedEpisodeCount = 0,
+  seasonEpisodeCount = 0,
+) {
   event?.stopPropagation();
   const viewState = getSeriesProgressViewState(itemId, season);
 
@@ -5317,11 +5369,20 @@ function markEpisodeSeen(itemId, season, episode, event, episodeIsAired = false)
     return;
   }
 
-  const seasonTotal =
+  const storedSeasonTotal =
     item.seasonData?.[season] ||
     item.seasonData?.[String(season)] ||
     CONSTANTS.DEFAULT_EPISODES_PER_SEASON;
-  const airedInSeason = getAiredEpisodeCountForSeason(item, season, seasonTotal);
+  const seasonTotal = Math.max(
+    Number(storedSeasonTotal) || 0,
+    Number(seasonEpisodeCount) || 0,
+    episode,
+  );
+  const airedInSeason = Math.max(
+    getAiredEpisodeCountForSeason(item, season, seasonTotal),
+    Number(airedEpisodeCount) || 0,
+    episodeIsAired ? episode : 0,
+  );
 
   if (!episodeIsAired && episode > airedInSeason) {
     showToast("Episode pas encore sorti");
@@ -5348,6 +5409,21 @@ function markEpisodeSeen(itemId, season, episode, event, episodeIsAired = false)
     ...item,
     status: "watching",
     lastWatchedAt: new Date().toISOString(),
+    seasonData: {
+      ...(item.seasonData || {}),
+      [String(season)]: seasonTotal,
+    },
+    seasonAiredCounts: {
+      ...(item.seasonAiredCounts || {}),
+      [String(season)]: airedInSeason,
+    },
+    seasonWatchedCounts: {
+      ...(item.seasonWatchedCounts || {}),
+      [String(season)]: Math.max(
+        getStoredWatchedEpisodeCountForSeason(item, season) || 0,
+        episode,
+      ),
+    },
   };
 
   if (episode >= seasonTotal) {
@@ -5399,6 +5475,10 @@ function unmarkEpisodeSeen(itemId, season, episode, event) {
     status: "watching",
     watchedAt: null,
     lastWatchedAt: new Date().toISOString(),
+    seasonWatchedCounts: {
+      ...(items[idx].seasonWatchedCounts || {}),
+      [String(season)]: Math.max(0, episode - 1),
+    },
   };
   localStorage.setItem("watchlist", JSON.stringify(items));
   renderItems();
@@ -5413,11 +5493,21 @@ function toggleEpisodeSeen(
   isDone,
   event,
   episodeIsAired = false,
+  airedEpisodeCount = 0,
+  seasonEpisodeCount = 0,
 ) {
   if (isDone) {
     unmarkEpisodeSeen(itemId, season, episode, event);
   } else {
-    markEpisodeSeen(itemId, season, episode, event, episodeIsAired);
+    markEpisodeSeen(
+      itemId,
+      season,
+      episode,
+      event,
+      episodeIsAired,
+      airedEpisodeCount,
+      seasonEpisodeCount,
+    );
   }
 }
 
@@ -5441,20 +5531,23 @@ function refreshOpenSeasonProgressInPlace(itemId, season, viewState = {}) {
 
   const episodeButtons = list.querySelectorAll(".sd-ep-item");
   const currentSeason = item.currentSeason || 1;
-  const currentEpisode = item.currentEpisode || 1;
   const isSeriesWatched = item.status === "watched";
+  const epCount = episodeButtons.length || 0;
+  const airedCount =
+    Number(list.dataset.airedCount || 0) ||
+    getAiredEpisodeCountForSeason(item, season, epCount);
+  const watchedCount = getWatchedEpisodeCountForSeason(item, season, epCount);
 
   episodeButtons.forEach((row) => {
     const epNum = Number(
       row.querySelector(".sd-ep-num")?.textContent?.replace(/\D/g, "") || 0,
     );
     if (!epNum) return;
-    const isDone =
-      season < currentSeason ||
-      (season === currentSeason &&
-        (isSeriesWatched ? epNum <= currentEpisode : epNum < currentEpisode));
+    const isDone = epNum <= watchedCount;
     const isCurrent =
-      !isSeriesWatched && season === currentSeason && epNum === currentEpisode;
+      !isSeriesWatched &&
+      season === currentSeason &&
+      epNum === watchedCount + 1;
     const button = row.querySelector(".sd-ep-mark");
 
     row.classList.toggle("sd-ep-done", isDone);
@@ -5467,12 +5560,11 @@ function refreshOpenSeasonProgressInPlace(itemId, season, viewState = {}) {
       button.removeAttribute("disabled");
       button.setAttribute(
         "onclick",
-        `toggleEpisodeSeen(${JSON.stringify(String(itemId ?? ""))}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event, true)`,
+        `toggleEpisodeSeen(${JSON.stringify(String(itemId ?? ""))}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event, true, ${airedCount}, ${epCount})`,
       );
     }
   });
 
-  const epCount = episodeButtons.length || 0;
   const seasonState = getSeasonProgressState(item, season, epCount);
   const fill = block.querySelector(".sd-season-fill");
   const pct = block.querySelector(".sd-season-pct");
@@ -6379,8 +6471,6 @@ function switchSeriesTab(name, el) {
 }
 
 function buildProgressTab(item, tmdb) {
-  const currentSeason = item.currentSeason || 1;
-  const currentEpisode = item.currentEpisode || 1;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -6505,8 +6595,6 @@ async function toggleSeasonEpisodes(itemId, season, event) {
     }
   }
 
-  const currentSeason = item.currentSeason || 1;
-  const currentEpisode = item.currentEpisode || 1;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -6516,7 +6604,17 @@ async function toggleSeasonEpisodes(itemId, season, event) {
     return;
   }
 
+  const airedCount = countAiredEpisodes(episodes);
+  const episodeCount = episodes.length;
   item = updateStoredAiredCountForSeason(itemId, season, episodes) || item;
+  const currentSeason = item.currentSeason || 1;
+  const watchedCount = getWatchedEpisodeCountForSeason(
+    item,
+    season,
+    episodeCount,
+  );
+  list.dataset.airedCount = String(airedCount);
+  list.dataset.episodeCount = String(episodeCount);
 
   list.innerHTML = episodes
     .map((ep) => {
@@ -6544,16 +6642,12 @@ async function toggleSeasonEpisodes(itemId, season, event) {
         }
       }
       const isSeriesWatched = item.status === "watched";
-      const isDone =
-        season < currentSeason ||
-        (season === currentSeason &&
-          epNum > 0 &&
-          (isSeriesWatched ? epNum <= currentEpisode : epNum < currentEpisode));
+      const isDone = epNum > 0 && epNum <= watchedCount;
       const isCurrent =
         !isSeriesWatched &&
         season === currentSeason &&
         epNum > 0 &&
-        epNum === currentEpisode;
+        epNum === watchedCount + 1;
 
       const stillUrl = ep.still_path
         ? `https://image.tmdb.org/t/p/w300${ep.still_path}`
@@ -6587,7 +6681,7 @@ async function toggleSeasonEpisodes(itemId, season, event) {
                 : `<button
                   type="button"
                   class="sd-ep-mark ${isDone ? "sd-ep-mark-done" : ""} ${isCurrent ? "sd-ep-mark-current" : ""}"
-                  onclick="toggleEpisodeSeen(${inlineJsString(itemId)}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event, true)">
+                  onclick="toggleEpisodeSeen(${inlineJsString(itemId)}, ${season}, ${epNum}, ${isDone ? "true" : "false"}, event, true, ${airedCount}, ${episodeCount})">
                   ${isDone ? "✓ Vu" : "Pas vu"}
                 </button>`
             }
