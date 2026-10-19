@@ -49,8 +49,15 @@ const AI_ASSISTANT_REMOTE_COLLECTION_MAX_CHARS = Math.max(
 );
 const AI_ASSISTANT_TIMEOUT_MS = Math.max(
   3000,
-  Math.min(300000, Number(CONFIG.AI_ASSISTANT_TIMEOUT_MS) || 300000),
+  Math.min(300000, Number(CONFIG.AI_ASSISTANT_TIMEOUT_MS) || 15000),
 );
+// Reported by /api/assistant/status: the client must outwait the server,
+// otherwise slow local models (Ollama) are aborted before they answer.
+let assistantServerTimeoutMs = 0;
+
+function getAssistantRequestTimeoutMs() {
+  return Math.max(AI_ASSISTANT_TIMEOUT_MS, assistantServerTimeoutMs + 3000);
+}
 const AVAILABILITY_SOURCE = String(CONFIG.AVAILABILITY_SOURCE || "tmdb").toLowerCase();
 const FRESH_AVAILABILITY_URL_TEMPLATE =
   CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE || "";
@@ -3722,7 +3729,7 @@ function renderListRow(item) {
       <div class="list-row-poster">
         ${
           item.posterUrl
-            ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
+            ? `<img loading="lazy" src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
             : `<div class="list-row-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`
         }
       </div>
@@ -3737,7 +3744,7 @@ function renderListRow(item) {
       <div class="list-row-right">
         ${stars ? `<span class="list-row-stars">${stars}</span>` : ""}
         <span class="list-row-badge card-badge ${normalizedStatus}">${escapeHtml(statusText)}</span>
-        ${item.providerLogo ? `<img src="${escapeHtml(item.providerLogo)}" class="list-row-provider" title="${escapeHtml(item.providerName || "")}" alt="">` : ""}
+        ${item.providerLogo ? `<img loading="lazy" src="${escapeHtml(item.providerLogo)}" class="list-row-provider" title="${escapeHtml(item.providerName || "")}" alt="">` : ""}
       </div>
     </div>`;
 }
@@ -3847,7 +3854,7 @@ function renderItems() {
             <div class="card-image">
               ${
                 item.posterUrl
-                  ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
+                  ? `<img loading="lazy" src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
                   : `<div class="card-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`
               }
               <div class="card-imagefade"></div>
@@ -4065,7 +4072,7 @@ function openCollectionBrowse(key, label) {
     return `
       <div class="card ${itemTypeClass}" onclick="openDetail(${inlineJsString(item.id)})">
         <div class="card-image">
-          ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="card-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`}
+          ${item.posterUrl ? `<img loading="lazy" src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="card-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`}
           <div class="card-imagefade"></div>
           <div class="card-badge ${statusClass}">${escapeHtml(statusText)}</div>
           ${buildCardProviderHTML(item)}
@@ -4295,7 +4302,7 @@ function renderHistory() {
           <div class="history-poster">
             ${
               item.posterUrl
-                ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
+                ? `<img loading="lazy" src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">`
                 : `<div class="history-poster-placeholder">${typeIcon}</div>`
             }
           </div>
@@ -4686,7 +4693,7 @@ function renderLists() {
             <div class="lists-poster-grid">
               ${tagItems.map((item) => `
                 <div class="lists-poster-item" onclick="openDetail(${inlineJsString(item.id)})" title="${escapeHtml(item.title)}">
-                  ${item.posterUrl ? `<img src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="lists-poster-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`}
+                  ${item.posterUrl ? `<img loading="lazy" src="${escapeHtml(item.posterUrl)}" alt="${escapeHtml(item.title)}">` : `<div class="lists-poster-placeholder">${item.type === "movie" ? "🎬" : "📺"}</div>`}
                 </div>`).join("")}
             </div>
           </section>
@@ -5164,7 +5171,7 @@ function buildCardProviderHTML(item) {
 
   return `
     <div class="card-provider" title="Disponible sur ${escapeHtml(item.providerName || "plateforme")}">
-      <img src="${escapeHtml(item.providerLogo)}" alt="${escapeHtml(item.providerName || "Plateforme")}" class="card-provider-logo${fitClass}">
+      <img loading="lazy" src="${escapeHtml(item.providerLogo)}" alt="${escapeHtml(item.providerName || "Plateforme")}" class="card-provider-logo${fitClass}">
     </div>
   `;
 }
@@ -7312,6 +7319,11 @@ async function refreshAssistantModeStatus() {
     statusUrl.pathname = statusUrl.pathname.replace(/\/assistant\/?$/, "/assistant/status");
     const response = await fetch(statusUrl, { cache: "no-store" });
     const data = response.ok ? await response.json() : null;
+    const serverTimeoutMs = Number(data?.requestTimeoutMs);
+    assistantServerTimeoutMs =
+      Number.isFinite(serverTimeoutMs) && serverTimeoutMs > 0
+        ? Math.min(120000, serverTimeoutMs)
+        : 0;
     status.textContent = data?.configured
       ? `${data.provider || "IA"} active · ${data.model || "modèle configuré"}${data.catalogConfigured ? " · découverte TMDB" : " · TMDB serveur manquant"}`
       : "Mode local · backend IA lancé sans configuration (utilise npm start + .env)";
@@ -7797,7 +7809,7 @@ function buildLocalAssistantReply(prompt) {
   return [
     "Je suis actuellement en mode local : je peux répondre aux questions portant sur ta collection, mais pas aux questions générales.",
     "Essaie par exemple : « combien de séries ai-je ? », « quels sont mes genres préférés ? », « parle-moi de [titre] » ou « que regarder ce soir ? ».",
-    "Pour une conversation libre, active l’IA distante et vérifie que le badge indique « IA distante active ».",
+    "Pour une conversation libre, active l’IA distante et vérifie que le badge n’indique plus « Mode local ».",
   ].join("\n");
 }
 
@@ -7889,15 +7901,17 @@ async function queryAssistantApi(prompt) {
   if (!AI_ASSISTANT_REMOTE_ENABLED || !hasAssistantRemoteConsent()) return null;
   if (AI_ASSISTANT_NEEDS_ABSOLUTE_URL) return null;
 
+  const timeoutMs = getAssistantRequestTimeoutMs();
   const attempts = [
     {
-      timeoutMs: AI_ASSISTANT_TIMEOUT_MS,
+      timeoutMs,
       collectionMaxChars: AI_ASSISTANT_REMOTE_COLLECTION_MAX_CHARS,
       historyLimit: AI_ASSISTANT_REMOTE_HISTORY_LIMIT,
       messageMaxChars: 1200,
     },
     {
-      timeoutMs: Math.max(5000, Math.min(10000, AI_ASSISTANT_TIMEOUT_MS)),
+      // Lighter retry payload; keep the server-aware timeout so it can succeed.
+      timeoutMs,
       collectionMaxChars: 1400,
       historyLimit: 2,
       messageMaxChars: 450,

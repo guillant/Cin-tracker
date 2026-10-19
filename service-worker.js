@@ -1,4 +1,4 @@
-const SHELL_CACHE_NAME = "cinetracker-shell-v57";
+const SHELL_CACHE_NAME = "cinetracker-shell-v58";
 const RUNTIME_IMAGE_CACHE_NAME = "cinetracker-runtime-images-v1";
 const TMDB_IMAGE_CACHE_LIMIT = 120;
 const APP_SHELL = [
@@ -64,6 +64,9 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
+
+  // Live backend data (assistant status, availability) must never be cached.
+  if (isSameOrigin(request.url) && url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).catch(() => caches.match("./index.html")));

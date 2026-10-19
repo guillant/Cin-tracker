@@ -114,7 +114,7 @@ Avec cette configuration, l'app ouverte via Live Server utilise automatiquement 
 → Vérifiez que l'extension est bien installée
 
 ❌ **L'assistant IA ne répond pas en mode Live Server**
-→ Lancez `npm start` pour démarrer le backend local, puis vérifiez que le badge assistant indique "IA active".
+→ Lancez `npm start` pour démarrer le backend local, puis vérifiez que le badge assistant indique le fournisseur actif (par exemple "Ollama active · qwen3:8b") et non "Mode local".
 
 ❌ **Les logos de plateformes n'apparaissent pas partout**
 → Ouvrez la fiche d'un contenu TMDB pour enrichir ses métadonnées

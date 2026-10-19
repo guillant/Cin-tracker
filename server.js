@@ -714,6 +714,7 @@ async function requestHandler(req, res) {
         model: AI_API_KEY ? OPENAI_MODEL : null,
         provider: AI_API_KEY ? AI_PROVIDER_LABEL : null,
         catalogConfigured: Boolean(process.env.TMDB_API_KEY),
+        requestTimeoutMs: REQUEST_TIMEOUT_MS,
       });
     }
     if (req.method === "POST" && url.pathname === "/api/assistant") {
