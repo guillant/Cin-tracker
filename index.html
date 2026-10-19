@@ -1166,6 +1166,34 @@
             >
               Choisir un fichier
             </button>
+
+            <div id="importChoice" class="import-choice" hidden>
+              <p class="import-choice-summary" id="importChoiceSummary"></p>
+              <div class="import-choice-actions">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  onclick="app.chooseImportMode('merge')"
+                >
+                  Fusionner avec ma collection
+                </button>
+                <button
+                  type="button"
+                  class="btn import-choice-replace"
+                  id="importChoiceReplace"
+                  onclick="app.chooseImportMode('replace')"
+                >
+                  Remplacer toute ma collection
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  onclick="app.chooseImportMode(null)"
+                >
+                  Annuler l'import
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

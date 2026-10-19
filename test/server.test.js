@@ -2,7 +2,11 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const http = require("node:http");
 const {
+  requestHandler,
+  isPublicStaticPath,
+  isRateLimited,
   sanitizeAssistantPayload,
   parseRecommendationIntent,
   buildSmartRecommendationReply,
@@ -163,4 +167,53 @@ test("smart recommendation prefers matching items from collection", () => {
 
   assert.match(reply, /Film A/);
   assert.ok(reply.indexOf("Film A") < reply.indexOf("Film B"));
+});
+
+test("static allowlist only exposes app assets", () => {
+  assert.equal(isPublicStaticPath("index.html"), true);
+  assert.equal(isPublicStaticPath("js/app.js"), true);
+  assert.equal(isPublicStaticPath("assets/icon-192.svg"), true);
+  assert.equal(isPublicStaticPath(".env"), false);
+  assert.equal(isPublicStaticPath(".git/config"), false);
+  assert.equal(isPublicStaticPath("server.js"), false);
+  assert.equal(isPublicStaticPath("package.json"), false);
+  assert.equal(isPublicStaticPath("js/.hidden"), false);
+});
+
+test("static server refuses private files and malformed paths", async () => {
+  const server = http.createServer(requestHandler);
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const expectations = {
+      "/": 200,
+      "/js/app.js": 200,
+      "/.env": 404,
+      "/.env.example": 404,
+      "/.git/config": 404,
+      "/server.js": 404,
+      "/js/..%2Fserver.js": 404,
+      "/js/..%5Cserver.js": 404,
+      "/%E0%A4%A": 400,
+    };
+    for (const [pathname, expectedStatus] of Object.entries(expectations)) {
+      const response = await fetch(`${base}${pathname}`);
+      await response.arrayBuffer();
+      assert.equal(response.status, expectedStatus, pathname);
+    }
+  } finally {
+    server.close();
+  }
+});
+
+test("rate limiter blocks a client after the per-minute quota", () => {
+  const now = 1_000_000;
+  let limited = false;
+  for (let index = 0; index < 20; index++) {
+    limited = isRateLimited("test-client", now);
+    assert.equal(limited, false);
+  }
+  assert.equal(isRateLimited("test-client", now), true);
+  assert.equal(isRateLimited("other-client", now), false);
+  assert.equal(isRateLimited("test-client", now + 61_000), false);
 });

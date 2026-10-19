@@ -14,7 +14,14 @@ const CONFIG = {
   // Optional secure backend proxy (never put an AI provider key in this file).
   AI_ASSISTANT_API_URL: "/api/assistant",
   AI_ASSISTANT_REMOTE_ENABLED: true,
-  AI_ASSISTANT_TIMEOUT_MS: 300000,
+  // Persist assistant conversation history in localStorage.
+  // Default false: each reload starts a fresh conversation.
+  AI_ASSISTANT_PERSIST_HISTORY: false,
+  // Performance tuning for remote assistant payload size.
+  AI_ASSISTANT_REMOTE_HISTORY_LIMIT: 6,
+  AI_ASSISTANT_REMOTE_COLLECTION_MAX_CHARS: 3200,
+  // UI timeout before fallback to local assistant (ms).
+  AI_ASSISTANT_TIMEOUT_MS: 15000,
   // Availability source: "tmdb" | "hybrid" | "fresh"
   AVAILABILITY_SOURCE: "tmdb",
   // Optional endpoint template for fresher availability provider.

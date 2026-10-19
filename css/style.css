@@ -167,6 +167,42 @@ header {
   justify-content: center;
 }
 
+.import-choice {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+}
+
+.import-choice-summary {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.import-choice-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import-choice-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.import-choice-replace {
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+.import-choice-replace.is-confirming {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
 .mobile-more-btn,
 .mobile-bottom-nav,
 .mobile-actions-menu {

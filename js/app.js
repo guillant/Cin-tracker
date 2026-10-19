@@ -54,6 +54,11 @@ const AI_ASSISTANT_TIMEOUT_MS = Math.max(
 const AVAILABILITY_SOURCE = String(CONFIG.AVAILABILITY_SOURCE || "tmdb").toLowerCase();
 const FRESH_AVAILABILITY_URL_TEMPLATE =
   CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE || "";
+const BACKEND_ACCESS_TOKEN = String(CONFIG.BACKEND_ACCESS_TOKEN || "").trim();
+
+function getBackendAuthHeaders() {
+  return BACKEND_ACCESS_TOKEN ? { "X-CineTracker-Token": BACKEND_ACCESS_TOKEN } : {};
+}
 const TMDB_WATCH_REGION = "FR";
 const TMDB_IMAGE_LANGUAGE_PREFERENCE = "fr,null,en";
 const TMDB_MOVIE_LOCALIZATION_VERSION = 1;
@@ -145,6 +150,13 @@ function getStatusLabel(status) {
 function normalizeCollectionItem(item, index = 0) {
   if (!item || typeof item !== "object") return null;
 
+  // Imported JSON may carry ratings as strings ("4"); the UI calls toFixed().
+  const ratingNumber = Number(item.rating);
+  const rating =
+    item.rating != null && item.rating !== "" && Number.isFinite(ratingNumber) && ratingNumber > 0
+      ? Math.min(5, ratingNumber)
+      : null;
+
   const normalized = {
     ...item,
     id: String(item.id || `item-${Date.now()}-${index}`),
@@ -153,6 +165,7 @@ function normalizeCollectionItem(item, index = 0) {
       .slice(0, 300),
     type: item.type === "series" ? "series" : "movie",
     status: normalizeStatusValue(item.status),
+    rating,
     year: String(item.year || "")
       .trim()
       .slice(0, 16),
@@ -5022,6 +5035,7 @@ async function fetchFreshWatchProviders(endpoint, tmdbId) {
   try {
     const res = await fetch(url, {
       method: "GET",
+      headers: getBackendAuthHeaders(),
     });
     if (!res.ok) return null;
 
@@ -7897,7 +7911,7 @@ async function queryAssistantApi(prompt) {
     try {
       const response = await fetch(AI_ASSISTANT_API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getBackendAuthHeaders() },
         signal: controller.signal,
         body: JSON.stringify({
           collection: getAssistantRemoteCollectionContext(prompt, attempt.collectionMaxChars),
@@ -10520,6 +10534,45 @@ function openImportExport() {
 
 function closeImportExport() {
   document.getElementById("importExportModal").classList.remove("active");
+  settleImportChoice(null);
+}
+
+const IMPORT_REPLACE_LABEL = "Remplacer toute ma collection";
+let pendingImportChoiceResolve = null;
+
+// Resolves with "merge", "replace" or null (cancelled). Replacing needs a second click.
+function askImportMode(summary) {
+  settleImportChoice(null);
+  const panel = document.getElementById("importChoice");
+  const replaceButton = document.getElementById("importChoiceReplace");
+  document.getElementById("importChoiceSummary").textContent = summary;
+  replaceButton.textContent = IMPORT_REPLACE_LABEL;
+  replaceButton.classList.remove("is-confirming");
+  panel.hidden = false;
+  panel.scrollIntoView({ block: "nearest" });
+  return new Promise((resolve) => {
+    pendingImportChoiceResolve = resolve;
+  });
+}
+
+function settleImportChoice(choice) {
+  const panel = document.getElementById("importChoice");
+  if (panel) panel.hidden = true;
+  const resolve = pendingImportChoiceResolve;
+  pendingImportChoiceResolve = null;
+  if (resolve) resolve(choice);
+}
+
+function chooseImportMode(mode) {
+  if (mode === "replace") {
+    const replaceButton = document.getElementById("importChoiceReplace");
+    if (!replaceButton.classList.contains("is-confirming")) {
+      replaceButton.classList.add("is-confirming");
+      replaceButton.textContent = `Confirmer : effacer les ${items.length} éléments actuels`;
+      return;
+    }
+  }
+  settleImportChoice(mode === "merge" || mode === "replace" ? mode : null);
 }
 
 function exportData() {
@@ -10589,14 +10642,18 @@ function importData() {
         matchedCount = enriched.matchedCount;
       }
 
-      const merge = confirm(
-        `${importedItems.length} éléments trouvés\n\n` +
-          `${isLetterboxdCsv ? `${matchedCount} fiches TMDB associées\n\n` : ""}` +
-          `OK = Fusionner avec vos données (${items.length})\n` +
-          `Annuler = Remplacer toutes vos données`,
+      const importMode = await askImportMode(
+        `${importedItems.length} éléments trouvés` +
+          `${isLetterboxdCsv ? ` · ${matchedCount} fiches TMDB associées` : ""}` +
+          ` · ${items.length} dans votre collection actuelle.`,
       );
 
-      if (merge) {
+      if (!importMode) {
+        showToast("Import annulé");
+        return;
+      }
+
+      if (importMode === "merge") {
         const existingByKey = new Map();
         items.forEach((item, index) => {
           existingByKey.set(getImportComparisonKey(item), index);
@@ -11090,6 +11147,7 @@ currentStatus = null;
 window.addEventListener("click", function (e) {
   if (e.target.classList.contains("modal")) {
     e.target.classList.remove("active");
+    if (e.target.id === "importExportModal") settleImportChoice(null);
   }
 });
 
@@ -11162,6 +11220,7 @@ window.app = {
   loadTrailer,
   openImportExport,
   closeImportExport,
+  chooseImportMode,
   openAssistant,
   closeAssistant,
   submitAssistantPrompt,

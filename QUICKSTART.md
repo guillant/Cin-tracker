@@ -58,6 +58,14 @@ VS Code va vous proposer d'installer des extensions recommandées :
 2. Cliquez sur **"Open with Live Server"**
 3. 🎉 L'app s'ouvre dans votre navigateur !
 
+Pour l'assistant IA distant, lancez aussi le backend dans un terminal séparé :
+
+```powershell
+npm start
+```
+
+Avec cette configuration, l'app ouverte via Live Server utilise automatiquement `http://localhost:4173/api/assistant`.
+
 **Méthode 2 - Fichier local :**
 
 1. Double-cliquez sur `index.html`
@@ -104,6 +112,9 @@ VS Code va vous proposer d'installer des extensions recommandées :
 
 ❌ **Live Server ne marche pas**
 → Vérifiez que l'extension est bien installée
+
+❌ **L'assistant IA ne répond pas en mode Live Server**
+→ Lancez `npm start` pour démarrer le backend local, puis vérifiez que le badge assistant indique "IA active".
 
 ❌ **Les logos de plateformes n'apparaissent pas partout**
 → Ouvrez la fiche d'un contenu TMDB pour enrichir ses métadonnées

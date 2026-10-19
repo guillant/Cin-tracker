@@ -1,5 +1,6 @@
 "use strict";
 
+const crypto = require("node:crypto");
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -32,6 +33,22 @@ const REQUEST_TIMEOUT_MS = Math.max(
   ),
 );
 const MAX_BODY_BYTES = 64 * 1024;
+// Optional shared secret required on paid API routes (header X-CineTracker-Token).
+const API_ACCESS_TOKEN = String(process.env.API_ACCESS_TOKEN || "").trim();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = Math.max(
+  1,
+  Number(process.env.API_RATE_LIMIT_PER_MINUTE) || 20,
+);
+// Only these files/folders are served; everything else (.env, .git, server.js,
+// node_modules, android/...) stays private.
+const PUBLIC_ROOT_FILES = new Set([
+  "index.html",
+  "manifest.json",
+  "service-worker.js",
+  "design-lab.html",
+]);
+const PUBLIC_DIRECTORIES = ["css/", "js/", "assets/"];
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -587,11 +604,32 @@ async function handleAvailability(url, res) {
   }
 }
 
+function isPublicStaticPath(relativePath) {
+  if (!relativePath || relativePath.split("/").some((segment) => segment.startsWith("."))) {
+    return false;
+  }
+  return (
+    PUBLIC_ROOT_FILES.has(relativePath) ||
+    PUBLIC_DIRECTORIES.some((directory) => relativePath.startsWith(directory))
+  );
+}
+
 function serveStatic(url, res) {
   const pathname = url.pathname === "/" ? "/index.html" : url.pathname;
-  const filePath = path.resolve(ROOT, `.${decodeURIComponent(pathname)}`);
-  if (!filePath.startsWith(`${ROOT}${path.sep}`)) {
-    return sendJson(res, 403, { error: "Forbidden" });
+  let decodedPathname;
+  try {
+    decodedPathname = decodeURIComponent(pathname);
+  } catch {
+    return sendJson(res, 400, { error: "Bad request" });
+  }
+  if (decodedPathname.includes("\0")) {
+    return sendJson(res, 400, { error: "Bad request" });
+  }
+  const filePath = path.resolve(ROOT, `.${decodedPathname}`);
+  // Check the resolved path so "..", backslashes or encoded separators cannot escape.
+  const relativePath = path.relative(ROOT, filePath).split(path.sep).join("/");
+  if (!filePath.startsWith(`${ROOT}${path.sep}`) || !isPublicStaticPath(relativePath)) {
+    return sendJson(res, 404, { error: "Not found" });
   }
   fs.stat(filePath, (error, stats) => {
     if (error || !stats.isFile()) return sendJson(res, 404, { error: "Not found" });
@@ -600,6 +638,47 @@ function serveStatic(url, res) {
     });
     fs.createReadStream(filePath).pipe(res);
   });
+}
+
+const rateLimitHits = new Map();
+
+function isRateLimited(clientKey, now = Date.now()) {
+  const recentHits = (rateLimitHits.get(clientKey) || []).filter(
+    (timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS,
+  );
+  const limited = recentHits.length >= RATE_LIMIT_MAX_REQUESTS;
+  if (!limited) recentHits.push(now);
+  rateLimitHits.set(clientKey, recentHits);
+
+  if (rateLimitHits.size > 1000) {
+    for (const [key, hits] of rateLimitHits) {
+      if (!hits.length || now - hits.at(-1) >= RATE_LIMIT_WINDOW_MS) {
+        rateLimitHits.delete(key);
+      }
+    }
+  }
+  return limited;
+}
+
+function hasValidAccessToken(req) {
+  if (!API_ACCESS_TOKEN) return true;
+  const provided = Buffer.from(String(req.headers["x-cinetracker-token"] || ""));
+  const expected = Buffer.from(API_ACCESS_TOKEN);
+  return provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
+}
+
+// Guards routes that spend provider quota (AI, RapidAPI). Returns true when handled.
+function rejectProtectedApiRequest(req, res) {
+  if (!hasValidAccessToken(req)) {
+    sendJson(res, 401, { error: "Unauthorized" });
+    return true;
+  }
+  if (isRateLimited(req.socket?.remoteAddress || "unknown")) {
+    res.setHeader("Retry-After", String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)));
+    sendJson(res, 429, { error: "Too many requests" });
+    return true;
+  }
+  return false;
 }
 
 async function requestHandler(req, res) {
@@ -623,7 +702,7 @@ async function requestHandler(req, res) {
   if (req.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
     res.writeHead(204, {
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Headers": "Content-Type, X-CineTracker-Token",
       "Access-Control-Max-Age": "86400",
     });
     return res.end();
@@ -638,9 +717,11 @@ async function requestHandler(req, res) {
       });
     }
     if (req.method === "POST" && url.pathname === "/api/assistant") {
+      if (rejectProtectedApiRequest(req, res)) return;
       return await handleAssistant(req, res);
     }
     if (req.method === "GET" && url.pathname.startsWith("/api/availability/")) {
+      if (rejectProtectedApiRequest(req, res)) return;
       return await handleAvailability(url, res);
     }
     if (req.method === "GET" || req.method === "HEAD") return serveStatic(url, res);
@@ -660,6 +741,8 @@ if (require.main === module) {
 
 module.exports = {
   requestHandler,
+  isPublicStaticPath,
+  isRateLimited,
   sanitizeAssistantPayload,
   parseRecommendationIntent,
   buildSmartRecommendationReply,

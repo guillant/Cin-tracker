@@ -50,3 +50,22 @@ Quand tu modifies `index.html`, `css/`, `js/`, `assets/`, `manifest.json` ou `se
 ```bash
 npm run cap:sync
 ```
+
+## Assistant IA dans l'app native
+
+Dans l'app Android/iOS, `localhost` pointe vers le telephone, pas vers ton PC.
+Il faut donc une URL backend publique (HTTPS) dans `js/config.local.js` :
+
+```js
+if (typeof CONFIG !== "undefined") {
+	CONFIG.AI_ASSISTANT_API_URL = "https://ton-backend.example.com/api/assistant";
+	CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE =
+		"https://ton-backend.example.com/api/availability/{mediaType}/{tmdbId}?country={country}";
+}
+```
+
+Ensuite execute :
+
+```bash
+npm run cap:sync
+```

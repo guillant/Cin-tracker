@@ -8,6 +8,13 @@ if (typeof CONFIG !== "undefined") {
   // Provider keys belong to the backend environment, never in this file.
   // CONFIG.AI_ASSISTANT_API_URL = "https://votre-backend.example.com/api/assistant";
 
+  // Optional: must match API_ACCESS_TOKEN in the backend .env when it is set.
+  // Not a real secret (it ships with the app), it only blocks anonymous callers.
+  // CONFIG.BACKEND_ACCESS_TOKEN = "change-me";
+
+  // Optional: save assistant chat history locally (false by default).
+  // CONFIG.AI_ASSISTANT_PERSIST_HISTORY = true;
+
   // Optional: fresher availability source for streaming platforms.
   // "tmdb" (default) | "hybrid" (TMDB + external fallback) | "fresh" (external first)
   // CONFIG.AVAILABILITY_SOURCE = "hybrid";
