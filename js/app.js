@@ -10589,20 +10589,67 @@ function chooseImportMode(mode) {
   settleImportChoice(mode === "merge" || mode === "replace" ? mode : null);
 }
 
-function exportData() {
+// Native plugin proxies are injected by the Capacitor bridge (no bundler needed).
+function getNativeCapacitorPlugin(name) {
+  const capacitor = window.Capacitor;
+  if (!capacitor?.isNativePlatform?.()) return null;
+  return capacitor.Plugins?.[name] || null;
+}
+
+// In the Android/iOS WebView, <a download> does nothing: write the backup to
+// the app cache and open the system share sheet (Drive, Files, mail...).
+async function exportDataNative(fileName, json) {
+  const filesystem = getNativeCapacitorPlugin("Filesystem");
+  const share = getNativeCapacitorPlugin("Share");
+  if (!filesystem || !share) return false;
+
+  const { uri } = await filesystem.writeFile({
+    path: fileName,
+    data: json,
+    directory: "CACHE",
+    encoding: "utf8",
+  });
+  try {
+    await share.share({
+      title: "Sauvegarde CineTracker",
+      url: uri,
+      dialogTitle: "Enregistrer la sauvegarde",
+    });
+    showToast("Sauvegarde prête à être enregistrée");
+  } catch (error) {
+    if (!/cancel/i.test(String(error?.message || error))) throw error;
+    showToast("Export annulé");
+  }
+  return true;
+}
+
+async function exportData() {
   const data = {
     version: "2.0",
     exportDate: new Date().toISOString(),
     items: items,
   };
+  const fileName = `cinetracker-${new Date().toISOString().split("T")[0]}.json`;
+  const json = JSON.stringify(data, null, 2);
 
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
+  try {
+    if (await exportDataNative(fileName, json)) {
+      closeImportExport();
+      return;
+    }
+  } catch (error) {
+    console.error("Export natif impossible:", error);
+    showToast("Export impossible sur cet appareil");
+    return;
+  }
+
+  const blob = new Blob([json], {
     type: "application/json",
   });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `cinetracker-${new Date().toISOString().split("T")[0]}.json`;
+  a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
 
