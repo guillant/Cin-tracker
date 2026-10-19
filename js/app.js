@@ -5,10 +5,6 @@
  * Configuration API: Voir js/config.js
  */
 
-// Utilisation des constantes depuis config.js
-const TMDB_API_KEY = CONFIG.TMDB_API_KEY;
-const TMDB_BASE_URL = CONFIG.TMDB_BASE_URL;
-const TMDB_IMAGE_BASE = CONFIG.TMDB_IMAGE_BASE;
 const AI_ASSISTANT_API_URL = (() => {
   const configuredUrl = String(CONFIG.AI_ASSISTANT_API_URL || "/api/assistant").trim();
   if (
@@ -58,39 +54,8 @@ let assistantServerTimeoutMs = 0;
 function getAssistantRequestTimeoutMs() {
   return Math.max(AI_ASSISTANT_TIMEOUT_MS, assistantServerTimeoutMs + 3000);
 }
-const AVAILABILITY_SOURCE = String(CONFIG.AVAILABILITY_SOURCE || "tmdb").toLowerCase();
-const FRESH_AVAILABILITY_URL_TEMPLATE =
-  CONFIG.FRESH_AVAILABILITY_URL_TEMPLATE || "";
-const BACKEND_ACCESS_TOKEN = String(CONFIG.BACKEND_ACCESS_TOKEN || "").trim();
 
-function getBackendAuthHeaders() {
-  return BACKEND_ACCESS_TOKEN ? { "X-CineTracker-Token": BACKEND_ACCESS_TOKEN } : {};
-}
-const TMDB_WATCH_REGION = "FR";
-const TMDB_IMAGE_LANGUAGE_PREFERENCE = "fr,null,en";
-const TMDB_MOVIE_LOCALIZATION_VERSION = 1;
-const WATCH_PROVIDER_GROUP_ORDER = ["flatrate", "free", "ads", "rent", "buy"];
-const WATCH_PROVIDER_INCLUDED_GROUPS = new Set(["flatrate", "free", "ads"]);
-const WATCH_PROVIDER_PRIORITY_VERSION = 2;
 const HIDDEN_SYSTEM_TAGS = new Set(["Letterboxd"]);
-const STREAMING_PROVIDER_PRIORITY = [
-  "netflix",
-  "max",
-  "disney+",
-  "prime-video",
-  "canal+",
-  "apple-tv+",
-  "ocs",
-  "paramount+",
-  "universal+",
-  "crunchyroll",
-  "mubi",
-  "arte",
-  "france-tv",
-  "tf1+",
-  "6play",
-  "sfr-play",
-];
 const USER_PROVIDERS_STORAGE_KEY = "cinetrackerUserProviders";
 const GROUP_PROFILES_STORAGE_KEY = "cinetrackerGroupProfiles";
 const GROUP_ACTIVE_PROFILES_STORAGE_KEY = "cinetrackerGroupActiveProfiles";
@@ -144,275 +109,6 @@ function inlineJsString(value) {
   return escapeHtml(JSON.stringify(String(value ?? "")));
 }
 
-async function fetchTmdbMovieDetails(tmdbId) {
-  if (!tmdbId || TMDB_API_KEY === "VOTRE_CLE_API_ICI") return null;
-
-  const urls = [
-    `${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR&append_to_response=images&include_image_language=${encodeURIComponent(TMDB_IMAGE_LANGUAGE_PREFERENCE)}`,
-    `${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&append_to_response=images&include_image_language=${encodeURIComponent(TMDB_IMAGE_LANGUAGE_PREFERENCE)}`,
-  ];
-
-  for (const url of urls) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      return await res.json();
-    } catch (error) {
-      console.error("Erreur détail TMDB import:", error);
-    }
-  }
-
-  return null;
-}
-
-function getPreferredTmdbPosterPath(tmdbDetails) {
-  const posters = Array.isArray(tmdbDetails?.images?.posters)
-    ? tmdbDetails.images.posters
-    : [];
-
-  const preferredPoster =
-    posters.find((poster) => poster?.iso_639_1 === "fr") ||
-    posters.find((poster) => poster?.iso_639_1 === null) ||
-    posters.find((poster) => poster?.iso_639_1 === "en") ||
-    posters[0];
-
-  return preferredPoster?.file_path || tmdbDetails?.poster_path || null;
-}
-
-async function hydrateMovieItemFromTmdb(item, tmdbId, statusOverride = null) {
-  if (!item || !tmdbId || TMDB_API_KEY === "VOTRE_CLE_API_ICI") return item;
-
-  const tmdbDetails = await fetchTmdbMovieDetails(tmdbId);
-  const forcedMatch = getForcedTmdbMovieMatch(item);
-  if (!tmdbDetails) {
-    if (!forcedMatch) return item;
-
-    return {
-      ...item,
-      tmdbId,
-      title: forcedMatch.fallbackTitle || item.title,
-      year: forcedMatch.year || item.year,
-      posterUrl: item.posterUrl || forcedMatch.fallbackPosterUrl || "",
-      tmdbLocalizationVersion: TMDB_MOVIE_LOCALIZATION_VERSION,
-    };
-  }
-
-  const preferredPosterPath = getPreferredTmdbPosterPath(tmdbDetails);
-
-  let provider = null;
-  try {
-    const watchProviders = await fetchWatchProviders("movie", tmdbId);
-    provider = getPrimaryWatchProvider(watchProviders, {
-      includedOnly: true,
-    });
-  } catch (error) {
-    console.error("Erreur providers hydrate import:", error);
-  }
-
-  const hydratedItem = buildCollectionItemFromTrending(
-    {
-      ...tmdbDetails,
-      media_type: "movie",
-      poster_path: preferredPosterPath || tmdbDetails.poster_path,
-    },
-    "movie",
-    provider,
-    statusOverride || item.status || "towatch",
-  );
-
-  return {
-    ...hydratedItem,
-    id: item.id,
-    title: hydratedItem.title || forcedMatch?.fallbackTitle || item.title,
-    year: hydratedItem.year || item.year,
-    releaseDate: hydratedItem.releaseDate || item.releaseDate || null,
-    posterUrl: hydratedItem.posterUrl || item.posterUrl || "",
-    rating: item.rating ?? hydratedItem.rating ?? null,
-    notes: item.notes || "",
-    tags: [...new Set([...(hydratedItem.tags || []), ...(item.tags || [])])],
-    dateAdded: item.dateAdded || hydratedItem.dateAdded,
-    watchedAt:
-      item.watchedAt ||
-      (item.status === "watched" ? hydratedItem.watchedAt : null),
-    status: item.status || statusOverride || hydratedItem.status,
-    letterboxdUri: item.letterboxdUri || "",
-    tmdbLocalizationVersion: TMDB_MOVIE_LOCALIZATION_VERSION,
-  };
-}
-
-// Titles with no TMDB match are remembered so the automatic repair does not
-// re-run the same searches on every launch.
-const TMDB_MATCH_MISS_STORAGE_KEY = "cinetrackerTmdbMatchMisses";
-const TMDB_MATCH_MISS_TTL_MS = 14 * 24 * 60 * 60 * 1000;
-const TMDB_MATCH_MISS_LIMIT = 2000;
-const tmdbMovieMatchRequests = new Map();
-let tmdbMatchMisses = null;
-
-function getTmdbMatchMisses() {
-  if (tmdbMatchMisses) return tmdbMatchMisses;
-  try {
-    const stored = JSON.parse(localStorage.getItem(TMDB_MATCH_MISS_STORAGE_KEY) || "{}");
-    tmdbMatchMisses = stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
-  } catch {
-    tmdbMatchMisses = {};
-  }
-  return tmdbMatchMisses;
-}
-
-function recordTmdbMatchMiss(key) {
-  const misses = getTmdbMatchMisses();
-  misses[key] = Date.now();
-  tmdbMatchMisses = Object.fromEntries(
-    Object.entries(misses)
-      .sort((left, right) => right[1] - left[1])
-      .slice(0, TMDB_MATCH_MISS_LIMIT),
-  );
-  try {
-    localStorage.setItem(TMDB_MATCH_MISS_STORAGE_KEY, JSON.stringify(tmdbMatchMisses));
-  } catch {
-    // Best effort cache: losing it only costs extra searches.
-  }
-}
-
-function findTmdbMovieMatch(title, year) {
-  if (!title || TMDB_API_KEY === "VOTRE_CLE_API_ICI") return Promise.resolve(null);
-
-  const key = `${slugifyImportPart(title)}|${String(year || "").trim()}`;
-  const missedAt = Number(getTmdbMatchMisses()[key]);
-  if (Number.isFinite(missedAt) && Date.now() - missedAt < TMDB_MATCH_MISS_TTL_MS) {
-    return Promise.resolve(null);
-  }
-
-  // Share one search between the startup repair and the render-time hydration.
-  if (!tmdbMovieMatchRequests.has(key)) {
-    tmdbMovieMatchRequests.set(
-      key,
-      searchTmdbMovieMatch(title, year).then(({ match, complete }) => {
-        if (!match && complete) recordTmdbMatchMiss(key);
-        if (!complete) tmdbMovieMatchRequests.delete(key);
-        return match;
-      }),
-    );
-  }
-  return tmdbMovieMatchRequests.get(key);
-}
-
-// Returns { match, complete }: complete is false when a request failed, so a
-// network/rate-limit error is never remembered as "no match".
-async function searchTmdbMovieMatch(title, year) {
-  const normalizedYear = /^\d{4}$/.test(String(year || "").trim())
-    ? String(year).trim()
-    : "";
-  const rankedCandidates = new Map();
-  const titleVariants = getMovieTitleSearchVariants(title);
-  let complete = true;
-
-  try {
-    for (const variant of titleVariants) {
-      const urls = [
-        `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(variant)}&language=fr-FR&include_adult=false${normalizedYear ? `&primary_release_year=${encodeURIComponent(normalizedYear)}` : ""}`,
-        `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(variant)}&language=fr-FR&include_adult=false`,
-        `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(variant)}&include_adult=false`,
-      ];
-
-      for (const url of urls) {
-        const res = await fetch(url);
-        if (!res.ok) {
-          complete = false;
-          continue;
-        }
-
-        const data = await res.json();
-        const results = Array.isArray(data.results)
-          ? data.results.slice(0, 12)
-          : [];
-
-        results.forEach((candidate) => {
-          const score = scoreMovieMatch(candidate, title, year);
-          const existingEntry = rankedCandidates.get(candidate.id);
-
-          if (!existingEntry || score > existingEntry.score) {
-            rankedCandidates.set(candidate.id, { candidate, score });
-          }
-        });
-
-        const exactishMatch = [...rankedCandidates.values()].sort(
-          (left, right) => right.score - left.score,
-        )[0];
-
-        if (exactishMatch && exactishMatch.score >= 72) {
-          return { match: exactishMatch.candidate, complete: true };
-        }
-      }
-    }
-
-    const bestMatch = [...rankedCandidates.values()].sort(
-      (left, right) => right.score - left.score,
-    )[0];
-    if (!bestMatch || bestMatch.score < 48) return { match: null, complete };
-    return { match: bestMatch.candidate, complete: true };
-  } catch (error) {
-    console.error("Erreur recherche TMDB import:", error);
-    return { match: null, complete: false };
-  }
-}
-
-async function enrichImportedMovieItem(item) {
-  if (item.type !== "movie" || TMDB_API_KEY === "VOTRE_CLE_API_ICI") {
-    return item;
-  }
-
-  const forcedMatch = getForcedTmdbMovieMatch(item);
-  if (forcedMatch && shouldForceMovieTmdbOverride(item)) {
-    return hydrateMovieItemFromTmdb(
-      item,
-      forcedMatch.tmdbId,
-      item.status || "towatch",
-    );
-  }
-
-  if (item.tmdbId) {
-    const needsHydration =
-      !item.posterUrl ||
-      !item.genre ||
-      !item.year ||
-      !item.releaseDate ||
-      (isLikelyLetterboxdImportedMovie(item) &&
-        (item.tmdbLocalizationVersion || 0) < TMDB_MOVIE_LOCALIZATION_VERSION);
-    return needsHydration
-      ? hydrateMovieItemFromTmdb(item, item.tmdbId, item.status || "towatch")
-      : item;
-  }
-
-  const tmdbMatch = await findTmdbMovieMatch(item.title, item.year);
-  if (!tmdbMatch) return item;
-
-  return hydrateMovieItemFromTmdb(item, tmdbMatch.id, item.status || "towatch");
-}
-
-async function enrichImportedItems(itemsToEnrich) {
-  if (!Array.isArray(itemsToEnrich) || itemsToEnrich.length === 0) {
-    return { items: [], matchedCount: 0 };
-  }
-
-  const results = [];
-  let matchedCount = 0;
-  const batchSize = 4;
-
-  for (let index = 0; index < itemsToEnrich.length; index += batchSize) {
-    const batch = itemsToEnrich.slice(index, index + batchSize);
-    const enrichedBatch = await Promise.all(
-      batch.map(async (item) => {
-        const enrichedItem = await enrichImportedMovieItem(item);
-        if (enrichedItem.tmdbId) matchedCount++;
-        return enrichedItem;
-      }),
-    );
-    results.push(...enrichedBatch);
-  }
-
-  return { items: results, matchedCount };
-}
 
 let letterboxdRepairAttempted = false;
 
@@ -731,65 +427,6 @@ function getEditorialUpcomingLabel(targetDate, fromDate) {
   return "Bientôt";
 }
 
-function getCompactProviderLabel(providerName) {
-  if (!providerName) return "";
-
-  const normalized = providerName.trim();
-  const aliases = {
-    "Apple TV Plus": "Apple TV+",
-    "Apple TV+": "Apple TV+",
-    "Disney Plus": "Disney+",
-    "Disney+": "Disney+",
-    "Amazon Prime Video": "Prime Video",
-    Netflix: "Netflix",
-    Max: "Max",
-    "Canal+": "Canal+",
-  };
-
-  return aliases[normalized] || normalized;
-}
-
-function getProviderPriorityKey(providerName) {
-  const normalized = getCompactProviderLabel(providerName)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-
-  if (normalized === "premiere max") return "premiere-max";
-  if (normalized === "prime video") return "prime-video";
-  if (normalized === "apple tv+") return "apple-tv+";
-  if (normalized === "disney+") return "disney+";
-  if (normalized === "canal+") return "canal+";
-  if (normalized === "paramount+") return "paramount+";
-  if (normalized === "universal+") return "universal+";
-  if (normalized === "france.tv") return "france-tv";
-  if (normalized === "tf1+") return "tf1+";
-  if (normalized === "6play") return "6play";
-  if (/\bocs\b/.test(normalized)) return "ocs";
-  if (/\bsfr\b/.test(normalized)) return "sfr-play";
-  if (/\bnetflix\b/.test(normalized)) return "netflix";
-  if (
-    normalized === "max" ||
-    normalized === "hbo max" ||
-    /^max\b/.test(normalized)
-  )
-    return "max";
-  if (/\bdisney\b/.test(normalized)) return "disney+";
-  if (/prime/.test(normalized)) return "prime-video";
-  if (/apple/.test(normalized)) return "apple-tv+";
-  if (/canal/.test(normalized)) return "canal+";
-  if (/paramount/.test(normalized)) return "paramount+";
-  if (/universal/.test(normalized)) return "universal+";
-  if (/crunchyroll/.test(normalized)) return "crunchyroll";
-  if (/mubi/.test(normalized)) return "mubi";
-  if (/arte/.test(normalized)) return "arte";
-  if (/france/.test(normalized)) return "france-tv";
-  if (/tf1/.test(normalized)) return "tf1+";
-
-  return normalized.replace(/[^a-z0-9+]+/g, "-").replace(/^-+|-+$/g, "");
-}
-
 function loadUserProviderKeys() {
   try {
     const stored = JSON.parse(
@@ -993,27 +630,6 @@ function getGenreOptionLabel(genreKey) {
   return (
     GROUP_GENRE_OPTIONS.find((genre) => genre.key === genreKey)?.label ||
     genreKey
-  );
-}
-
-function compareProvidersByPriority(leftProvider, rightProvider) {
-  const leftName = leftProvider?.provider_name || "";
-  const rightName = rightProvider?.provider_name || "";
-  const leftKey = getProviderPriorityKey(leftName);
-  const rightKey = getProviderPriorityKey(rightName);
-  const leftRank = STREAMING_PROVIDER_PRIORITY.indexOf(leftKey);
-  const rightRank = STREAMING_PROVIDER_PRIORITY.indexOf(rightKey);
-
-  if (leftRank !== -1 || rightRank !== -1) {
-    if (leftRank === -1) return 1;
-    if (rightRank === -1) return -1;
-    if (leftRank !== rightRank) return leftRank - rightRank;
-  }
-
-  return getCompactProviderLabel(leftName).localeCompare(
-    getCompactProviderLabel(rightName),
-    "fr",
-    { sensitivity: "base" },
   );
 }
 
@@ -1312,14 +928,6 @@ function normalizeAssistantRecommendations(recommendations) {
     items: items.slice(0, 4),
     note: String(recommendations.note || "").trim().slice(0, 220),
   };
-}
-
-function normalizeTmdbMediaType(type) {
-  return type === "tv" || type === "series" ? "tv" : "movie";
-}
-
-function getCollectionTypeFromTmdbType(type) {
-  return normalizeTmdbMediaType(type) === "tv" ? "series" : "movie";
 }
 
 function getTrendingCacheKey(id, type) {
@@ -2424,10 +2032,10 @@ async function searchTMDB(query) {
   try {
     const [movieRes, tvRes] = await Promise.all([
       fetch(
-        `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`,
+        buildTmdbUrl("search/movie", { query }),
       ),
       fetch(
-        `${TMDB_BASE_URL}/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`,
+        buildTmdbUrl("search/tv", { query }),
       ),
     ]);
 
@@ -2531,7 +2139,7 @@ async function selectTMDBItem(item) {
   if (item.media_type === "tv") {
     try {
       const res = await fetch(
-        `${TMDB_BASE_URL}/tv/${item.id}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+        buildTmdbUrl(`tv/${item.id}`),
       );
       if (res.ok) {
         const tvData = await res.json();
@@ -2556,16 +2164,6 @@ async function selectTMDBItem(item) {
   document.getElementById("searchResults").innerHTML = "";
   document.getElementById("tmdbSearch").value = "";
   showToast("Informations remplies ✓");
-}
-
-// Utilise GENRE_MAP depuis config.js
-function getGenreNames(genreIds, mediaType) {
-  const map = GENRE_MAP[mediaType] || GENRE_MAP.movie;
-  return genreIds
-    .slice(0, 3)
-    .map((id) => map[id] || "")
-    .filter(Boolean)
-    .join(", ");
 }
 
 document.getElementById("tmdbSearch")?.addEventListener("input", function (e) {
@@ -2678,7 +2276,7 @@ async function enrichMovieReleaseDate(item) {
 
   try {
     const res = await fetch(
-      `${TMDB_BASE_URL}/movie/${item.tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      buildTmdbUrl(`movie/${item.tmdbId}`),
     );
     if (!res.ok) return;
 
@@ -2774,7 +2372,7 @@ async function enrichSeriesUpcomingEpisode(item) {
 
   try {
     const res = await fetch(
-      `${TMDB_BASE_URL}/tv/${item.tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      buildTmdbUrl(`tv/${item.tmdbId}`),
     );
     if (!res.ok) {
       seriesUpcomingEpisodesCache[item.id] = null;
@@ -4291,201 +3889,6 @@ function loadTrailer(container, key) {
   `;
 }
 
-function resolveProviderLogoUrl(logoPath) {
-  const raw = String(logoPath || "").trim();
-  if (!raw) return null;
-  if (/^https?:\/\//i.test(raw)) return raw;
-  return `https://image.tmdb.org/t/p/w92${raw}`;
-}
-
-function normalizeWatchProviders(payload, region = TMDB_WATCH_REGION) {
-  const regionData = payload?.results?.[region];
-  if (!regionData) return null;
-
-  const groupLabels = {
-    flatrate: "Streaming",
-    free: "Gratuit",
-    ads: "Avec pub",
-    rent: "Location",
-    buy: "Achat",
-  };
-
-  const groups = WATCH_PROVIDER_GROUP_ORDER.map((groupKey) => ({
-    key: groupKey,
-    label: groupLabels[groupKey] || groupKey,
-  }))
-    .map((group) => ({
-      ...group,
-      providers: [...(regionData[group.key] || [])]
-        .sort(compareProvidersByPriority)
-        .slice(0, 8),
-    }))
-    .filter((group) => group.providers.length > 0);
-
-  if (groups.length === 0) return null;
-
-  return {
-    region,
-    link: regionData.link || "",
-    sourceLabel: "TMDB",
-    groups,
-  };
-}
-
-function getAvailabilityMode() {
-  return ["tmdb", "hybrid", "fresh"].includes(AVAILABILITY_SOURCE)
-    ? AVAILABILITY_SOURCE
-    : "tmdb";
-}
-
-function buildFreshAvailabilityUrl(endpoint, tmdbId, region = TMDB_WATCH_REGION) {
-  if (!FRESH_AVAILABILITY_URL_TEMPLATE) return "";
-  const mediaType = endpoint === "movie" ? "movie" : "tv";
-  const countryCode = String(region || "").toLowerCase();
-  return FRESH_AVAILABILITY_URL_TEMPLATE.replace(/\{mediaType\}/g, mediaType)
-    .replace(/\{tmdbId\}/g, encodeURIComponent(String(tmdbId)))
-    .replace(/\{country\}/g, encodeURIComponent(countryCode));
-}
-
-function normalizeFreshProviderType(rawType) {
-  const value = String(rawType || "").toLowerCase();
-  if (["subscription", "sub", "flatrate", "stream", "streaming"].includes(value)) return "flatrate";
-  if (["free", "free_with_ads"].includes(value)) return "free";
-  if (["ads", "ad", "ad_supported"].includes(value)) return "ads";
-  if (value === "rent" || value === "rental") return "rent";
-  if (["buy", "purchase"].includes(value)) return "buy";
-  return null;
-}
-
-function normalizeFreshWatchProviders(payload, region = TMDB_WATCH_REGION) {
-  if (!payload) return null;
-
-  // Accept already-normalized payload from a custom proxy.
-  if (Array.isArray(payload.groups) && payload.groups.length > 0) {
-    return {
-      region,
-      link: payload.link || "",
-      sourceLabel: payload.sourceLabel || "Source externe",
-      groups: payload.groups,
-    };
-  }
-
-  // Accept TMDB-shaped payload if proxy forwards TMDB compatibility format.
-  if (payload?.results?.[region]) {
-    const normalized = normalizeWatchProviders(payload, region);
-    if (!normalized) return null;
-    return {
-      ...normalized,
-      sourceLabel: payload.sourceLabel || "Source externe",
-    };
-  }
-
-  // Streaming-availability style shape: payload.streamingOptions[countryCode].
-  const countryKey = String(region || "").toLowerCase();
-  const optionsByCountry = payload.streamingOptions || payload?.result?.streamingOptions;
-  const entries = Array.isArray(optionsByCountry?.[countryKey])
-    ? optionsByCountry[countryKey]
-    : Array.isArray(optionsByCountry?.[region])
-      ? optionsByCountry[region]
-      : [];
-
-  if (!entries.length) return null;
-
-  const groupsMap = new Map(
-    WATCH_PROVIDER_GROUP_ORDER.map((groupKey) => [groupKey, new Map()]),
-  );
-
-  entries.forEach((entry) => {
-    const groupKey = normalizeFreshProviderType(entry?.type);
-    if (!groupKey || !groupsMap.has(groupKey)) return;
-
-    const service = entry?.service || {};
-    const providerId = service.id || service.providerId || service.name || "unknown";
-    const providerName = service.name || entry?.provider_name || "Plateforme";
-    const logoPath =
-      service?.imageSet?.lightThemeImage ||
-      service?.imageSet?.darkThemeImage ||
-      service?.logo_path ||
-      "";
-
-    groupsMap.get(groupKey).set(String(providerId), {
-      provider_id: providerId,
-      provider_name: providerName,
-      logo_path: logoPath,
-    });
-  });
-
-  const groupLabels = {
-    flatrate: "Streaming",
-    free: "Gratuit",
-    ads: "Avec pub",
-    rent: "Location",
-    buy: "Achat",
-  };
-
-  const groups = WATCH_PROVIDER_GROUP_ORDER.map((groupKey) => ({
-    key: groupKey,
-    label: groupLabels[groupKey] || groupKey,
-    providers: [...(groupsMap.get(groupKey)?.values() || [])]
-      .sort(compareProvidersByPriority)
-      .slice(0, 8),
-  })).filter((group) => group.providers.length > 0);
-
-  if (!groups.length) return null;
-
-  return {
-    region,
-    link: payload.link || payload.moreInfoUrl || "",
-    sourceLabel: payload.sourceLabel || "Source externe",
-    groups,
-  };
-}
-
-async function fetchFreshWatchProviders(endpoint, tmdbId) {
-  const url = buildFreshAvailabilityUrl(endpoint, tmdbId);
-  if (!url) return null;
-
-  try {
-    const res = await fetch(url, {
-      method: "GET",
-      headers: getBackendAuthHeaders(),
-    });
-    if (!res.ok) return null;
-
-    const payload = await res.json();
-    return normalizeFreshWatchProviders(payload, TMDB_WATCH_REGION);
-  } catch (error) {
-    console.error("Erreur availability source externe:", error);
-    return null;
-  }
-}
-
-function getPrimaryWatchProvider(watchProviders, options = {}) {
-  const includedOnly = Boolean(options.includedOnly);
-  const sortedGroups = Array.isArray(watchProviders?.groups)
-    ? [...watchProviders.groups].sort(
-        (leftGroup, rightGroup) =>
-          WATCH_PROVIDER_GROUP_ORDER.indexOf(leftGroup?.key) -
-          WATCH_PROVIDER_GROUP_ORDER.indexOf(rightGroup?.key),
-      )
-    : [];
-  const group = sortedGroups.find(
-    (candidateGroup) =>
-      (!includedOnly ||
-        WATCH_PROVIDER_INCLUDED_GROUPS.has(candidateGroup?.key)) &&
-      Array.isArray(candidateGroup?.providers) &&
-      candidateGroup.providers.length > 0,
-  );
-  const provider = group?.providers?.[0];
-  if (!provider) return null;
-
-  return {
-    providerName: provider.provider_name || "",
-    providerLogo: resolveProviderLogoUrl(provider.logo_path),
-    providerAccessType: group?.key || null,
-  };
-}
-
 function getUserMatchingWatchProvider(watchProviders) {
   if (!userProviderKeys.length || !Array.isArray(watchProviders?.groups)) {
     return null;
@@ -5229,49 +4632,6 @@ function buildAvailabilityInfoRow(item, watchProviders, tmdb = null) {
   );
 }
 
-async function fetchWatchProviders(endpoint, tmdbId) {
-  const mode = getAvailabilityMode();
-
-  if (mode === "fresh") {
-    const fresh = await fetchFreshWatchProviders(endpoint, tmdbId);
-    if (fresh) return fresh;
-  }
-
-  try {
-    const res = await fetch(
-      `${TMDB_BASE_URL}/${endpoint}/${tmdbId}/watch/providers?api_key=${TMDB_API_KEY}`,
-    );
-    if (!res.ok) {
-      if (mode === "hybrid") {
-        return await fetchFreshWatchProviders(endpoint, tmdbId);
-      }
-      return null;
-    }
-
-    const payload = await res.json();
-    const tmdbProviders = normalizeWatchProviders(payload);
-    
-    // Return TMDB data if available (includes all types: flatrate, rent, buy, etc.)
-    if (tmdbProviders) {
-      return tmdbProviders;
-    }
-
-    // Only fallback to fresh if TMDB has absolutely nothing
-    if (mode === "hybrid") {
-      const fresh = await fetchFreshWatchProviders(endpoint, tmdbId);
-      if (fresh) return fresh;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error("Erreur watch providers:", error);
-    if (mode === "hybrid") {
-      return await fetchFreshWatchProviders(endpoint, tmdbId);
-    }
-    return null;
-  }
-}
-
 function buildCastHTML(tmdb) {
   const cast = tmdb?.credits?.cast?.slice(0, 6) || [];
   if (cast.length === 0) return "";
@@ -5560,53 +4920,6 @@ function buildTrendingQuickBar(item, type, alreadyAdded) {
     <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="quickAddFromTrendingById(${item.id}, 'towatch', '${type}')">+ Ajouter</button>
     <button class="btn" style="flex:1;justify-content:center;" onclick="openWatchedFlowFromTrendingById(${item.id}, '${type}')">✓ Marquer comme vu + noter</button>
   </div>`;
-}
-
-function buildCollectionItemFromTrending(
-  item,
-  type,
-  provider,
-  status = "towatch",
-) {
-  const title = item.title || item.name;
-  const releaseDate = item.release_date || item.first_air_date || null;
-  const year = (item.release_date || item.first_air_date || "").substring(0, 4);
-  const genres = item.genre_ids
-    ? getGenreNames(item.genre_ids, type)
-    : Array.isArray(item.genres)
-      ? item.genres
-          .map((genre) => genre?.name)
-          .filter(Boolean)
-          .join(", ")
-      : "";
-  const rating = item.vote_average ? (item.vote_average / 2).toFixed(1) : "";
-  const posterUrl = item.poster_path
-    ? `${TMDB_IMAGE_BASE}${item.poster_path}`
-    : null;
-
-  return {
-    id: Date.now().toString(),
-    title,
-    type: type === "movie" ? "movie" : "series",
-    year,
-    releaseDate,
-    status,
-    rating: null,
-    tmdbRating: parseFloat(rating) || null,
-    genre: genres,
-    notes: "",
-    posterUrl,
-    tmdbId: item.id,
-    providerLogo: provider?.providerLogo || null,
-    providerName: provider?.providerName || null,
-    providerAccessType: provider?.providerAccessType || null,
-    providerPriorityVersion: WATCH_PROVIDER_PRIORITY_VERSION,
-    tags: [],
-    currentSeason: type === "tv" ? 1 : null,
-    currentEpisode: type === "tv" ? 1 : null,
-    dateAdded: new Date().toISOString(),
-    watchedAt: status === "watched" ? new Date().toISOString() : null,
-  };
 }
 
 async function quickAddFromTrendingById(id, status = "towatch", type = null) {
@@ -6057,7 +5370,7 @@ async function toggleSeasonEpisodes(itemId, season, event) {
   if (!episodes) {
     try {
       const res = await fetch(
-        `${TMDB_BASE_URL}/tv/${item.tmdbId}/season/${season}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+        buildTmdbUrl(`tv/${item.tmdbId}/season/${season}`),
       );
 
       if (!res.ok) throw new Error("Erreur API saison");
@@ -6265,7 +5578,9 @@ async function openDetail(id) {
       const endpoint = item.type === "movie" ? "movie" : "tv";
       const [res, watchProviders] = await Promise.all([
         fetch(
-          `${TMDB_BASE_URL}/${endpoint}/${item.tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR&append_to_response=credits,videos`,
+          buildTmdbUrl(`${endpoint}/${item.tmdbId}`, {
+            append_to_response: "credits,videos",
+          }),
         ),
         fetchWatchProviders(endpoint, item.tmdbId),
       ]);
@@ -6582,10 +5897,10 @@ async function loadSimilars(
   try {
     const [similarRes, recommendationsRes] = await Promise.all([
       fetch(
-        `${TMDB_BASE_URL}/${endpoint}/${tmdbId}/similar?api_key=${TMDB_API_KEY}&language=fr-FR&page=1`,
+        buildTmdbUrl(`${endpoint}/${tmdbId}/similar`, { page: 1 }),
       ),
       fetch(
-        `${TMDB_BASE_URL}/${endpoint}/${tmdbId}/recommendations?api_key=${TMDB_API_KEY}&language=fr-FR&page=1`,
+        buildTmdbUrl(`${endpoint}/${tmdbId}/recommendations`, { page: 1 }),
       ),
     ]);
     if (!similarRes.ok && !recommendationsRes.ok) throw new Error();
@@ -6686,10 +6001,6 @@ function deleteItem() {
   closeDetailModal();
   renderItems();
   showToast("Contenu supprimé");
-}
-
-function hasConfiguredTmdbApiKey() {
-  return Boolean(TMDB_API_KEY && TMDB_API_KEY !== "VOTRE_CLE_API_ICI");
 }
 
 function hasAssistantRemoteConsent() {
@@ -6991,24 +6302,19 @@ async function buildLocalCatalogSuggestionReply(prompt) {
   if (!intent || !hasConfiguredTmdbApiKey()) return null;
 
   const endpoint = intent.mediaType === "tv" ? "tv" : "movie";
-  const url = new URL(`${TMDB_BASE_URL}/discover/${endpoint}`);
-  url.searchParams.set("api_key", TMDB_API_KEY);
-  url.searchParams.set("language", "fr-FR");
-  url.searchParams.set("include_adult", "false");
-  url.searchParams.set("sort_by", "popularity.desc");
-  url.searchParams.set("vote_count.gte", endpoint === "movie" ? "150" : "80");
-  url.searchParams.set("watch_region", TMDB_WATCH_REGION);
-  url.searchParams.set(
-    endpoint === "movie" ? "primary_release_date.lte" : "first_air_date.lte",
-    getTodayDateInputValue(),
-  );
-  if (intent.genreId) url.searchParams.set("with_genres", String(intent.genreId));
-  if (intent.providerId) {
-    url.searchParams.set("with_watch_providers", String(intent.providerId));
-    url.searchParams.set("with_watch_monetization_types", "flatrate|free|ads");
-  }
+  const url = buildTmdbUrl(`discover/${endpoint}`, {
+    include_adult: "false",
+    sort_by: "popularity.desc",
+    "vote_count.gte": endpoint === "movie" ? "150" : "80",
+    watch_region: TMDB_WATCH_REGION,
+    [endpoint === "movie" ? "primary_release_date.lte" : "first_air_date.lte"]:
+      getTodayDateInputValue(),
+    with_genres: intent.genreId,
+    with_watch_providers: intent.providerId,
+    with_watch_monetization_types: intent.providerId ? "flatrate|free|ads" : null,
+  });
 
-  const response = await fetch(url.toString());
+  const response = await fetch(url);
   if (!response.ok) return null;
   const data = await response.json();
   const candidates = (data.results || [])
@@ -8101,13 +7407,13 @@ async function fetchExternalSuggestionItems() {
   if (suggestionFilters.type === "all" || suggestionFilters.type === "movie") {
     endpoints.push({
       mediaType: "movie",
-      url: `${TMDB_BASE_URL}/trending/movie/week?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      url: buildTmdbUrl("trending/movie/week"),
     });
   }
   if (suggestionFilters.type === "all" || suggestionFilters.type === "series") {
     endpoints.push({
       mediaType: "tv",
-      url: `${TMDB_BASE_URL}/trending/tv/week?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      url: buildTmdbUrl("trending/tv/week"),
     });
   }
 
@@ -8155,19 +7461,24 @@ async function fetchExternalProviderItems() {
     Date.now() - suggestionProviderCache.fetchedAt < 10 * 60 * 1000;
   if (cacheIsFresh) return suggestionProviderCache.items;
 
-  const providerParam = providerTmdbIds.join("%7C");
+  const providerDiscoverParams = {
+    watch_region: TMDB_WATCH_REGION,
+    with_watch_providers: providerTmdbIds.join("|"),
+    with_watch_monetization_types: "flatrate|free|ads",
+    sort_by: "popularity.desc",
+  };
   const selectedProviderLabel = getUserProviderLabelList().join(" ou ");
   const endpoints = [];
   if (suggestionFilters.type === "all" || suggestionFilters.type === "movie") {
     endpoints.push({
       mediaType: "movie",
-      url: `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&language=fr-FR&watch_region=FR&with_watch_providers=${providerParam}&with_watch_monetization_types=flatrate%7Cfree%7Cads&sort_by=popularity.desc`,
+      url: buildTmdbUrl("discover/movie", providerDiscoverParams),
     });
   }
   if (suggestionFilters.type === "all" || suggestionFilters.type === "series") {
     endpoints.push({
       mediaType: "tv",
-      url: `${TMDB_BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&language=fr-FR&watch_region=FR&with_watch_providers=${providerParam}&with_watch_monetization_types=flatrate%7Cfree%7Cads&sort_by=popularity.desc`,
+      url: buildTmdbUrl("discover/tv", providerDiscoverParams),
     });
   }
 
@@ -8240,7 +7551,7 @@ async function fetchExternalNetworkProviderItems(trendingItems) {
     const enriched = await Promise.all(
       seriesItems.map(async (item) => {
         const response = await fetch(
-          `${TMDB_BASE_URL}/tv/${item.tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+          buildTmdbUrl(`tv/${item.tmdbId}`),
         );
         if (!response.ok) return null;
         const tmdbDetails = await response.json();
@@ -8682,7 +7993,7 @@ async function loadUpcoming() {
     seriesForSeasons.map(async (item) => {
       try {
         const res = await fetch(
-          `${TMDB_BASE_URL}/tv/${item.tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+          buildTmdbUrl(`tv/${item.tmdbId}`),
         );
         if (!res.ok) return null;
         const tmdb = await res.json();
@@ -8847,7 +8158,7 @@ function getDiscoverRowsConfig() {
       title: "Films tendances",
       description: "Les films les plus populaires de la semaine sur TMDB.",
       gridId: "discoverTrendingMoviesGrid",
-      url: `${TMDB_BASE_URL}/trending/movie/week?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      url: buildTmdbUrl("trending/movie/week"),
       type: "movie",
       showDate: false,
     },
@@ -8856,7 +8167,7 @@ function getDiscoverRowsConfig() {
       title: "Séries tendances",
       description: "Les séries qui font le plus parler d'elles cette semaine.",
       gridId: "discoverTrendingSeriesGrid",
-      url: `${TMDB_BASE_URL}/trending/tv/week?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      url: buildTmdbUrl("trending/tv/week"),
       type: "tv",
       showDate: false,
     },
@@ -8865,7 +8176,12 @@ function getDiscoverRowsConfig() {
       title: "Films les plus attendus",
       description: "Les prochaines sorties cinéma et streaming à surveiller.",
       gridId: "discoverAnticipatedMoviesGrid",
-      url: `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&language=fr-FR&sort_by=popularity.desc&primary_release_date.gte=${today}&primary_release_date.lte=${in6months}&with_release_type=2|3`,
+      url: buildTmdbUrl("discover/movie", {
+        sort_by: "popularity.desc",
+        "primary_release_date.gte": today,
+        "primary_release_date.lte": in6months,
+        with_release_type: "2|3",
+      }),
       type: "movie",
       showDate: true,
     },
@@ -8874,7 +8190,11 @@ function getDiscoverRowsConfig() {
       title: "Séries les plus attendues",
       description: "Les nouveautés séries à venir dans les prochains mois.",
       gridId: "discoverAnticipatedSeriesGrid",
-      url: `${TMDB_BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&language=fr-FR&sort_by=popularity.desc&first_air_date.gte=${today}&first_air_date.lte=${in6months}`,
+      url: buildTmdbUrl("discover/tv", {
+        sort_by: "popularity.desc",
+        "first_air_date.gte": today,
+        "first_air_date.lte": in6months,
+      }),
       type: "tv",
       showDate: true,
     },
@@ -8883,7 +8203,7 @@ function getDiscoverRowsConfig() {
       title: "Actuellement au cinéma",
       description: "Les films en salle en ce moment, côté France.",
       gridId: "discoverNowPlayingGrid",
-      url: `${TMDB_BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&language=fr-FR&region=FR`,
+      url: buildTmdbUrl("movie/now_playing", { region: TMDB_WATCH_REGION }),
       type: "movie",
       showDate: false,
     },
@@ -8892,7 +8212,7 @@ function getDiscoverRowsConfig() {
       title: "Meilleurs films de tous les temps",
       description: "Les films les mieux notés sur TMDB.",
       gridId: "discoverTopMoviesGrid",
-      url: `${TMDB_BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      url: buildTmdbUrl("movie/top_rated"),
       type: "movie",
       showDate: false,
     },
@@ -8901,7 +8221,7 @@ function getDiscoverRowsConfig() {
       title: "Meilleures séries de tous les temps",
       description: "Les séries les mieux notées sur TMDB.",
       gridId: "discoverTopSeriesGrid",
-      url: `${TMDB_BASE_URL}/tv/top_rated?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      url: buildTmdbUrl("tv/top_rated"),
       type: "tv",
       showDate: false,
     },
@@ -9094,18 +8414,22 @@ function openDiscoverPrompt(promptId) {
 
   const endpoint = prompt.mediaType === "movie" ? "movie" : "tv";
   const dateParam =
-    prompt.mediaType === "movie"
-      ? "&primary_release_date.lte="
-      : "&first_air_date.lte=";
+    prompt.mediaType === "movie" ? "primary_release_date.lte" : "first_air_date.lte";
   const today = new Date().toISOString().slice(0, 10);
-  const genreParam = prompt.genreId ? `&with_genres=${prompt.genreId}` : "";
 
   openDiscoverWithConfig({
     key: `prompt-${prompt.id}`,
     mediaType: prompt.mediaType,
     title: prompt.title,
     description: prompt.description,
-    url: `${TMDB_BASE_URL}/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=fr-FR&watch_region=FR${genreParam}&sort_by=popularity.desc${dateParam}${today}${prompt.extraQuery || ""}`,
+    url: buildTmdbUrl(`discover/${endpoint}`, {
+      watch_region: TMDB_WATCH_REGION,
+      with_genres: prompt.genreId,
+      sort_by: "popularity.desc",
+      [dateParam]: today,
+      // extraQuery is a "&key=value&..." string from DISCOVER_PROMPTS.
+      ...Object.fromEntries(new URLSearchParams(prompt.extraQuery || "")),
+    }),
     type: prompt.mediaType,
     showDate: false,
   });
@@ -9187,7 +8511,11 @@ function openDiscoverGenreWithType(targetType) {
     mediaType: targetType,
     title: genre.genreName,
     description: `${typeLabel} populaires maintenant, triés par popularité.`,
-    url: `${TMDB_BASE_URL}/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=fr-FR&with_genres=${genre.genreId}&sort_by=popularity.desc&watch_region=FR`,
+    url: buildTmdbUrl(`discover/${endpoint}`, {
+      with_genres: genre.genreId,
+      sort_by: "popularity.desc",
+      watch_region: TMDB_WATCH_REGION,
+    }),
     type: targetType,
     showDate: false,
   });
@@ -9371,7 +8699,7 @@ async function loadPersonalizedRows() {
 
     try {
       const res = await fetch(
-        `${TMDB_BASE_URL}/${endpoint}/${item.tmdbId}/similar?api_key=${TMDB_API_KEY}&language=fr-FR`,
+        buildTmdbUrl(`${endpoint}/${item.tmdbId}/similar`),
       );
       if (!res.ok) throw new Error();
       const data = await res.json();
@@ -9863,7 +9191,9 @@ async function showTrendingDetail(id, mediaType = null) {
     const endpoint = type === "movie" ? "movie" : "tv";
     const [res, watchProviders] = await Promise.all([
       fetch(
-        `${TMDB_BASE_URL}/${endpoint}/${item.id}?api_key=${TMDB_API_KEY}&language=fr-FR&append_to_response=credits,videos`,
+        buildTmdbUrl(`${endpoint}/${item.id}`, {
+          append_to_response: "credits,videos",
+        }),
       ),
       fetchWatchProviders(endpoint, item.id),
     ]);
@@ -9889,7 +9219,7 @@ async function fetchTrendingNetworkProvider(tmdbId) {
   if (!hasConfiguredTmdbApiKey() || !tmdbId) return null;
   try {
     const response = await fetch(
-      `${TMDB_BASE_URL}/tv/${tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      buildTmdbUrl(`tv/${tmdbId}`),
     );
     if (!response.ok) return null;
     const tmdb = await response.json();
@@ -10390,10 +9720,10 @@ async function runSectionSearch(query) {
   try {
     const [movieRes, tvRes] = await Promise.all([
       fetch(
-        `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`,
+        buildTmdbUrl("search/movie", { query }),
       ),
       fetch(
-        `${TMDB_BASE_URL}/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`,
+        buildTmdbUrl("search/tv", { query }),
       ),
     ]);
     const [movies, tv] = await Promise.all([movieRes.json(), tvRes.json()]);
@@ -10472,10 +9802,10 @@ async function runOverlaySearch(query) {
   try {
     const [movieRes, tvRes] = await Promise.all([
       fetch(
-        `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`,
+        buildTmdbUrl("search/movie", { query }),
       ),
       fetch(
-        `${TMDB_BASE_URL}/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=fr-FR`,
+        buildTmdbUrl("search/tv", { query }),
       ),
     ]);
     const [movies, tv] = await Promise.all([movieRes.json(), tvRes.json()]);
@@ -10708,7 +10038,7 @@ window.app = {
 async function checkSeriesForNewSeason(item) {
   try {
     const res = await fetch(
-      `${TMDB_BASE_URL}/tv/${item.tmdbId}?api_key=${TMDB_API_KEY}&language=fr-FR`,
+      buildTmdbUrl(`tv/${item.tmdbId}`),
     );
     if (!res.ok) return;
     const tmdb = await res.json();
