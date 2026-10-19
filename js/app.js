@@ -882,14 +882,72 @@ async function hydrateMovieItemFromTmdb(item, tmdbId, statusOverride = null) {
   };
 }
 
-async function findTmdbMovieMatch(title, year) {
-  if (!title || TMDB_API_KEY === "VOTRE_CLE_API_ICI") return null;
+// Titles with no TMDB match are remembered so the automatic repair does not
+// re-run the same searches on every launch.
+const TMDB_MATCH_MISS_STORAGE_KEY = "cinetrackerTmdbMatchMisses";
+const TMDB_MATCH_MISS_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const TMDB_MATCH_MISS_LIMIT = 2000;
+const tmdbMovieMatchRequests = new Map();
+let tmdbMatchMisses = null;
 
+function getTmdbMatchMisses() {
+  if (tmdbMatchMisses) return tmdbMatchMisses;
+  try {
+    const stored = JSON.parse(localStorage.getItem(TMDB_MATCH_MISS_STORAGE_KEY) || "{}");
+    tmdbMatchMisses = stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+  } catch {
+    tmdbMatchMisses = {};
+  }
+  return tmdbMatchMisses;
+}
+
+function recordTmdbMatchMiss(key) {
+  const misses = getTmdbMatchMisses();
+  misses[key] = Date.now();
+  tmdbMatchMisses = Object.fromEntries(
+    Object.entries(misses)
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, TMDB_MATCH_MISS_LIMIT),
+  );
+  try {
+    localStorage.setItem(TMDB_MATCH_MISS_STORAGE_KEY, JSON.stringify(tmdbMatchMisses));
+  } catch {
+    // Best effort cache: losing it only costs extra searches.
+  }
+}
+
+function findTmdbMovieMatch(title, year) {
+  if (!title || TMDB_API_KEY === "VOTRE_CLE_API_ICI") return Promise.resolve(null);
+
+  const key = `${slugifyImportPart(title)}|${String(year || "").trim()}`;
+  const missedAt = Number(getTmdbMatchMisses()[key]);
+  if (Number.isFinite(missedAt) && Date.now() - missedAt < TMDB_MATCH_MISS_TTL_MS) {
+    return Promise.resolve(null);
+  }
+
+  // Share one search between the startup repair and the render-time hydration.
+  if (!tmdbMovieMatchRequests.has(key)) {
+    tmdbMovieMatchRequests.set(
+      key,
+      searchTmdbMovieMatch(title, year).then(({ match, complete }) => {
+        if (!match && complete) recordTmdbMatchMiss(key);
+        if (!complete) tmdbMovieMatchRequests.delete(key);
+        return match;
+      }),
+    );
+  }
+  return tmdbMovieMatchRequests.get(key);
+}
+
+// Returns { match, complete }: complete is false when a request failed, so a
+// network/rate-limit error is never remembered as "no match".
+async function searchTmdbMovieMatch(title, year) {
   const normalizedYear = /^\d{4}$/.test(String(year || "").trim())
     ? String(year).trim()
     : "";
   const rankedCandidates = new Map();
   const titleVariants = getMovieTitleSearchVariants(title);
+  let complete = true;
 
   try {
     for (const variant of titleVariants) {
@@ -901,7 +959,10 @@ async function findTmdbMovieMatch(title, year) {
 
       for (const url of urls) {
         const res = await fetch(url);
-        if (!res.ok) continue;
+        if (!res.ok) {
+          complete = false;
+          continue;
+        }
 
         const data = await res.json();
         const results = Array.isArray(data.results)
@@ -922,7 +983,7 @@ async function findTmdbMovieMatch(title, year) {
         )[0];
 
         if (exactishMatch && exactishMatch.score >= 72) {
-          return exactishMatch.candidate;
+          return { match: exactishMatch.candidate, complete: true };
         }
       }
     }
@@ -930,11 +991,11 @@ async function findTmdbMovieMatch(title, year) {
     const bestMatch = [...rankedCandidates.values()].sort(
       (left, right) => right.score - left.score,
     )[0];
-    if (!bestMatch || bestMatch.score < 48) return null;
-    return bestMatch.candidate;
+    if (!bestMatch || bestMatch.score < 48) return { match: null, complete };
+    return { match: bestMatch.candidate, complete: true };
   } catch (error) {
     console.error("Erreur recherche TMDB import:", error);
-    return null;
+    return { match: null, complete: false };
   }
 }
 
@@ -1133,7 +1194,7 @@ async function repairExistingLetterboxdImports() {
   if (!nextItems.length) return;
 
   items = nextItems;
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   renderItems();
   showToast(`${matchedCount} fiches Letterboxd réparées`);
 }
@@ -1325,7 +1386,7 @@ function updateStoredAiredCountForSeason(itemId, season, episodes) {
       [String(season)]: airedCount,
     },
   };
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   return items[idx];
 }
 
@@ -1672,7 +1733,8 @@ function compareProvidersByPriority(leftProvider, rightProvider) {
   );
 }
 
-const providerRefreshInFlight = new Set();
+// One attempt per item per session: failures must not be retried on every render.
+const providerRefreshAttempted = new Set();
 
 function shouldRefreshItemProvider(item) {
   return Boolean(
@@ -1682,14 +1744,16 @@ function shouldRefreshItemProvider(item) {
 }
 
 async function ensureItemProviderUpToDate(item) {
-  if (!item?.tmdbId || providerRefreshInFlight.has(item.id)) return;
-  if (!shouldRefreshItemProvider(item)) return;
-
-  providerRefreshInFlight.add(item.id);
+  if (!item?.tmdbId || !shouldRefreshItemProvider(item)) return;
+  const attemptKey = `${item.id}|${item.type}|${item.tmdbId}`;
+  if (providerRefreshAttempted.has(attemptKey)) return;
+  providerRefreshAttempted.add(attemptKey);
 
   try {
     const endpoint = item.type === "series" ? "tv" : "movie";
-    const watchProviders = await fetchWatchProviders(endpoint, item.tmdbId);
+    const watchProviders = await runBackgroundTmdbTask(() =>
+      fetchWatchProviders(endpoint, item.tmdbId),
+    );
     const provider = getPrimaryWatchProvider(watchProviders, {
       includedOnly: true,
     });
@@ -1715,12 +1779,9 @@ async function ensureItemProviderUpToDate(item) {
       providerAccessType: nextProviderAccessType,
       providerPriorityVersion: WATCH_PROVIDER_PRIORITY_VERSION,
     };
-    localStorage.setItem("watchlist", JSON.stringify(items));
-    renderItems();
+    scheduleBackgroundItemsCommit();
   } catch (error) {
     console.error("Erreur mise a jour providers:", error);
-  } finally {
-    providerRefreshInFlight.delete(item.id);
   }
 }
 
@@ -1894,7 +1955,7 @@ function getSeasonProgressState(item, seasonNumber, episodeCount = 0) {
 
 function loadStoredItems() {
   try {
-    const storedItems = JSON.parse(localStorage.getItem("watchlist") || "[]");
+    const storedItems = JSON.parse(localStorage.getItem(CONSTANTS.STORAGE_KEY) || "[]");
     if (!Array.isArray(storedItems)) return [];
 
     return storedItems
@@ -2011,6 +2072,66 @@ function isSameTmdbCollectionItem(item, tmdbId, type) {
 }
 
 let items = loadStoredItems();
+let storageErrorToastAt = 0;
+
+// Single write path for the collection. localStorage throws when full
+// (quota ~5 MB): warn the user instead of silently losing changes.
+function saveItems() {
+  try {
+    localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(items));
+    return true;
+  } catch (error) {
+    console.error("Sauvegarde locale impossible:", error);
+    if (Date.now() - storageErrorToastAt > 10000) {
+      storageErrorToastAt = Date.now();
+      showToast("Sauvegarde impossible : stockage plein. Exportez vos données.");
+    }
+    return false;
+  }
+}
+
+// Background TMDB enrichment runs while rendering cards: cap concurrency so a
+// large collection does not fire hundreds of requests at once.
+const BACKGROUND_TMDB_CONCURRENCY = 4;
+const backgroundTmdbQueue = [];
+let backgroundTmdbActive = 0;
+
+function runBackgroundTmdbTask(task) {
+  return new Promise((resolve, reject) => {
+    backgroundTmdbQueue.push({ task, resolve, reject });
+    pumpBackgroundTmdbQueue();
+  });
+}
+
+function pumpBackgroundTmdbQueue() {
+  while (
+    backgroundTmdbActive < BACKGROUND_TMDB_CONCURRENCY &&
+    backgroundTmdbQueue.length
+  ) {
+    const { task, resolve, reject } = backgroundTmdbQueue.shift();
+    backgroundTmdbActive++;
+    Promise.resolve()
+      .then(task)
+      .then(resolve, reject)
+      .finally(() => {
+        backgroundTmdbActive--;
+        pumpBackgroundTmdbQueue();
+      });
+  }
+}
+
+// Group the save + full re-render triggered by background updates.
+let backgroundItemsCommitTimer = null;
+
+function scheduleBackgroundItemsCommit() {
+  if (backgroundItemsCommitTimer) return;
+  backgroundItemsCommitTimer = setTimeout(() => {
+    backgroundItemsCommitTimer = null;
+    saveItems();
+    renderItems();
+  }, 400);
+}
+
 let assistantMessages = loadAssistantHistory();
 let assistantRequestPending = false;
 let assistantConfigTipShown = false;
@@ -2188,7 +2309,7 @@ const BROWSE_PROVIDERS = BROWSE_PROVIDER_KEYS
   .filter(Boolean);
 const seasonEpisodesCache = {};
 const movieReleaseEnrichmentInFlight = new Set();
-const orphanMovieRepairInFlight = new Set();
+const orphanMovieRepairAttempted = new Set();
 const seriesUpcomingEpisodesCache = {};
 const seriesUpcomingFetchInFlight = new Set();
 let collectionBrowseItems = [];
@@ -2268,7 +2389,7 @@ function sanitizeImportedSystemTags() {
   });
 
   if (hasChanges) {
-    localStorage.setItem("watchlist", JSON.stringify(items));
+    saveItems();
   }
 }
 
@@ -2498,7 +2619,7 @@ function quickNextEpisode(id, event) {
   if (item.status === "towatch") item.status = "watching";
 
   items[idx] = item;
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   renderItems();
   showToast(`S${season} E${episode} ✓`);
 }
@@ -3289,7 +3410,7 @@ async function enrichMovieReleaseDate(item) {
       releaseDate,
       year: releaseDate.substring(0, 4) || items[idx].year,
     };
-    localStorage.setItem("watchlist", JSON.stringify(items));
+    saveItems();
     renderItems();
   } catch (e) {
     console.error("Erreur enrichissement date film:", e);
@@ -3320,11 +3441,15 @@ async function ensureMovieItemHydrated(item) {
       (item.tmdbLocalizationVersion || 0) < TMDB_MOVIE_LOCALIZATION_VERSION);
   if (!needsHydration) return;
 
-  if (orphanMovieRepairInFlight.has(item.id)) return;
-  orphanMovieRepairInFlight.add(item.id);
+  // Keyed on the matching inputs: editing the title/year allows a new attempt.
+  const attemptKey = `${item.id}|${item.title}|${item.year}|${item.tmdbId || ""}`;
+  if (orphanMovieRepairAttempted.has(attemptKey)) return;
+  orphanMovieRepairAttempted.add(attemptKey);
 
   try {
-    const repairedItem = await enrichImportedMovieItem(item);
+    const repairedItem = await runBackgroundTmdbTask(() =>
+      enrichImportedMovieItem(item),
+    );
     if (!repairedItem) return;
 
     const hasMeaningfulUpdate =
@@ -3345,12 +3470,9 @@ async function ensureMovieItemHydrated(item) {
     if (index === -1) return;
 
     items[index] = mergeImportedIntoExistingItem(items[index], repairedItem);
-    localStorage.setItem("watchlist", JSON.stringify(items));
-    renderItems();
+    scheduleBackgroundItemsCommit();
   } catch (error) {
     console.error("Erreur reparation film orphelin:", error);
-  } finally {
-    orphanMovieRepairInFlight.delete(item.id);
   }
 }
 
@@ -5299,7 +5421,7 @@ function jumpToSeason(itemId, season, seasonAirDate, event) {
     currentEpisode: 1,
     status: "watching",
   };
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   renderItems();
   // Recharger la fiche
   openDetail(itemId);
@@ -5343,7 +5465,7 @@ function markSeasonDone(itemId, season, event) {
         [String(season)]: Math.min(epCount, airedCount),
       },
     };
-    localStorage.setItem("watchlist", JSON.stringify(items));
+    saveItems();
     renderItems();
     reopenDetailAtSeason(itemId, season, viewState);
     showToast(`Saison ${season} à jour · En attente du prochain épisode`);
@@ -5379,7 +5501,7 @@ function markSeasonDone(itemId, season, event) {
     };
     showToast(`Série terminée ✓`);
   }
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   renderItems();
   reopenDetailAtSeason(itemId, season, viewState);
 }
@@ -5398,7 +5520,7 @@ function unmarkSeasonDone(itemId, season, event) {
     watchedAt: null,
     lastWatchedAt: new Date().toISOString(),
   };
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   renderItems();
   reopenDetailAtSeason(itemId, season, viewState);
   showToast(`Saison ${season} remise à zéro`);
@@ -5527,7 +5649,7 @@ function markEpisodeSeen(
   }
 
   items[idx] = updated;
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   renderItems();
   refreshOpenSeasonProgressInPlace(itemId, season, viewState);
 }
@@ -5550,7 +5672,7 @@ function unmarkEpisodeSeen(itemId, season, episode, event) {
       [String(season)]: Math.max(0, episode - 1),
     },
   };
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   renderItems();
   refreshOpenSeasonProgressInPlace(itemId, season, viewState);
   showToast(`S${season} E${episode} remis en non vu`);
@@ -5961,7 +6083,7 @@ function setItemStatusFromDetail(status) {
   }
 
   items[index] = updatedItem;
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   renderItems();
   openDetail(updatedItem.id);
 
@@ -6918,7 +7040,7 @@ async function openDetail(id) {
                 lastAiredEpisode || items[idx].lastAiredEpisode || 0,
             };
             item = items[idx];
-            localStorage.setItem("watchlist", JSON.stringify(items));
+            saveItems();
           }
         } else if (provider?.providerName) {
           const idx = items.findIndex((i) => i.id === item.id);
@@ -6939,7 +7061,7 @@ async function openDetail(id) {
                 lastAiredEpisode || items[idx].lastAiredEpisode || 0,
             };
             item = items[idx];
-            localStorage.setItem("watchlist", JSON.stringify(items));
+            saveItems();
           }
         }
 
@@ -6965,7 +7087,7 @@ async function openDetail(id) {
                 lastAiredEpisode || items[idx2].lastAiredEpisode || 0,
             };
             item = items[idx2];
-            localStorage.setItem("watchlist", JSON.stringify(items));
+            saveItems();
             renderWatchingStrip();
           }
         }
@@ -7276,7 +7398,7 @@ function deleteItem() {
   if (!confirm("Supprimer ce contenu ?")) return;
 
   items = items.filter((i) => i.id !== currentItemId);
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   closeDetailModal();
   renderItems();
   showToast("Contenu supprimé");
@@ -10528,7 +10650,7 @@ async function addFromTrending(
   const newItem = buildCollectionItemFromTrending(item, type, provider, status);
 
   items.unshift(newItem);
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   if (options.closeAfter) closeDetailModal();
   showToast(
     status === "watched" ? `${title} ajouté comme vu` : `${title} ajouté ! 🎉`,
@@ -10764,7 +10886,7 @@ function importData() {
         showToast(`${items.length} éléments restaurés`);
       }
 
-      localStorage.setItem("watchlist", JSON.stringify(items));
+      saveItems();
       letterboxdRepairAttempted = false;
       await repairExistingLetterboxdImports();
       renderItems();
@@ -10914,7 +11036,7 @@ document.getElementById("addForm").addEventListener("submit", function (e) {
     showToast("Contenu ajouté");
   }
 
-  localStorage.setItem("watchlist", JSON.stringify(items));
+  saveItems();
   closeAddModal();
   renderItems();
 
@@ -11359,7 +11481,7 @@ async function checkSeriesForNewSeason(item) {
         seasonCheckedAt: now,
         totalEpisodes: tmdb.number_of_episodes || items[idx].totalEpisodes,
       };
-      localStorage.setItem("watchlist", JSON.stringify(items));
+      saveItems();
       renderItems();
       showToast(`${item.title} · Saison ${newSeason.season_number} disponible !`);
     } else {
@@ -11375,7 +11497,7 @@ async function checkSeriesForNewSeason(item) {
           items[idx].lastAiredEpisode ||
           0,
       };
-      localStorage.setItem("watchlist", JSON.stringify(items));
+      saveItems();
     }
   } catch (e) {
     console.error("Erreur vérification nouvelle saison:", item.title, e);
