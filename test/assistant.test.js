@@ -10,6 +10,7 @@ Object.assign(globalThis, require("../js/storage"), {
   USER_PROVIDER_OPTIONS: [
     { key: "netflix", label: "Netflix", tmdbId: 8 },
     { key: "arte", label: "Arte", tmdbId: 234 },
+    { key: "disney+", label: "Disney+", tmdbId: 337 },
   ],
 });
 const assistant = require("../js/assistant");
@@ -70,6 +71,26 @@ test("films are the default media type", () => {
   assert.equal(intent.mediaType, "movie");
   assert.equal(intent.genreId, 35);
   assert.equal(intent.providerId, null);
+});
+
+test("platforms and genres must be whole words", () => {
+  // "carte" contains "arte", "satisfaction" contains "action".
+  const intent = assistant.parseAssistantCatalogIntent(
+    "Trouve un film à la carte, satisfaction maximum",
+  );
+  assert.equal(intent.providerId, null);
+  assert.equal(intent.genreId, null);
+});
+
+test("plurals and punctuated platform names still match", () => {
+  const intent = assistant.parseAssistantCatalogIntent("Des comédies sur Arte ?");
+  assert.equal(intent.genreId, 35);
+  assert.equal(intent.providerId, 234);
+  assert.equal(assistant.parseAssistantCatalogIntent("des thrillers").genreLabel, "thriller");
+  for (const prompt of ["un film de science-fiction", "un film de science fiction", "du sci-fi"]) {
+    assert.equal(assistant.parseAssistantCatalogIntent(prompt).genreLabel, "science-fiction", prompt);
+  }
+  assert.equal(assistant.parseAssistantCatalogIntent("une série Disney+").providerId, 337);
 });
 
 test("small talk is not a catalog request", () => {

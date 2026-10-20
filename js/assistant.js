@@ -340,6 +340,13 @@ function normalizeAssistantText(value) {
     .toLowerCase();
 }
 
+// Whole-word match (plural allowed), so "arte" does not match "carte" nor
+// "max" match "maximum". Terms may contain "+", "." or spaces.
+function hasAssistantTerm(text, term) {
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${escaped}(s|x)?(?![a-z0-9])`).test(text);
+}
+
 function parseAssistantCatalogIntent(prompt) {
   const text = normalizeAssistantText(prompt);
   const wantsSuggestion = [
@@ -375,11 +382,13 @@ function parseAssistantCatalogIntent(prompt) {
     horror: { movie: 27, tv: 9648, label: "horreur" },
     romance: { movie: 10749, tv: 10766, label: "romance" },
     "science fiction": { movie: 878, tv: 10765, label: "science-fiction" },
+    "science-fiction": { movie: 878, tv: 10765, label: "science-fiction" },
     "sci fi": { movie: 878, tv: 10765, label: "science-fiction" },
+    "sci-fi": { movie: 878, tv: 10765, label: "science-fiction" },
     thriller: { movie: 53, tv: 9648, label: "thriller" },
   };
   const genreEntry = Object.entries(genreMap).find(([term]) =>
-    text.includes(term),
+    hasAssistantTerm(text, term),
   )?.[1];
   const providerAliases = [
     { terms: ["netflix"], key: "netflix" },
@@ -395,7 +404,7 @@ function parseAssistantCatalogIntent(prompt) {
     { terms: ["mubi"], key: "mubi" },
   ];
   const providerMatch = providerAliases.find((entry) =>
-    entry.terms.some((term) => text.includes(term)),
+    entry.terms.some((term) => hasAssistantTerm(text, term)),
   );
   const provider = providerMatch
     ? USER_PROVIDER_OPTIONS.find((option) => option.key === providerMatch.key)
