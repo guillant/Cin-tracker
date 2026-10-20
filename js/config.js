@@ -7,8 +7,9 @@
 // TMDB API CONFIGURATION
 // ===========================================
 // Get your free API key at: https://www.themoviedb.org/settings/api
+// The real key goes in js/config.local.js (ignored by Git), never here.
 const CONFIG = {
-  TMDB_API_KEY: "f689f7bb5b4da2e7f86f3437a8f5745f",
+  TMDB_API_KEY: "VOTRE_CLE_API_ICI",
   TMDB_BASE_URL: "https://api.themoviedb.org/3",
   TMDB_IMAGE_BASE: "https://image.tmdb.org/t/p/w500",
   // Optional secure backend proxy (never put an AI provider key in this file).
