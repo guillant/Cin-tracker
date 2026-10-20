@@ -216,6 +216,10 @@ exposé directement sur Internet.
 
 - Couche TMDB : construction des URLs, recherche, enrichissement des fiches
 
+### `assistant.js`
+
+- Assistant cinéma : appel au backend IA (`/api/assistant`), repli local sur la collection et la découverte TMDB, rendu de la conversation
+
 ### `app.js`
 
 Contient le reste de la logique applicative :
