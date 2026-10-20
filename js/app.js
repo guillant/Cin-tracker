@@ -56,12 +56,6 @@ function getAssistantRequestTimeoutMs() {
 }
 
 const HIDDEN_SYSTEM_TAGS = new Set(["Letterboxd"]);
-const USER_PROVIDERS_STORAGE_KEY = "cinetrackerUserProviders";
-const GROUP_PROFILES_STORAGE_KEY = "cinetrackerGroupProfiles";
-const GROUP_ACTIVE_PROFILES_STORAGE_KEY = "cinetrackerGroupActiveProfiles";
-const SUGGESTION_RECENT_HISTORY_STORAGE_KEY = "cinetrackerSuggestionRecentHistory";
-const AI_ASSISTANT_HISTORY_STORAGE_KEY = "cinetrackerAssistantHistory";
-const AI_ASSISTANT_CONSENT_STORAGE_KEY = "cinetrackerAssistantRemoteConsent";
 const AI_ASSISTANT_MAX_HISTORY = 12;
 const SUGGESTION_RECENT_HISTORY_LIMIT = 8;
 const SUGGESTION_PROVIDER_CACHE_VERSION = 3;
@@ -428,21 +422,12 @@ function getEditorialUpcomingLabel(targetDate, fromDate) {
 }
 
 function loadUserProviderKeys() {
-  try {
-    const stored = JSON.parse(
-      localStorage.getItem(USER_PROVIDERS_STORAGE_KEY) || "[]",
-    );
-    return Array.isArray(stored) ? stored : [];
-  } catch {
-    return [];
-  }
+  const stored = readStoredJson(STORAGE_KEYS.userProviders, []);
+  return Array.isArray(stored) ? stored : [];
 }
 
 function saveUserProviderKeys() {
-  localStorage.setItem(
-    USER_PROVIDERS_STORAGE_KEY,
-    JSON.stringify(userProviderKeys),
-  );
+  writeStoredJson(STORAGE_KEYS.userProviders, userProviderKeys);
 }
 
 function syncCurrentUserGroupProfile() {
@@ -522,41 +507,26 @@ function createDefaultGroupProfiles() {
 }
 
 function loadGroupProfiles() {
-  try {
-    const stored = JSON.parse(
-      localStorage.getItem(GROUP_PROFILES_STORAGE_KEY) || "[]",
-    );
-    return Array.isArray(stored) && stored.length
-      ? stored.map(normalizeGroupProfile)
-      : createDefaultGroupProfiles();
-  } catch {
-    return createDefaultGroupProfiles();
-  }
+  const stored = readStoredJson(STORAGE_KEYS.groupProfiles, []);
+  const profiles = Array.isArray(stored)
+    ? stored.filter((profile) => profile && typeof profile === "object")
+    : [];
+  return profiles.length
+    ? profiles.map(normalizeGroupProfile)
+    : createDefaultGroupProfiles();
 }
 
 function saveGroupProfiles() {
-  localStorage.setItem(
-    GROUP_PROFILES_STORAGE_KEY,
-    JSON.stringify(groupProfiles),
-  );
+  writeStoredJson(STORAGE_KEYS.groupProfiles, groupProfiles);
 }
 
 function loadActiveGroupProfileIds() {
-  try {
-    const stored = JSON.parse(
-      localStorage.getItem(GROUP_ACTIVE_PROFILES_STORAGE_KEY) || "[]",
-    );
-    return Array.isArray(stored) ? stored : ["me"];
-  } catch {
-    return ["me"];
-  }
+  const stored = readStoredJson(STORAGE_KEYS.activeGroupProfiles, []);
+  return Array.isArray(stored) ? stored : ["me"];
 }
 
 function saveActiveGroupProfileIds() {
-  localStorage.setItem(
-    GROUP_ACTIVE_PROFILES_STORAGE_KEY,
-    JSON.stringify(activeGroupProfileIds),
-  );
+  writeStoredJson(STORAGE_KEYS.activeGroupProfiles, activeGroupProfileIds);
 }
 
 function getActiveGroupProfiles() {
@@ -853,32 +823,13 @@ function getSeasonProgressState(item, seasonNumber, episodeCount = 0) {
   };
 }
 
-function loadStoredItems() {
-  try {
-    const storedItems = JSON.parse(localStorage.getItem(CONSTANTS.STORAGE_KEY) || "[]");
-    if (!Array.isArray(storedItems)) return [];
-
-    return storedItems
-      .map((item, index) => normalizeCollectionItem(item, index))
-      .filter(Boolean);
-  } catch (error) {
-    console.warn(
-      "Données locales illisibles, démarrage avec une collection vide.",
-      error,
-    );
-    return [];
-  }
-}
-
 function loadAssistantHistory() {
   if (!AI_ASSISTANT_PERSIST_HISTORY) {
-    localStorage.removeItem(AI_ASSISTANT_HISTORY_STORAGE_KEY);
+    removeStoredValue(STORAGE_KEYS.assistantHistory);
     return [];
   }
   try {
-    const stored = JSON.parse(
-      localStorage.getItem(AI_ASSISTANT_HISTORY_STORAGE_KEY) || "[]",
-    );
+    const stored = readStoredJson(STORAGE_KEYS.assistantHistory, []);
     if (!Array.isArray(stored)) return [];
     return stored
       .filter(
@@ -966,20 +917,15 @@ function isSameTmdbCollectionItem(item, tmdbId, type) {
 let items = loadStoredItems();
 let storageErrorToastAt = 0;
 
-// Single write path for the collection. localStorage throws when full
-// (quota ~5 MB): warn the user instead of silently losing changes.
+// Single write path for the collection: warn the user when storage is full
+// instead of silently losing changes.
 function saveItems() {
-  try {
-    localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(items));
-    return true;
-  } catch (error) {
-    console.error("Sauvegarde locale impossible:", error);
-    if (Date.now() - storageErrorToastAt > 10000) {
-      storageErrorToastAt = Date.now();
-      showToast("Sauvegarde impossible : stockage plein. Exportez vos données.");
-    }
-    return false;
+  if (saveStoredItems(items)) return true;
+  if (Date.now() - storageErrorToastAt > 10000) {
+    storageErrorToastAt = Date.now();
+    showToast("Sauvegarde impossible : stockage plein. Exportez vos données.");
   }
+  return false;
 }
 
 // Background TMDB enrichment runs while rendering cards: cap concurrency so a
@@ -1030,7 +976,7 @@ let assistantConfigTipShown = false;
 let currentFilter = "movie";
 let currentStatus = null;
 let currentSort = "date-desc";
-let currentViewMode = localStorage.getItem("viewMode") || "grid";
+let currentViewMode = readStoredString(STORAGE_KEYS.viewMode, "grid");
 let collectionTagFilter = "";
 const trendingCache = {};
 const TMDB_MOVIE_GENRES = [
@@ -2675,11 +2621,11 @@ function toggleDarkMode() {
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
   const next = isDark ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
-  localStorage.setItem("theme", next);
+  writeStoredString(STORAGE_KEYS.theme, next);
 }
 
 (function initTheme() {
-  const saved = localStorage.getItem("theme");
+  const saved = readStoredString(STORAGE_KEYS.theme);
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   const theme = saved || (prefersDark ? "dark" : "light");
   if (theme === "dark") {
@@ -2691,7 +2637,7 @@ function toggleDarkMode() {
 
 function setViewMode(mode) {
   currentViewMode = mode;
-  localStorage.setItem("viewMode", mode);
+  writeStoredString(STORAGE_KEYS.viewMode, mode);
   document
     .getElementById("viewGrid")
     ?.classList.toggle("active", mode === "grid");
@@ -2702,7 +2648,7 @@ function setViewMode(mode) {
 }
 
 (function initViewMode() {
-  const mode = localStorage.getItem("viewMode") || "grid";
+  const mode = readStoredString(STORAGE_KEYS.viewMode, "grid");
   document
     .getElementById("viewGrid")
     ?.classList.toggle("active", mode === "grid");
@@ -6004,11 +5950,11 @@ function deleteItem() {
 }
 
 function hasAssistantRemoteConsent() {
-  return localStorage.getItem(AI_ASSISTANT_CONSENT_STORAGE_KEY) === "true";
+  return readStoredString(STORAGE_KEYS.assistantConsent) === "true";
 }
 
 function setAssistantRemoteConsent(enabled) {
-  localStorage.setItem(AI_ASSISTANT_CONSENT_STORAGE_KEY, String(Boolean(enabled)));
+  writeStoredString(STORAGE_KEYS.assistantConsent, Boolean(enabled));
 }
 
 async function refreshAssistantModeStatus() {
@@ -6053,9 +5999,9 @@ async function refreshAssistantModeStatus() {
 
 function persistAssistantHistory() {
   if (!AI_ASSISTANT_PERSIST_HISTORY) return;
-  localStorage.setItem(
-    AI_ASSISTANT_HISTORY_STORAGE_KEY,
-    JSON.stringify(assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY * 2)),
+  writeStoredJson(
+    STORAGE_KEYS.assistantHistory,
+    assistantMessages.slice(-AI_ASSISTANT_MAX_HISTORY * 2),
   );
 }
 
@@ -6749,16 +6695,10 @@ async function submitAssistantPrompt() {
 }
 
 function loadRecentSuggestionHistory() {
-  try {
-    const stored = JSON.parse(
-      localStorage.getItem(SUGGESTION_RECENT_HISTORY_STORAGE_KEY) || "[]",
-    );
-    return Array.isArray(stored)
-      ? stored.filter(Boolean).slice(0, SUGGESTION_RECENT_HISTORY_LIMIT)
-      : [];
-  } catch {
-    return [];
-  }
+  const stored = readStoredJson(STORAGE_KEYS.suggestionHistory, []);
+  return Array.isArray(stored)
+    ? stored.filter(Boolean).slice(0, SUGGESTION_RECENT_HISTORY_LIMIT)
+    : [];
 }
 
 function rememberSuggestion(item) {
@@ -6767,10 +6707,7 @@ function rememberSuggestion(item) {
     item.id,
     ...recentSuggestionHistory.filter((id) => id !== item.id),
   ].slice(0, SUGGESTION_RECENT_HISTORY_LIMIT);
-  localStorage.setItem(
-    SUGGESTION_RECENT_HISTORY_STORAGE_KEY,
-    JSON.stringify(recentSuggestionHistory),
-  );
+  writeStoredJson(STORAGE_KEYS.suggestionHistory, recentSuggestionHistory);
 }
 
 function getEstimatedWatchMinutes(item) {

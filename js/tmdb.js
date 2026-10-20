@@ -164,8 +164,6 @@ async function hydrateMovieItemFromTmdb(item, tmdbId, statusOverride = null) {
 
 // Titles with no TMDB match are remembered so the automatic repair does not
 // re-run the same searches on every launch.
-const TMDB_MATCH_MISS_STORAGE_KEY = "cinetrackerTmdbMatchMisses";
-
 const TMDB_MATCH_MISS_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
 const TMDB_MATCH_MISS_LIMIT = 2000;
@@ -176,12 +174,8 @@ let tmdbMatchMisses = null;
 
 function getTmdbMatchMisses() {
   if (tmdbMatchMisses) return tmdbMatchMisses;
-  try {
-    const stored = JSON.parse(localStorage.getItem(TMDB_MATCH_MISS_STORAGE_KEY) || "{}");
-    tmdbMatchMisses = stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
-  } catch {
-    tmdbMatchMisses = {};
-  }
+  const stored = readStoredJson(STORAGE_KEYS.tmdbMatchMisses, {});
+  tmdbMatchMisses = stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
   return tmdbMatchMisses;
 }
 
@@ -193,11 +187,8 @@ function recordTmdbMatchMiss(key) {
       .sort((left, right) => right[1] - left[1])
       .slice(0, TMDB_MATCH_MISS_LIMIT),
   );
-  try {
-    localStorage.setItem(TMDB_MATCH_MISS_STORAGE_KEY, JSON.stringify(tmdbMatchMisses));
-  } catch {
-    // Best effort cache: losing it only costs extra searches.
-  }
+  // Best effort cache: losing it only costs extra searches.
+  writeStoredJson(STORAGE_KEYS.tmdbMatchMisses, tmdbMatchMisses);
 }
 
 function findTmdbMovieMatch(title, year) {
@@ -754,7 +745,6 @@ if (typeof module !== "undefined" && module.exports) {
     fetchTmdbMovieDetails,
     getPreferredTmdbPosterPath,
     hydrateMovieItemFromTmdb,
-    TMDB_MATCH_MISS_STORAGE_KEY,
     TMDB_MATCH_MISS_TTL_MS,
     TMDB_MATCH_MISS_LIMIT,
     tmdbMovieMatchRequests,

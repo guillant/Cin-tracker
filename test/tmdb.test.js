@@ -4,9 +4,9 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 // tmdb.js is a classic browser script: it reads CONFIG, GENRE_MAP and the
-// collection.js helpers as globals, exactly like in index.html.
+// collection.js / storage.js helpers as globals, exactly like in index.html.
 const { GENRE_MAP } = require("../js/config");
-Object.assign(globalThis, require("../js/collection"), {
+Object.assign(globalThis, require("../js/collection"), require("../js/storage"), {
   GENRE_MAP,
   CONFIG: {
     TMDB_API_KEY: "test-key",
@@ -16,6 +16,14 @@ Object.assign(globalThis, require("../js/collection"), {
   },
 });
 const tmdb = require("../js/tmdb");
+
+// In-memory localStorage for the TMDB miss cache.
+const storedValues = new Map();
+globalThis.localStorage = {
+  getItem: (key) => (storedValues.has(key) ? storedValues.get(key) : null),
+  setItem: (key, value) => storedValues.set(key, String(value)),
+  removeItem: (key) => storedValues.delete(key),
+};
 
 function mockFetch(handler) {
   const calls = [];

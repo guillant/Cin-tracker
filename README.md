@@ -202,14 +202,26 @@ exposé directement sur Internet.
 - URLs et constantes publiques de l'API TMDB
 - Clé personnelle à placer dans `js/config.local.js` uniquement
 - Mapping des genres (films & séries)
-- Constantes (clé localStorage, durées moyennes)
+- Constantes (durées moyennes)
+
+### `collection.js`
+
+- Modèle de données de la collection : statuts, normalisation, import Letterboxd, fusion
+
+### `storage.js`
+
+- Persistance localStorage : toutes les clés (`STORAGE_KEYS`) et des lectures/écritures qui ne plantent jamais (stockage plein, bloqué ou corrompu)
+
+### `tmdb.js`
+
+- Couche TMDB : construction des URLs, recherche, enrichissement des fiches
 
 ### `app.js`
 
-Contient toute la logique applicative :
+Contient le reste de la logique applicative :
 
-- État global et persistance localStorage
-- Intégration TMDB (recherche, trending, upcoming, détails enrichis avec crédits, vidéos et watch providers)
+- État global
+- Écrans TMDB (trending, découverte, détails enrichis avec crédits, vidéos et watch providers)
 - Rendu des cards, fiches détail, statistiques, listes et suivi avancé des séries
 - Gestion des modals, filtres, tri, tags
 - Import/Export et PWA

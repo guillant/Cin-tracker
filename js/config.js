@@ -80,7 +80,6 @@ const GENRE_MAP = {
 // APPLICATION CONSTANTS
 // ===========================================
 const CONSTANTS = {
-  STORAGE_KEY: "watchlist",
   DEFAULT_EPISODES_PER_SEASON: 24,
   MOVIE_AVERAGE_DURATION: 120, // minutes
   EPISODE_AVERAGE_DURATION: 45, // minutes
