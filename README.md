@@ -220,6 +220,10 @@ exposé directement sur Internet.
 
 - Assistant cinéma : appel au backend IA (`/api/assistant`), repli local sur la collection et la découverte TMDB, rendu de la conversation
 
+### `suggestions.js`
+
+- « Que regarder ? » : filtres, modes solo et groupe, score des candidats, découverte TMDB, fenêtre de suggestion
+
 ### `app.js`
 
 Contient le reste de la logique applicative :

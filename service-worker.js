@@ -1,4 +1,4 @@
-const SHELL_CACHE_NAME = "cinetracker-shell-v63";
+const SHELL_CACHE_NAME = "cinetracker-shell-v64";
 const RUNTIME_IMAGE_CACHE_NAME = "cinetracker-runtime-images-v1";
 const TMDB_IMAGE_CACHE_LIMIT = 120;
 const APP_SHELL = [
@@ -12,6 +12,7 @@ const APP_SHELL = [
   "./js/config.js",
   "./js/config.local.example.js",
   "./js/storage.js",
+  "./js/suggestions.js",
   "./js/tmdb.js",
   "./assets/icon-192.svg",
   "./assets/icon-512.svg",
